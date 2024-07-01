@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	// relativeAPIath is default Pipy api relative path
-	relativeAPIath = "api"
+	// relativeAPIPath is default Pipy api relative path
+	relativeAPIPath = "api"
 	// relativeRepoPath is default Pipy repo api relative path
 	relativeRepoPath = "repo"
 	// relativeRepoPath is default Pipy repo files api relative path
@@ -43,7 +43,7 @@ func newRepoAPIURI(serverAddr string, serverPort uint16) *repoAPIURI {
 		serverPort:   serverPort,
 		schema:       defaultHTTPSchema,
 		version:      apiVersion1,
-		apiURI:       relativeAPIath,
+		apiURI:       relativeAPIPath,
 		repoURI:      relativeRepoPath,
 		repoFilesURI: relativeRepoFilePath,
 	}).init()
