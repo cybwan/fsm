@@ -5,6 +5,7 @@ on:
       - main
       - release-v*
       - release/v*
+      - ztm/v*
     paths-ignore:
       - "docs/**"
       - "**.md"
@@ -16,6 +17,7 @@ on:
       - main
       - release-v*
       - release/v*
+      - ztm/v*
     paths-ignore:
       - "docs/**"
       - "**.md"

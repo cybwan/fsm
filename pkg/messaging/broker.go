@@ -55,6 +55,13 @@ const (
 	// ConnectorUpdateMaxWindow is the max window duration used to batch connector update events, and is
 	// the max amount of time a connector update event can be held for batching before being dispatched.
 	ConnectorUpdateMaxWindow = 5 * time.Second
+
+	// ZtmUpdateSlidingWindow is the sliding window duration used to batch ztm update events
+	ZtmUpdateSlidingWindow = 2 * time.Second
+
+	// ZtmUpdateMaxWindow is the max window duration used to batch ztm update events, and is
+	// the max amount of time a ztm update event can be held for batching before being dispatched.
+	ZtmUpdateMaxWindow = 5 * time.Second
 )
 
 // NewBroker returns a new message broker instance and starts the internal goroutine
@@ -72,6 +79,8 @@ func NewBroker(stopCh <-chan struct{}) *Broker {
 		serviceUpdateCh:       make(chan serviceUpdateEvent),
 		connectorUpdatePubSub: pubsub.New(10240),
 		connectorUpdateCh:     make(chan connectorUpdateEvent),
+		ztmUpdatePubSub:       pubsub.New(10240),
+		ztmUpdateCh:           make(chan ztmUpdateEvent),
 		kubeEventPubSub:       pubsub.New(10240),
 		certPubSub:            pubsub.New(10240),
 		mcsEventPubSub:        pubsub.New(10240),
@@ -84,6 +93,7 @@ func NewBroker(stopCh <-chan struct{}) *Broker {
 	go b.runGatewayUpdateDispatcher(stopCh)
 	go b.runServiceUpdateDispatcher(stopCh)
 	go b.runConnectorUpdateDispatcher(stopCh)
+	go b.runZtmUpdateDispatcher(stopCh)
 	go b.queueLenMetric(stopCh, 5*time.Second)
 
 	return b
@@ -125,6 +135,11 @@ func (b *Broker) GetServiceUpdatePubSub() *pubsub.PubSub {
 // GetConnectorUpdatePubSub returns the PubSub instance corresponding to connector update events
 func (b *Broker) GetConnectorUpdatePubSub() *pubsub.PubSub {
 	return b.connectorUpdatePubSub
+}
+
+// GetZtmUpdatePubSub returns the PubSub instance corresponding to ztm agent update events
+func (b *Broker) GetZtmUpdatePubSub() *pubsub.PubSub {
+	return b.ztmUpdatePubSub
 }
 
 // GetMCSEventPubSub returns the PubSub instance corresponding to MCS update events
@@ -736,6 +751,98 @@ func (b *Broker) runConnectorUpdateDispatcher(stopCh <-chan struct{}) {
 	}
 }
 
+func (b *Broker) runZtmUpdateDispatcher(stopCh <-chan struct{}) {
+	// batchTimer and maxTimer are updated by the dispatcher routine
+	// when events are processed and timeouts expire. They are initialized
+	// with a large timeout (a decade) so they don't time out till an event
+	// is received.
+	noTimeout := 87600 * time.Hour // A decade
+	slidingTimer := time.NewTimer(noTimeout)
+	maxTimer := time.NewTimer(noTimeout)
+
+	// dispatchPending indicates whether a ztm update event is pending
+	// from being published on the pub-sub. A ztm update event will
+	// be held for 'ZtmUpdateSlidingWindow' duration to be able to
+	// coalesce multiple ztm update events within that duration, before
+	// it is dispatched on the pub-sub. The 'ZtmUpdateSlidingWindow' duration
+	// is a sliding window, which means each event received within a window
+	// slides the window further ahead in time, up to a max of 'ZtmUpdateMaxWindow'.
+	//
+	// This mechanism is necessary to avoid triggering connector update pub-sub events in
+	// a hot loop, which would otherwise result in CPU spikes on the controller.
+	// We want to coalesce as many ztm update events within the 'ZtmUpdateMaxWindow'
+	// duration.
+	dispatchPending := false
+	batchCount := 0 // number of ztm update events batched per dispatch
+
+	var event ztmUpdateEvent
+	for {
+		select {
+		case e, ok := <-b.ztmUpdateCh:
+			if !ok {
+				log.Warn().Msgf("Ztm update event chan closed, exiting dispatcher")
+				return
+			}
+			event = e
+
+			if !dispatchPending {
+				// No connector update events are pending send on the pub-sub.
+				// Reset the dispatch timers. The events will be dispatched
+				// when either of the timers expire.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(ZtmUpdateSlidingWindow)
+				if !maxTimer.Stop() {
+					<-maxTimer.C
+				}
+				maxTimer.Reset(ZtmUpdateMaxWindow)
+				dispatchPending = true
+				batchCount++
+				log.Trace().Msgf("Pending dispatch of msg kind %s", event.msg.Kind)
+			} else {
+				// A ztm update event is pending dispatch. Update the sliding window.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(ZtmUpdateSlidingWindow)
+				batchCount++
+				log.Trace().Msgf("Reset sliding window for msg kind %s", event.msg.Kind)
+			}
+
+		case <-slidingTimer.C:
+			slidingTimer.Reset(noTimeout) // 'slidingTimer' drained in this case statement
+			// Stop and drain 'maxTimer' before Reset()
+			if !maxTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-maxTimer.C
+			}
+			maxTimer.Reset(noTimeout)
+			b.ztmUpdatePubSub.Pub(event.msg, event.topic)
+			log.Trace().Msgf("Sliding window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-maxTimer.C:
+			maxTimer.Reset(noTimeout) // 'maxTimer' drained in this case statement
+			// Stop and drain 'slidingTimer' before Reset()
+			if !slidingTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-slidingTimer.C
+			}
+			slidingTimer.Reset(noTimeout)
+			b.ztmUpdatePubSub.Pub(event.msg, event.topic)
+			log.Trace().Msgf("Max window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-stopCh:
+			log.Info().Msg("Ztm update dispatcher received stop signal, exiting")
+			return
+		}
+	}
+}
+
 // processEvent processes an event dispatched from the workqueue.
 // It does the following:
 // 1. If the event must update a proxy/ingress/gateway, it publishes a proxy/ingress/gateway update message
@@ -820,6 +927,20 @@ func (b *Broker) processEvent(msg events.PubSubMessage) {
 			// Pass the broadcast event to the dispatcher routine, that coalesces
 			// multiple broadcasts received in close proximity.
 			b.connectorUpdateCh <- *event
+		}
+	}
+
+	// Update ztm if applicable
+	if event := getZtmUpdateEvent(msg); event != nil {
+		log.Trace().Msgf("Msg kind %s will update ztm agents", msg.Kind)
+		if event.topic != announcements.ZtmAgentUpdate.String() {
+			// This is not a broadcast event, so it cannot be coalesced with
+			// other events as the event is specific to one or more connectors.
+			b.ztmUpdatePubSub.Pub(event.msg, event.topic)
+		} else {
+			// Pass the broadcast event to the dispatcher routine, that coalesces
+			// multiple broadcasts received in close proximity.
+			b.ztmUpdateCh <- *event
 		}
 	}
 
@@ -1097,32 +1218,26 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.GatewayAPITCPRouteAdded, announcements.GatewayAPITCPRouteDeleted, announcements.GatewayAPITCPRouteUpdated,
 		// UDPRoute event
 		announcements.GatewayAPIUDPRouteAdded, announcements.GatewayAPIUDPRouteDeleted, announcements.GatewayAPIUDPRouteUpdated,
-		// ReferenceGrant event
-		announcements.GatewayAPIReferenceGrantAdded, announcements.GatewayAPIReferenceGrantDeleted, announcements.GatewayAPIReferenceGrantUpdated,
 		// RateLimitPolicy event
-		//announcements.RateLimitPolicyAdded, announcements.RateLimitPolicyDeleted, announcements.RateLimitPolicyUpdated,
+		announcements.RateLimitPolicyAdded, announcements.RateLimitPolicyDeleted, announcements.RateLimitPolicyUpdated,
 		// SessionStickyPolicy event
-		//announcements.SessionStickyPolicyAdded, announcements.SessionStickyPolicyDeleted, announcements.SessionStickyPolicyUpdated,
+		announcements.SessionStickyPolicyAdded, announcements.SessionStickyPolicyDeleted, announcements.SessionStickyPolicyUpdated,
 		// LoadBalancerPolicy event
-		//announcements.LoadBalancerPolicyAdded, announcements.LoadBalancerPolicyDeleted, announcements.LoadBalancerPolicyUpdated,
+		announcements.LoadBalancerPolicyAdded, announcements.LoadBalancerPolicyDeleted, announcements.LoadBalancerPolicyUpdated,
 		// CircuitBreakingPolicy event
-		//announcements.CircuitBreakingPolicyAdded, announcements.CircuitBreakingPolicyDeleted, announcements.CircuitBreakingPolicyUpdated,
+		announcements.CircuitBreakingPolicyAdded, announcements.CircuitBreakingPolicyDeleted, announcements.CircuitBreakingPolicyUpdated,
 		// AccessControlPolicy event
-		//announcements.AccessControlPolicyAdded, announcements.AccessControlPolicyDeleted, announcements.AccessControlPolicyUpdated,
+		announcements.AccessControlPolicyAdded, announcements.AccessControlPolicyDeleted, announcements.AccessControlPolicyUpdated,
 		// HealthCheckPolicy event
 		announcements.HealthCheckPolicyAdded, announcements.HealthCheckPolicyDeleted, announcements.HealthCheckPolicyUpdated,
 		// FaultInjectionPolicy event
-		//announcements.FaultInjectionPolicyAdded, announcements.FaultInjectionPolicyDeleted, announcements.FaultInjectionPolicyUpdated,
+		announcements.FaultInjectionPolicyAdded, announcements.FaultInjectionPolicyDeleted, announcements.FaultInjectionPolicyUpdated,
 		// UpstreamTLSPolicy event
-		//announcements.UpstreamTLSPolicyAdded, announcements.UpstreamTLSPolicyDeleted, announcements.UpstreamTLSPolicyUpdated,
+		announcements.UpstreamTLSPolicyAdded, announcements.UpstreamTLSPolicyDeleted, announcements.UpstreamTLSPolicyUpdated,
 		// RetryPolicy event
 		announcements.RetryPolicyAttachmentAdded, announcements.RetryPolicyAttachmentDeleted, announcements.RetryPolicyAttachmentUpdated,
-		// BackendTLSPolicy event
-		announcements.BackendTLSPolicyAdded, announcements.BackendTLSPolicyDeleted, announcements.BackendTLSPolicyUpdated,
-		// BackendLBPolicy event
-		announcements.BackendLBPolicyAdded, announcements.BackendLBPolicyDeleted, announcements.BackendLBPolicyUpdated,
-		// Filter event
-		announcements.FilterAdded, announcements.FilterDeleted, announcements.FilterUpdated,
+		// ReferenceGrant event
+		announcements.GatewayAPIReferenceGrantAdded, announcements.GatewayAPIReferenceGrantDeleted, announcements.GatewayAPIReferenceGrantUpdated,
 
 		//
 		// MultiCluster events
@@ -1134,40 +1249,40 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 			msg:   msg,
 			topic: announcements.GatewayUpdate.String(),
 		}
-	//case announcements.MeshConfigUpdated:
-	//	return gatewayInterestedConfigChanged(msg)
+	case announcements.MeshConfigUpdated:
+		return gatewayInterestedConfigChanged(msg)
 	default:
 		return nil
 	}
 }
 
-//func gatewayInterestedConfigChanged(msg events.PubSubMessage) *gatewayUpdateEvent {
-//	prevMeshConfig, okPrevCast := msg.OldObj.(*configv1alpha3.MeshConfig)
-//	newMeshConfig, okNewCast := msg.NewObj.(*configv1alpha3.MeshConfig)
-//	if !okPrevCast || !okNewCast {
-//		log.Error().Msgf("Expected MeshConfig type, got previous=%T, new=%T", okPrevCast, okNewCast)
-//		return nil
-//	}
-//	prevSpec := prevMeshConfig.Spec
-//	newSpec := newMeshConfig.Spec
-//
-//	if prevSpec.GatewayAPI.FGWLogLevel != newSpec.GatewayAPI.FGWLogLevel ||
-//		prevSpec.FeatureFlags.EnableGatewayAgentService != newSpec.FeatureFlags.EnableGatewayAgentService ||
-//		prevSpec.GatewayAPI.StripAnyHostPort != newSpec.GatewayAPI.StripAnyHostPort ||
-//		prevSpec.GatewayAPI.ProxyPreserveHost != newSpec.GatewayAPI.ProxyPreserveHost ||
-//		prevSpec.GatewayAPI.SSLPassthroughUpstreamPort != newSpec.GatewayAPI.SSLPassthroughUpstreamPort ||
-//		prevSpec.GatewayAPI.ProxyTag.DstHostHeader != newSpec.GatewayAPI.ProxyTag.DstHostHeader ||
-//		prevSpec.GatewayAPI.ProxyTag.SrcHostHeader != newSpec.GatewayAPI.ProxyTag.SrcHostHeader ||
-//		prevSpec.GatewayAPI.HTTP1PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP1PerRequestLoadBalancing ||
-//		prevSpec.GatewayAPI.HTTP2PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP2PerRequestLoadBalancing {
-//		return &gatewayUpdateEvent{
-//			msg:   msg,
-//			topic: announcements.GatewayUpdate.String(),
-//		}
-//	}
-//
-//	return nil
-//}
+func gatewayInterestedConfigChanged(msg events.PubSubMessage) *gatewayUpdateEvent {
+	prevMeshConfig, okPrevCast := msg.OldObj.(*configv1alpha3.MeshConfig)
+	newMeshConfig, okNewCast := msg.NewObj.(*configv1alpha3.MeshConfig)
+	if !okPrevCast || !okNewCast {
+		log.Error().Msgf("Expected MeshConfig type, got previous=%T, new=%T", okPrevCast, okNewCast)
+		return nil
+	}
+	prevSpec := prevMeshConfig.Spec
+	newSpec := newMeshConfig.Spec
+
+	if prevSpec.GatewayAPI.FGWLogLevel != newSpec.GatewayAPI.FGWLogLevel ||
+		prevSpec.FeatureFlags.EnableGatewayAgentService != newSpec.FeatureFlags.EnableGatewayAgentService ||
+		prevSpec.GatewayAPI.StripAnyHostPort != newSpec.GatewayAPI.StripAnyHostPort ||
+		prevSpec.GatewayAPI.ProxyPreserveHost != newSpec.GatewayAPI.ProxyPreserveHost ||
+		prevSpec.GatewayAPI.SSLPassthroughUpstreamPort != newSpec.GatewayAPI.SSLPassthroughUpstreamPort ||
+		prevSpec.GatewayAPI.ProxyTag.DstHostHeader != newSpec.GatewayAPI.ProxyTag.DstHostHeader ||
+		prevSpec.GatewayAPI.ProxyTag.SrcHostHeader != newSpec.GatewayAPI.ProxyTag.SrcHostHeader ||
+		prevSpec.GatewayAPI.HTTP1PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP1PerRequestLoadBalancing ||
+		prevSpec.GatewayAPI.HTTP2PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP2PerRequestLoadBalancing {
+		return &gatewayUpdateEvent{
+			msg:   msg,
+			topic: announcements.GatewayUpdate.String(),
+		}
+	}
+
+	return nil
+}
 
 // getMCSUpdateEvent returns a mcsUpdateEvent type indicating whether the given PubSubMessage should
 // result in a gateway configuration update on an appropriate topic. Nil is returned if the PubSubMessage
@@ -1238,6 +1353,28 @@ func getConnectorUpdateEvent(msg events.PubSubMessage) *connectorUpdateEvent {
 		return &connectorUpdateEvent{
 			msg:   msg,
 			topic: announcements.ConnectorUpdate.String(),
+		}
+	default:
+		return nil
+	}
+}
+
+// getZtmUpdateEvent returns a ztmUpdateEvent type indicating whether the given PubSubMessage should
+// result in a ztm agent configuration update on an appropriate topic. Nil is returned if the PubSubMessage
+// does not result in a ztm agent update event.
+func getZtmUpdateEvent(msg events.PubSubMessage) *ztmUpdateEvent {
+	switch msg.Kind {
+	case
+		//
+		// K8s native resource events
+		//
+		// Ztm event
+		announcements.ZtmAgentAdded, announcements.ZtmAgentUpdated, announcements.ZtmAgentDeleted,
+		announcements.ZtmAgentUpdate:
+
+		return &ztmUpdateEvent{
+			msg:   msg,
+			topic: announcements.ZtmAgentUpdate.String(),
 		}
 	default:
 		return nil

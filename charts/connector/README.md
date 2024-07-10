@@ -84,8 +84,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | initContainer resource parameters |
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
-| fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
-| fsm.cloudConnector.resource | object | `{"limits":{"cpu":"1","memory":"1G"},"requests":{"cpu":"0.5","memory":"128M"}}` | Sidecar injector's container resource parameters |
+| fsm.cloudConnector.replicaCount | int | `1` |  |
+| fsm.cloudConnector.resource.limits.cpu | string | `"1"` |  |
+| fsm.cloudConnector.resource.limits.memory | string | `"1G"` |  |
+| fsm.cloudConnector.resource.requests.cpu | string | `"0.5"` |  |
+| fsm.cloudConnector.resource.requests.memory | string | `"128M"` |  |
 | fsm.cloudConnector.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.controllerLogLevel | string | `"info"` | Controller log verbosity |
 | fsm.fsmNamespace | string | `""` | Namespace to deploy FSM in. If not specified, the Helm release namespace is used. |

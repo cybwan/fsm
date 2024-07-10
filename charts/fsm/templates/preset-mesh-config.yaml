@@ -160,5 +160,8 @@ data:
       },
       "misc": {
         "repoServerImage": "{{ include "repoServer.image" . }}"
-      }
+      },
+      "ztm": {
+        "enabled": {{ .Values.fsm.ztm.enabled }},
+        "logLevel": "{{ .Values.fsm.ztm.logLevel }}"
     }

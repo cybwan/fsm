@@ -1054,6 +1054,12 @@ fsm:
         cpu: 200m
         memory: 128M
 
+  #
+  # -- FSM ztm parameters
+  ztm:
+    enabled: false
+    logLevel: info
+
 #
 # -- SMI configuration
 smi:

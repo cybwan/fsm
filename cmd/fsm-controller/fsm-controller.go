@@ -17,6 +17,8 @@ import (
 
 	mgrecon "github.com/flomesh-io/fsm/pkg/manager/reconciler"
 
+	ztmscheme "github.com/flomesh-io/fsm/pkg/gen/client/ztm/clientset/versioned/scheme"
+
 	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
@@ -174,6 +176,7 @@ func init() {
 	_ = machinescheme.AddToScheme(scheme)
 	_ = connectorscheme.AddToScheme(scheme)
 	_ = extscheme.AddToScheme(scheme)
+	_ = ztmscheme.AddToScheme(scheme)
 }
 
 // TODO(#4502): This function can be deleted once we get rid of cert options.

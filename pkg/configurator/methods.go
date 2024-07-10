@@ -694,3 +694,15 @@ func (c *Client) GetFSMIngressLogLevel() string {
 	mcSpec := c.getMeshConfig().Spec
 	return mcSpec.Ingress.LogLevel
 }
+
+// IsZtmEnabled returns whether ztm is enabled
+func (c *Client) IsZtmEnabled() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.Ztm.Enabled
+}
+
+// GetZtmLogLevel returns log level of ztm
+func (c *Client) GetZtmLogLevel() string {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.Ztm.LogLevel
+}
