@@ -196,6 +196,7 @@
                 "fsmBootstrap",
                 "fsmIngress",
                 "fsmGateway",
+                "ztm",
                 "egressGateway",
                 "flb",
                 "serviceLB",
@@ -2794,6 +2795,30 @@
                         }
                     },
                     "additionalProperties": false
+                },
+                "ztm": {
+                  "$id": "#/properties/fsm/properties/ztm",
+                  "type": "object",
+                  "default": {},
+                  "title": "The ztm Schema",
+                  "required": [
+                    "enabled",
+                    "logLevel"
+                  ],
+                  "properties": {
+                    "enabled": {
+                      "$id": "#/properties/fsm/properties/ztm/properties/enabled",
+                      "type": "boolean",
+                      "default": false,
+                      "title": "The enabled Schema"
+                    },
+                    "logLevel": {
+                      "$id": "#/properties/fsm/properties/ztm/properties/logLevel",
+                      "type": "string",
+                      "default": "info",
+                      "title": "The logLevel Schema"
+                    }
+                  }
                 },
                 "cleanup": {
                     "$id": "#/properties/fsm/properties/preinstall",

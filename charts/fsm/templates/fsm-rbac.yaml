@@ -132,6 +132,14 @@ rules:
     resources: ["consulconnectors/status", "eurekaconnectors/status", "nacosconnectors/status", "machineconnectors/status", "gatewayconnectors/status"]
     verbs: ["update"]
 
+  # FSM's custom ztm API
+  - apiGroups: [ "ztm.flomesh.io" ]
+    resources: [ "agents" ]
+    verbs: [ "list", "get", "watch", "update" ]
+  - apiGroups: [ "ztm.flomesh.io" ]
+    resources: [ "agents/status" ]
+    verbs: [ "update" ]
+
   # FSM's NamespacedIngress API
   - apiGroups: [ "networking.flomesh.io" ]
     resources: [ "namespacedingresses" ]

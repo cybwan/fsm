@@ -271,4 +271,10 @@ type Configurator interface {
 
 	// GetFLBUpstreamMode returns the upstream mode of FLB
 	GetFLBUpstreamMode() configv1alpha3.FLBUpstreamMode
+
+	// IsZtmEnabled returns whether ztm is enabled
+	IsZtmEnabled() bool
+
+	// GetZtmLogLevel returns log level of ztm
+	GetZtmLogLevel() string
 }

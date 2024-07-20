@@ -795,6 +795,20 @@ func (mr *MockConfiguratorMockRecorder) GetTrafficInterceptionMode() *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTrafficInterceptionMode", reflect.TypeOf((*MockConfigurator)(nil).GetTrafficInterceptionMode))
 }
 
+// GetZtmLogLevel mocks base method.
+func (m *MockConfigurator) GetZtmLogLevel() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetZtmLogLevel")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetZtmLogLevel indicates an expected call of GetZtmLogLevel.
+func (mr *MockConfiguratorMockRecorder) GetZtmLogLevel() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetZtmLogLevel", reflect.TypeOf((*MockConfigurator)(nil).GetZtmLogLevel))
+}
+
 // IsDebugServerEnabled mocks base method.
 func (m *MockConfigurator) IsDebugServerEnabled() bool {
 	m.ctrl.T.Helper()
@@ -1157,6 +1171,20 @@ func (m *MockConfigurator) IsWildcardDNSProxyEnabled() bool {
 func (mr *MockConfiguratorMockRecorder) IsWildcardDNSProxyEnabled() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsWildcardDNSProxyEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsWildcardDNSProxyEnabled))
+}
+
+// IsZtmEnabled mocks base method.
+func (m *MockConfigurator) IsZtmEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsZtmEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsZtmEnabled indicates an expected call of IsZtmEnabled.
+func (mr *MockConfiguratorMockRecorder) IsZtmEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsZtmEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsZtmEnabled))
 }
 
 // ServiceLBImage mocks base method.

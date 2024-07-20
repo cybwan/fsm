@@ -1,0 +1,130 @@
+fsm:
+  #
+  # -- FSM control plane image parameters
+  image:
+    # -- Container image registry for control plane images
+    registry: flomesh
+    # -- Container image pull policy for control plane containers
+    pullPolicy: IfNotPresent
+    # -- Container image tag for control plane images
+    tag: "1.4.0-alpha.1"
+    # -- Image name defaults
+    name:
+      # -- fsm-ztm-agent's image name
+      ztmController: fsm-ztm-agent
+      # -- fsm-curl's image name
+      fsmCurl: fsm-curl
+    # -- Image digest (defaults to latest compatible tag)
+    digest:
+      # -- fsm-ztm-agent's image digest
+      ztmController: ""
+      # -- fsm-curl's image digest
+      fsmCurl: ""
+
+  # -- `fsm-ztm-agent` image pull secret
+  imagePullSecrets: []
+
+  # -- Identifier for the instance of a service mesh within a cluster
+  meshName: fsm
+
+  # -- Namespace to deploy FSM in. If not specified, the Helm release namespace is used.
+  fsmNamespace: ""
+
+  # -- Controller log verbosity
+  controllerLogLevel: info
+
+  # -- The trust domain to use as part of the common name when requesting new certificates.
+  trustDomain: cluster.local
+
+  ztm:
+    image:
+      # -- Registry for ztm image
+      registry: flomesh
+      # -- ztm image name
+      name: ztm
+      # -- ztm image tag
+      tag: 0.0.4
+
+  #
+  # -- ZTM's controller parameters
+  ztmController:
+    enable: false
+    name: ""
+    replicaCount: 1
+    resource:
+      limits:
+        cpu: "1"
+        memory: "1G"
+      requests:
+        cpu: "0.5"
+        memory: "128M"
+    podLabels: { }
+    # -- Enable Pod Disruption Budget
+    enablePodDisruptionBudget: false
+    # -- Auto scale configuration
+    autoScale:
+      # -- Enable Autoscale
+      enable: false
+      # -- Minimum replicas for autoscale
+      minReplicas: 1
+      # -- Maximum replicas for autoscale
+      maxReplicas: 5
+      cpu:
+        # -- Average target CPU utilization (%)
+        targetAverageUtilization: 80
+      memory:
+        # -- Average target memory utilization (%)
+        targetAverageUtilization: 80
+
+    ## Node labels for pod assignment
+    ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+    nodeSelector: { }
+
+    ## Affinity settings for pod assignment
+    ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/os
+                  operator: In
+                  values:
+                    - linux
+                - key: kubernetes.io/arch
+                  operator: In
+                  values:
+                    - amd64
+                    - arm64
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - fsm-injector
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+
+    # -- Node tolerations applied to control plane pods.
+    # The specified tolerations allow pods to schedule onto nodes with matching taints.
+    tolerations: [ ]
+
+    # -- initContainer resource parameters
+    initResources:
+      limits:
+        cpu: "500m"
+        memory: "512M"
+      requests:
+        cpu: "200m"
+        memory: "128M"
+    # -- agentContainer resource parameters
+    agentResources:
+      limits:
+        cpu: "500m"
+        memory: "512M"
+      requests:
+        cpu: "200m"
+        memory: "128M"

@@ -1,8 +1,6 @@
 module github.com/flomesh-io/fsm
 
-go 1.22.0
-
-toolchain go1.22.2
+go 1.22.3
 
 require (
 	github.com/AlekSi/gocov-xml v0.0.0-20190121064608-3a14fb1c4737
@@ -81,6 +79,7 @@ require (
 	github.com/cert-manager/cert-manager v1.11.0
 	github.com/cilium/ebpf v0.10.0
 	github.com/containernetworking/cni v1.1.2
+	github.com/cybwan/ztm-go-sdk v0.0.4
 	github.com/deckarep/golang-set v1.8.0
 	github.com/florianl/go-tc v0.4.2
 	github.com/fsnotify/fsnotify v1.7.0

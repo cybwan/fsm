@@ -74,6 +74,9 @@ type MeshConfigSpec struct {
 
 	// Connector defines the configurations of connector info
 	Connector ConnectorSpec `json:"connector"`
+
+	// Ztm defines the configurations of ztm info
+	Ztm ZtmSpec `json:"ztm"`
 }
 
 // LocalProxyMode is a type alias representing the way the sidecar proxies to the main application
@@ -756,4 +759,16 @@ type ConnectorSpec struct {
 
 	// ViaGateway defines gateway settings
 	ViaGateway ConnectorGatewaySpec `json:"viaGateway"`
+}
+
+// ZtmSpec is the type to represent ztm configs.
+type ZtmSpec struct {
+	// +kubebuilder:default=false
+	// Enabled defines if ztm is enabled.
+	Enabled bool `json:"enabled"`
+
+	// +kubebuilder:default=info
+	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
+	// LogLevel defines the log level of ztm.
+	LogLevel string `json:"logLevel"`
 }

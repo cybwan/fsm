@@ -53,14 +53,14 @@ import (
 	gatewayv1 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1"
 
 	"github.com/flomesh-io/fsm/pkg/controllers"
-
-	"github.com/flomesh-io/fsm/pkg/webhook"
-
 	"github.com/flomesh-io/fsm/pkg/version"
+	"github.com/flomesh-io/fsm/pkg/webhook"
 
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	ztmv1 "github.com/flomesh-io/fsm/pkg/controllers/ztm/v1alpha1"
 
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -250,6 +250,10 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 	reconcilers[ConnectorNacosConnector] = ctv1.NewNacosConnectorReconciler(ctx)
 	reconcilers[ConnectorMachineConnector] = ctv1.NewMachineConnectorReconciler(ctx)
 	reconcilers[ConnectorGatewayConnector] = ctv1.NewGatewayConnectorReconciler(ctx)
+
+	if mc.IsZtmEnabled() {
+		reconcilers["Ztm(Agent)"] = ztmv1.NewZtmAgentReconciler(ctx)
+	}
 
 	if mc.IsIngressEnabled() {
 		// no reconciler

@@ -1,0 +1,16 @@
+{{- if .Values.fsm.ztmController.enable }}
+{{- if .Values.fsm.ztmController.enablePodDisruptionBudget }}
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "ztmController.name" . }}-pdb
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    app: {{ include "ztmController.name" . }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: {{ include "ztmController.name" . }}
+{{- end }}
+{{- end }}
