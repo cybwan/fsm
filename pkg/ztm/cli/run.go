@@ -97,7 +97,6 @@ func (c *client) startSync() {
 							log.Error().Msg(err.Error())
 						}
 					}
-
 				}
 
 				for _, service := range mesh.ServiceImports {
