@@ -48,24 +48,6 @@ spec:
                   properties:
                     meshName:
                       type: string
-                    serviceExports:
-                      items:
-                        properties:
-                          ip:
-                            type: string
-                          name:
-                            type: string
-                          port:
-                            type: integer
-                          protocol:
-                            default: tcp
-                            type: string
-                        required:
-                        - ip
-                        - name
-                        - port
-                        type: object
-                      type: array
                     serviceImports:
                       items:
                         properties:

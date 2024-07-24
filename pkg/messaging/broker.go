@@ -62,6 +62,13 @@ const (
 	// ZtmUpdateMaxWindow is the max window duration used to batch ztm update events, and is
 	// the max amount of time a ztm update event can be held for batching before being dispatched.
 	ZtmUpdateMaxWindow = 5 * time.Second
+
+	// McsUpdateSlidingWindow is the sliding window duration used to batch mcs update events
+	McsUpdateSlidingWindow = 2 * time.Second
+
+	// McsUpdateMaxWindow is the max window duration used to batch mcs update events, and is
+	// the max amount of time a mcs update event can be held for batching before being dispatched.
+	McsUpdateMaxWindow = 5 * time.Second
 )
 
 // NewBroker returns a new message broker instance and starts the internal goroutine
@@ -83,8 +90,9 @@ func NewBroker(stopCh <-chan struct{}) *Broker {
 		ztmUpdateCh:           make(chan ztmUpdateEvent),
 		kubeEventPubSub:       pubsub.New(10240),
 		certPubSub:            pubsub.New(10240),
-		mcsEventPubSub:        pubsub.New(10240),
-		//mcsUpdateCh:         make(chan mcsUpdateEvent),
+		mcsUpdatePubSub:       pubsub.New(10240),
+		mcsUpdateCh:           make(chan mcsUpdateEvent),
+		mcsEventUpdatePubSub:  pubsub.New(10240),
 	}
 
 	go b.runWorkqueueProcessor(stopCh)
@@ -94,6 +102,7 @@ func NewBroker(stopCh <-chan struct{}) *Broker {
 	go b.runServiceUpdateDispatcher(stopCh)
 	go b.runConnectorUpdateDispatcher(stopCh)
 	go b.runZtmUpdateDispatcher(stopCh)
+	go b.runMcsUpdateDispatcher(stopCh)
 	go b.queueLenMetric(stopCh, 5*time.Second)
 
 	return b
@@ -142,9 +151,14 @@ func (b *Broker) GetZtmUpdatePubSub() *pubsub.PubSub {
 	return b.ztmUpdatePubSub
 }
 
-// GetMCSEventPubSub returns the PubSub instance corresponding to MCS update events
-func (b *Broker) GetMCSEventPubSub() *pubsub.PubSub {
-	return b.mcsEventPubSub
+// GetMcsUpdatePubSub returns the PubSub instance corresponding to mcs update events
+func (b *Broker) GetMcsUpdatePubSub() *pubsub.PubSub {
+	return b.mcsUpdatePubSub
+}
+
+// GetMCSEventUpdatePubSub returns the PubSub instance corresponding to MCS update events
+func (b *Broker) GetMCSEventUpdatePubSub() *pubsub.PubSub {
+	return b.mcsEventUpdatePubSub
 }
 
 // GetKubeEventPubSub returns the PubSub instance corresponding to k8s events
@@ -843,6 +857,98 @@ func (b *Broker) runZtmUpdateDispatcher(stopCh <-chan struct{}) {
 	}
 }
 
+func (b *Broker) runMcsUpdateDispatcher(stopCh <-chan struct{}) {
+	// batchTimer and maxTimer are updated by the dispatcher routine
+	// when events are processed and timeouts expire. They are initialized
+	// with a large timeout (a decade) so they don't time out till an event
+	// is received.
+	noTimeout := 87600 * time.Hour // A decade
+	slidingTimer := time.NewTimer(noTimeout)
+	maxTimer := time.NewTimer(noTimeout)
+
+	// dispatchPending indicates whether a mcs update event is pending
+	// from being published on the pub-sub. A mcs update event will
+	// be held for 'McsUpdateSlidingWindow' duration to be able to
+	// coalesce multiple ztm update events within that duration, before
+	// it is dispatched on the pub-sub. The 'McsUpdateSlidingWindow' duration
+	// is a sliding window, which means each event received within a window
+	// slides the window further ahead in time, up to a max of 'McsUpdateMaxWindow'.
+	//
+	// This mechanism is necessary to avoid triggering mcs update pub-sub events in
+	// a hot loop, which would otherwise result in CPU spikes on the controller.
+	// We want to coalesce as many mcs update events within the 'McsUpdateMaxWindow'
+	// duration.
+	dispatchPending := false
+	batchCount := 0 // number of mcs update events batched per dispatch
+
+	var event mcsUpdateEvent
+	for {
+		select {
+		case e, ok := <-b.mcsUpdateCh:
+			if !ok {
+				log.Warn().Msgf("Mcs update event chan closed, exiting dispatcher")
+				return
+			}
+			event = e
+
+			if !dispatchPending {
+				// No mcs update events are pending send on the pub-sub.
+				// Reset the dispatch timers. The events will be dispatched
+				// when either of the timers expire.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(McsUpdateSlidingWindow)
+				if !maxTimer.Stop() {
+					<-maxTimer.C
+				}
+				maxTimer.Reset(McsUpdateMaxWindow)
+				dispatchPending = true
+				batchCount++
+				log.Trace().Msgf("Pending dispatch of msg kind %s", event.msg.Kind)
+			} else {
+				// A mcs update event is pending dispatch. Update the sliding window.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(McsUpdateSlidingWindow)
+				batchCount++
+				log.Trace().Msgf("Reset sliding window for msg kind %s", event.msg.Kind)
+			}
+
+		case <-slidingTimer.C:
+			slidingTimer.Reset(noTimeout) // 'slidingTimer' drained in this case statement
+			// Stop and drain 'maxTimer' before Reset()
+			if !maxTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-maxTimer.C
+			}
+			maxTimer.Reset(noTimeout)
+			b.mcsUpdatePubSub.Pub(event.msg, event.topic)
+			log.Trace().Msgf("Sliding window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-maxTimer.C:
+			maxTimer.Reset(noTimeout) // 'maxTimer' drained in this case statement
+			// Stop and drain 'slidingTimer' before Reset()
+			if !slidingTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-slidingTimer.C
+			}
+			slidingTimer.Reset(noTimeout)
+			b.mcsUpdatePubSub.Pub(event.msg, event.topic)
+			log.Trace().Msgf("Max window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-stopCh:
+			log.Info().Msg("Mcs update dispatcher received stop signal, exiting")
+			return
+		}
+	}
+}
+
 // processEvent processes an event dispatched from the workqueue.
 // It does the following:
 // 1. If the event must update a proxy/ingress/gateway, it publishes a proxy/ingress/gateway update message
@@ -944,10 +1050,23 @@ func (b *Broker) processEvent(msg events.PubSubMessage) {
 		}
 	}
 
+	if event := getMcsEvent(msg); event != nil {
+		log.Debug().Msgf("[MCS] Publishing event type: %s", msg.Kind)
+		if event.topic != announcements.McsUpdate.String() {
+			// This is not a broadcast event, so it cannot be coalesced with
+			// other events as the event is specific to one or more connectors.
+			b.mcsUpdatePubSub.Pub(event.msg, event.topic)
+		} else {
+			// Pass the broadcast event to the dispatcher routine, that coalesces
+			// multiple broadcasts received in close proximity.
+			b.mcsUpdateCh <- *event
+		}
+	}
+
 	// Publish MCS event to other interested clients
 	if event := getMCSUpdateEvent(msg); event != nil {
 		log.Debug().Msgf("[MCS] Publishing event type: %s", msg.Kind)
-		b.mcsEventPubSub.Pub(event.msg, event.topic)
+		b.mcsEventUpdatePubSub.Pub(event.msg, event.topic)
 	}
 
 	// Publish event to other interested clients, e.g. log level changes, debug server on/off etc.
@@ -1284,26 +1403,39 @@ func gatewayInterestedConfigChanged(msg events.PubSubMessage) *gatewayUpdateEven
 	return nil
 }
 
-// getMCSUpdateEvent returns a mcsUpdateEvent type indicating whether the given PubSubMessage should
-// result in a gateway configuration update on an appropriate topic. Nil is returned if the PubSubMessage
-// does not result in a gateway update event.
-func getMCSUpdateEvent(msg events.PubSubMessage) *mcsUpdateEvent {
+func getMcsEvent(msg events.PubSubMessage) *mcsUpdateEvent {
 	switch msg.Kind {
 	case
 		//
-		// MultiCluster events
+		//MultiCluster events
 		//
-		// ServiceImport event
-		//announcements.ServiceImportAdded, announcements.ServiceImportDeleted, announcements.ServiceImportUpdated,
-		// ServiceExport event
-		//announcements.ServiceExportAdded, announcements.ServiceExportDeleted, announcements.ServiceExportUpdated,
-		// GlobalTrafficPolicy event
-		//announcements.GlobalTrafficPolicyAdded, announcements.GlobalTrafficPolicyUpdated, announcements.GlobalTrafficPolicyDeleted,
+		//ServiceImport event
+		announcements.ServiceImportAdded, announcements.ServiceImportDeleted, announcements.ServiceImportUpdated,
+		//ServiceExport event
+		announcements.ServiceExportAdded, announcements.ServiceExportDeleted, announcements.ServiceExportUpdated,
+		//GlobalTrafficPolicy event
+		announcements.GlobalTrafficPolicyAdded, announcements.GlobalTrafficPolicyUpdated, announcements.GlobalTrafficPolicyDeleted:
+
+		return &mcsUpdateEvent{
+			msg:   msg,
+			topic: msg.Kind.String(),
+		}
+	default:
+		return nil
+	}
+}
+
+// getMCSUpdateEvent returns a mcsEventUpdateEvent type indicating whether the given PubSubMessage should
+// result in a gateway configuration update on an appropriate topic. Nil is returned if the PubSubMessage
+// does not result in a gateway update event.
+func getMCSUpdateEvent(msg events.PubSubMessage) *mcsEventUpdateEvent {
+	switch msg.Kind {
+	case
 		// MultiCluster ServiceExport event
 		announcements.MultiClusterServiceExportCreated, announcements.MultiClusterServiceExportDeleted,
 		announcements.MultiClusterServiceExportAccepted, announcements.MultiClusterServiceExportRejected:
 
-		return &mcsUpdateEvent{
+		return &mcsEventUpdateEvent{
 			msg:   msg,
 			topic: msg.Kind.String(),
 		}

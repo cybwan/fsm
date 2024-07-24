@@ -4,22 +4,21 @@ import (
 	"context"
 	"sync"
 
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
+	"github.com/flomesh-io/fsm/pkg/endpoint"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	ztmClientset "github.com/flomesh-io/fsm/pkg/gen/client/ztm/clientset/versioned"
+	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
-// InformerKey stores the different Informers we keep for K8s resources
-type InformerKey string
-
 const (
-	// ZtmAgents lookup identifier
-	ZtmAgents InformerKey = "ZtmAgents"
+	ServiceExport k8s.InformerKey = "ServiceExport"
+	ServiceImport k8s.InformerKey = "ServiceImport"
+	ZtmAgents     k8s.InformerKey = "ZtmAgents"
 )
 
 // client is the type used to represent the k8s client for the connector resources
@@ -37,9 +36,10 @@ type client struct {
 	// msgWorkerPoolSize is the default number of workerpool workers (0 is GOMAXPROCS)
 	msgWorkerPoolSize int
 
-	kubeConfig   *rest.Config
-	kubeClient   kubernetes.Interface
-	configClient configClientset.Interface
+	kubeConfig    *rest.Config
+	k8sController k8s.Controller
+	kubeProvider  endpoint.Provider
+	configClient  configClientset.Interface
 
 	ztmClient ztmClientset.Interface
 

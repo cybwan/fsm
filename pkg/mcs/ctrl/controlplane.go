@@ -13,7 +13,7 @@ import (
 
 // Run starts the control plane server
 func (s *ControlPlaneServer) Run(stop <-chan struct{}) {
-	mcsPubSub := s.msgBroker.GetMCSEventPubSub()
+	mcsPubSub := s.msgBroker.GetMCSEventUpdatePubSub()
 	svcExportCreatedCh := mcsPubSub.Sub(announcements.MultiClusterServiceExportCreated.String())
 	defer s.msgBroker.Unsub(mcsPubSub, svcExportCreatedCh)
 

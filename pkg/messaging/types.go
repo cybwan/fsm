@@ -29,7 +29,9 @@ type Broker struct {
 	connectorUpdateCh                  chan connectorUpdateEvent
 	ztmUpdatePubSub                    *pubsub.PubSub
 	ztmUpdateCh                        chan ztmUpdateEvent
-	mcsEventPubSub                     *pubsub.PubSub
+	mcsUpdatePubSub                    *pubsub.PubSub
+	mcsUpdateCh                        chan mcsUpdateEvent
+	mcsEventUpdatePubSub               *pubsub.PubSub
 	kubeEventPubSub                    *pubsub.PubSub
 	certPubSub                         *pubsub.PubSub
 	totalQEventCount                   uint64
@@ -69,6 +71,13 @@ type gatewayUpdateEvent struct {
 // mcsUpdateEvent specifies the PubSubMessage and topic for an event that
 // results in a mcs config update
 type mcsUpdateEvent struct {
+	msg   events.PubSubMessage
+	topic string
+}
+
+// mcsEventUpdateEvent specifies the PubSubMessage and topic for an event that
+// results in a mcs event update
+type mcsEventUpdateEvent struct {
 	msg   events.PubSubMessage
 	topic string
 }

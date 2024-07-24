@@ -70,17 +70,7 @@ type PermitSpec struct {
 
 type JoinMeshSpec struct {
 	MeshName       string              `json:"meshName"`
-	ServiceExports []ServiceExportSpec `json:"serviceExports,omitempty"`
 	ServiceImports []ServiceImportSpec `json:"serviceImports,omitempty"`
-}
-
-type ServiceExportSpec struct {
-	// +kubebuilder:default=tcp
-	// +optional
-	Protocol    ztm.MeshProtocol `json:"protocol"`
-	ServiceName string           `json:"name"`
-	IP          string           `json:"ip"`
-	Port        uint16           `json:"port"`
 }
 
 type ServiceImportSpec struct {

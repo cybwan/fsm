@@ -16,6 +16,8 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
+	multiclusterClientset "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
+	mcscheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	ztmClientset "github.com/flomesh-io/fsm/pkg/gen/client/ztm/clientset/versioned"
 	ztmscheme "github.com/flomesh-io/fsm/pkg/gen/client/ztm/clientset/versioned/scheme"
 	"github.com/flomesh-io/fsm/pkg/health"
@@ -25,6 +27,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
+	"github.com/flomesh-io/fsm/pkg/providers/kube"
 	_ "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/driver"
 	"github.com/flomesh-io/fsm/pkg/signals"
 	"github.com/flomesh-io/fsm/pkg/version"
@@ -39,6 +42,7 @@ var (
 
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
+	_ = mcscheme.AddToScheme(scheme)
 	_ = ztmscheme.AddToScheme(scheme)
 }
 
@@ -64,6 +68,7 @@ func main() {
 	}
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 	ztmClient := ztmClientset.NewForConfigOrDie(kubeConfig)
+	mcsClient := multiclusterClientset.NewForConfigOrDie(kubeConfig)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-ztm-agent pod resource
 	ztmAgentPod, err := cli.GetZtmAgentPod(kubeClient)
@@ -87,23 +92,28 @@ func main() {
 	msgBroker := messaging.NewBroker(stop)
 	configClient := configClientset.NewForConfigOrDie(kubeConfig)
 	informerCollection, err := informers.NewInformerCollection(cli.Cfg.MeshName, stop,
+		informers.WithKubeClient(kubeClient),
 		informers.WithConfigClient(configClient, cli.Cfg.FsmMeshConfigName, cli.Cfg.FsmNamespace),
 		informers.WithZtmClient(ztmClient),
+		informers.WithMultiClusterClient(mcsClient),
 	)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
 	}
 
 	cfg := configurator.NewConfigurator(informerCollection, cli.Cfg.FsmNamespace, cli.Cfg.FsmMeshConfigName, msgBroker)
+	k8sController := k8s.NewKubernetesController(informerCollection, nil, nil, msgBroker)
+	kubeProvider := kube.NewClient(k8sController, cfg)
+
 	agentController := cli.NewAgentController(ctx,
 		cli.Cfg.ZtmAgent,
 		kubeConfig,
-		kubeClient,
+		k8sController,
+		kubeProvider,
 		configClient,
 		ztmClient,
 		informerCollection,
 		msgBroker)
-
 	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
 	agentController.SetClusterSet(clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
 

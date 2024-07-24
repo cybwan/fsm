@@ -28,8 +28,8 @@ const (
 	// ZtmAgentUpdate is the event kind used to trigger an update to subscribed ztm agents
 	ZtmAgentUpdate Kind = "ztm-agent-update"
 
-	// MCSUpdate is the event kind used to trigger an update to subscribed gateways
-	MCSUpdate Kind = "mcs-update"
+	// McsUpdate is the event kind used to trigger an update to subscribed mcs
+	McsUpdate Kind = "mcs-update"
 
 	// PodAdded is the type of announcement emitted when we observe an addition of a Kubernetes Pod
 	PodAdded Kind = "pod-added"

@@ -1,12 +1,17 @@
 package cli
 
 import (
+	"fmt"
+
+	ztm "github.com/cybwan/ztm-go-sdk"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/rs/zerolog/log"
 
-	ztm "github.com/cybwan/ztm-go-sdk"
-
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	ztmv1 "github.com/flomesh-io/fsm/pkg/apis/ztm/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
+	"github.com/flomesh-io/fsm/pkg/service"
 )
 
 func (c *client) Refresh() {
@@ -72,17 +77,29 @@ func (c *client) startSync() {
 			}
 
 			if localEndpoint != nil {
-				for _, service := range mesh.ServiceExports {
-					if err := agentClient.CreateEndpointService(
-						mesh.MeshName,
-						localEndpoint.UUID,
-						service.Protocol,
-						service.ServiceName,
-						service.IP,
-						service.Port); err != nil {
-						log.Error().Msg(err.Error())
+				serviceExports := c.informers.List(fsminformers.InformerKeyServiceExport)
+				for _, serviceExportIf := range serviceExports {
+					serviceExport := serviceExportIf.(*mcsv1alpha1.ServiceExport)
+					svc := service.MeshService{
+						Namespace: serviceExport.Namespace,
+						Name:      serviceExport.Name,
 					}
+					endpoints := c.kubeProvider.ListEndpointsForService(svc)
+					for _, endpoint := range endpoints {
+						fmt.Println(serviceExport.Namespace, serviceExport.Name, endpoint.IP, endpoint.Port)
+						if err := agentClient.CreateEndpointService(
+							mesh.MeshName,
+							localEndpoint.UUID,
+							constants.ProtocolTCP,
+							svc.Name,
+							endpoint.IP.String(),
+							uint16(endpoint.Port)); err != nil {
+							log.Error().Msg(err.Error())
+						}
+					}
+
 				}
+
 				for _, service := range mesh.ServiceImports {
 					if err := agentClient.CreateEndpointPort(
 						mesh.MeshName,

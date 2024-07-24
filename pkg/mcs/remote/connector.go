@@ -65,7 +65,7 @@ func (c *Connector) processEvent(stopCh <-chan struct{}) {
 	connectorCfg := ctx.ConnectorConfig
 	log.Debug().Msgf("[%s] start to processing events .... ", connectorCfg.Key())
 
-	mcsPubSub := c.controlPlaneBroker.GetMCSEventPubSub()
+	mcsPubSub := c.controlPlaneBroker.GetMCSEventUpdatePubSub()
 	svcExportDeletedCh := mcsPubSub.Sub(announcements.MultiClusterServiceExportDeleted.String())
 	defer c.controlPlaneBroker.Unsub(mcsPubSub, svcExportDeletedCh)
 
