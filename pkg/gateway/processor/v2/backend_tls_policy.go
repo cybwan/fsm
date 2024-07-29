@@ -2,7 +2,6 @@ package v2
 
 import (
 	"fmt"
-	"strings"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
@@ -30,7 +29,7 @@ func NewBackendTLSPolicyProcessor(c *ConfigGenerator) BackendPolicyProcessor {
 	}
 }
 
-func (p *BackendTLSPolicyProcessor) Process(route client.Object, _ gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName) {
+func (p *BackendTLSPolicyProcessor) Process(route client.Object, routeParentRef gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName) {
 	targetRef := gwv1alpha2.LocalPolicyTargetReferenceWithSectionName{
 		LocalPolicyTargetReference: gwv1alpha2.LocalPolicyTargetReference{
 			Group: ptr.Deref(backendRef.Group, corev1.GroupName),
@@ -45,11 +44,7 @@ func (p *BackendTLSPolicyProcessor) Process(route client.Object, _ gwv1.ParentRe
 		return
 	}
 
-	hostname := string(policy.Spec.Validation.Hostname)
-	if err := gwutils.IsValidHostname(hostname); err != nil {
-		return
-	}
-	if strings.Contains(hostname, "*") {
+	if !gwutils.IsPolicyAcceptedForAncestor(routeParentRef, policy.Status.Ancestors) {
 		return
 	}
 

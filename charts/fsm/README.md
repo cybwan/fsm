@@ -1,6 +1,6 @@
 # Flomesh Service Mesh Helm Chart
 
-![Version: 1.4.0-alpha.1](https://img.shields.io/badge/Version-1.4.0--alpha.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.4.0-alpha.1](https://img.shields.io/badge/AppVersion-v1.4.0--alpha.1-informational?style=flat-square)
+![Version: 1.4.0-alpha.3](https://img.shields.io/badge/Version-1.4.0--alpha.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.4.0-alpha.3](https://img.shields.io/badge/AppVersion-v1.4.0--alpha.3-informational?style=flat-square)
 
 A Helm chart to install the [fsm](https://github.com/flomesh-io/fsm) control plane on Kubernetes.
 
@@ -319,7 +319,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.name.fsmSidecarInit | string | `"fsm-sidecar-init"` | Sidecar init container's image name |
 | fsm.image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy for control plane containers |
 | fsm.image.registry | string | `"flomesh"` | Container image registry for control plane images |
-| fsm.image.tag | string | `"1.4.0-alpha.1"` | Container image tag for control plane images |
+| fsm.image.tag | string | `"1.4.0-alpha.3"` | Container image tag for control plane images |
 | fsm.imagePullSecrets | list | `[]` | `fsm-controller` image pull secret |
 | fsm.inboundPortExclusionList | list | `[]` | Specifies a global list of ports to exclude from inbound traffic interception by the sidecar proxy. If specified, must be a list of positive integers. |
 | fsm.injector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
@@ -476,13 +476,12 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.tracing.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[3] | string | `"s390x"` |  |
 | fsm.tracing.enable | bool | `false` | Toggles Sidecar's tracing functionality on/off for all sidecar proxies in the mesh |
 | fsm.tracing.endpoint | string | `"/api/v2/spans"` | Tracing collector's API path where the spans will be sent to |
-| fsm.tracing.image | object | `{"name":"all-in-one","registry":"jaegertracing","tag":"latest"}` | Image used for tracing |
+| fsm.tracing.image | object | `{"name":"all-in-one","registry":"jaegertracing","tag":"latest"}` | Sampled Fraction |
 | fsm.tracing.image.name | string | `"all-in-one"` | Tracing image name |
 | fsm.tracing.image.registry | string | `"jaegertracing"` | Registry for Tracing image |
 | fsm.tracing.image.tag | string | `"latest"` | Tracing image tag |
 | fsm.tracing.nodeSelector | object | `{}` |  |
 | fsm.tracing.port | int | `9411` | Port of the tracing collector service |
-| fsm.tracing.sampledFraction | string | `"1.0"` | Sampled Fraction |
 | fsm.tracing.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.trafficInterceptionMode | string | `"iptables"` | Traffic interception mode in the mesh |
 | fsm.trustDomain | string | `"cluster.local"` | The trust domain to use as part of the common name when requesting new certificates. |

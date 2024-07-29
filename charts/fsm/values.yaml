@@ -12,7 +12,7 @@ fsm:
     # -- Container image pull policy for control plane containers
     pullPolicy: IfNotPresent
     # -- Container image tag for control plane images
-    tag: "1.4.0-alpha.1"
+    tag: "1.4.0-alpha.3"
     # -- Image name defaults
     name:
       # -- fsm-controller's image name
@@ -545,8 +545,6 @@ fsm:
     # -- Tracing collector's API path where the spans will be sent to
     endpoint: "/api/v2/spans"
     # -- Sampled Fraction
-    sampledFraction: "1.0"
-    # -- Image used for tracing
     image:
       # -- Registry for Tracing image
       registry: jaegertracing
