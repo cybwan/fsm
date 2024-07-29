@@ -1,0 +1,120 @@
+{{- if .Values.fsm.ztmController.enable }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ztmController.name" . }}
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: {{ include "ztmController.name" . }}
+    flomesh.io/ztm: agent
+    meshName: {{ .Values.fsm.meshName }}
+spec:
+  {{- if not .Values.fsm.ztmController.autoScale.enable }}
+  replicas: {{ .Values.fsm.ztmController.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ include "ztmController.name" . }}
+  template:
+    metadata:
+      labels:
+        {{- include "fsm.labels" . | nindent 8 }}
+        app: {{ include "ztmController.name" . }}
+  {{- if .Values.fsm.ztmController.podLabels }}
+  {{- toYaml .Values.fsm.ztmController.podLabels | nindent 8 }}
+  {{- end }}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9091'
+    spec:
+      {{- if .Values.fsm.ztmController.affinity }}
+      affinity:
+      {{- toYaml .Values.fsm.ztmController.affinity | nindent 8 }}
+      {{- end }}
+      priorityClassName: system-node-critical
+      serviceAccountName: {{ .Release.Name }}
+      {{- if not (.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
+      {{- include "restricted.securityContext" . | nindent 6 }}
+      {{- end }}
+      initContainers:
+        - name: init
+          image: "{{ include "fsmCurl.image" . }}"
+          command: ["curl", "http://fsm-bootstrap.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/healthz", "--connect-timeout", "2", "--retry", "50", "--retry-connrefused", "--retry-delay", "5"]
+          resources:
+            {{- toYaml .Values.fsm.ztmController.initResources | nindent 12 }}
+      containers:
+        - name: ztm-agent
+          image: "{{ include "ztm.image" . }}"
+          imagePullPolicy: {{ $.Values.fsm.image.pullPolicy }}
+          command: ['ztm']
+          args: [
+            "run",
+            "agent",
+            "--listen",
+            "127.0.0.1:7777",
+            "--database",
+            "ztm.db",
+          ]
+          resources:
+            limits:
+              cpu: "{{.Values.fsm.ztmController.agentResources.limits.cpu}}"
+              memory: "{{.Values.fsm.ztmController.agentResources.limits.memory}}"
+            requests:
+              cpu: "{{.Values.fsm.ztmController.agentResources.requests.cpu}}"
+              memory: "{{.Values.fsm.ztmController.agentResources.requests.memory}}"
+        - name: ztm-controller
+          image: "{{ include "ztmController.image" . }}"
+          imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
+          ports:
+            - name: "metrics"
+              containerPort: 9091
+          command: ['/fsm-ztm-agent']
+          args: [
+            "-verbosity", "{{.Values.fsm.controllerLogLevel}}",
+            "-fsm-namespace", "{{ include "fsm.namespace" . }}",
+            "-fsm-version", "{{ .Chart.AppVersion }}",
+            "-mesh-name", "{{.Values.fsm.meshName}}",
+            "-trust-domain", "{{.Values.fsm.trustDomain}}",
+            "-ztm-agent={{.Values.fsm.ztmController.name}}",
+          ]
+          resources:
+            limits:
+              cpu: {{.Values.fsm.ztmController.resource.limits.cpu}}
+              memory: {{.Values.fsm.ztmController.resource.limits.memory}}
+            requests:
+              cpu: {{.Values.fsm.ztmController.resource.requests.cpu}}
+              memory: {{.Values.fsm.ztmController.resource.requests.memory}}
+          readinessProbe:
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            httpGet:
+              scheme: HTTP
+              path: /healthz
+              port: 9091
+          livenessProbe:
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            httpGet:
+              scheme: HTTP
+              path: /healthz
+              port: 9091
+          env:
+            # The ZTM_AGENT_POD_NAME env variable sets pod name dynamically, used by fsm-ztm-agent to register events
+            - name: ZTM_AGENT_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+    {{- if .Values.fsm.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.fsm.imagePullSecrets | indent 8 }}
+    {{- end }}
+      {{- if .Values.fsm.ztmController.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.fsm.ztmController.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.fsm.ztmController.tolerations }}
+      tolerations:
+      {{- toYaml .Values.fsm.ztmController.tolerations | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -25,8 +25,11 @@ const (
 	// ConnectorUpdate is the event kind used to trigger an update to subscribed connectors
 	ConnectorUpdate Kind = "connector-update"
 
-	// MCSUpdate is the event kind used to trigger an update to subscribed gateways
-	MCSUpdate Kind = "mcs-update"
+	// ZtmAgentUpdate is the event kind used to trigger an update to subscribed ztm agents
+	ZtmAgentUpdate Kind = "ztm-agent-update"
+
+	// McsUpdate is the event kind used to trigger an update to subscribed mcs
+	McsUpdate Kind = "mcs-update"
 
 	// PodAdded is the type of announcement emitted when we observe an addition of a Kubernetes Pod
 	PodAdded Kind = "pod-added"
@@ -263,6 +266,15 @@ const (
 
 	// GatewayConnectorUpdated is the type of announcement emitted when we observe an update to gatewayconnectors.connector.flomesh.io
 	GatewayConnectorUpdated Kind = "gatewayconnector-updated"
+
+	// ZtmAgentAdded is the type of announcement emitted when we observe an addition of agents.ztm.flomesh.io
+	ZtmAgentAdded Kind = "agent-added"
+
+	// ZtmAgentDeleted the type of announcement emitted when we observe a deletion of agents.ztm.flomesh.io
+	ZtmAgentDeleted Kind = "agent-deleted"
+
+	// ZtmAgentUpdated is the type of announcement emitted when we observe an update to agents.ztm.flomesh.io
+	ZtmAgentUpdated Kind = "agent-updated"
 
 	// ServiceExportAdded is the type of announcement emitted when we observe an addition of serviceexports.flomesh.io
 	ServiceExportAdded Kind = "serviceexport-added"

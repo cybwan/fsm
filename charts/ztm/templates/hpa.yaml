@@ -1,0 +1,29 @@
+{{- if .Values.fsm.ztmController.enable }}
+{{- if .Values.fsm.ztmController.autoScale.enable }}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "ztmController.name" . }}-hpa
+  namespace: {{ include "fsm.namespace" . }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "ztmController.name" . }}
+  minReplicas: {{.Values.fsm.ztmController.autoScale.minReplicas}}
+  maxReplicas: {{.Values.fsm.ztmController.autoScale.maxReplicas}}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{.Values.fsm.ztmController.autoScale.cpu.targetAverageUtilization}}
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: {{.Values.fsm.ztmController.autoScale.memory.targetAverageUtilization}}
+{{- end }}
+{{- end }}

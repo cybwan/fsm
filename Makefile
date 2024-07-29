@@ -88,6 +88,9 @@ pkg/controllers/gateway/v1/chart.tgz: scripts/generate_chart/generate_chart.go $
 pkg/controllers/connector/v1alpha1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/connector)
 	go run $< --chart-name=connector > $@
 
+pkg/controllers/ztm/v1alpha1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/ztm)
+	go run $< --chart-name=ztm > $@
+
 helm-update-dep: helm
 	$(HELM) dependency update charts/fsm/
 	$(HELM) dependency update charts/gateway/
@@ -102,7 +105,7 @@ package-scripts:
 	tar --no-xattrs -C $(CHART_COMPONENTS_DIR)/ --exclude='.DS_Store' --exclude='._*' -zcvf $(SCRIPTS_TAR) scripts/
 
 .PHONY: charts-tgz
-charts-tgz: pkg/controllers/namespacedingress/v1alpha1/chart.tgz pkg/controllers/gateway/v1/chart.tgz pkg/controllers/connector/v1alpha1/chart.tgz
+charts-tgz: pkg/controllers/namespacedingress/v1alpha1/chart.tgz pkg/controllers/gateway/v1/chart.tgz pkg/controllers/connector/v1alpha1/chart.tgz pkg/controllers/ztm/v1alpha1/chart.tgz
 
 .PHONY: clean-fsm
 clean-fsm:
@@ -122,6 +125,7 @@ chart-check-readme: chart-readme
 	@git diff --exit-code charts/gateway/README.md || { echo "----- Please commit the changes made by 'make chart-readme' -----"; exit 1; }
 	@git diff --exit-code charts/namespaced-ingress/README.md || { echo "----- Please commit the changes made by 'make chart-readme' -----"; exit 1; }
 	@git diff --exit-code charts/connector/README.md || { echo "----- Please commit the changes made by 'make chart-readme' -----"; exit 1; }
+	@git diff --exit-code charts/ztm/README.md || { echo "----- Please commit the changes made by 'make chart-readme' -----"; exit 1; }
 
 .PHONY: helm-lint
 helm-lint:
@@ -261,6 +265,10 @@ docker-build-fsm-interceptor:
 docker-build-fsm-connector:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-connector:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-connector --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) .
 
+.PHONY: docker-build-fsm-ztm-agent
+docker-build-fsm-ztm-agent:
+	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-ztm-agent:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-ztm-agent --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) .
+
 .PHONY: docker-build-fsm-ingress
 docker-build-fsm-ingress:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-ingress:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-ingress --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) --build-arg DISTROLESS_TAG=$(DISTROLESS_TAG) .
@@ -269,9 +277,9 @@ docker-build-fsm-ingress:
 docker-build-fsm-gateway:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-gateway:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-gateway --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) --build-arg DISTROLESS_TAG=$(DISTROLESS_TAG) .
 
-TRI_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
-FSM_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-interceptor fsm-ingress fsm-gateway
-E2E_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
+TRI_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ztm-agent fsm-ingress fsm-gateway
+FSM_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ztm-agent fsm-interceptor fsm-ingress fsm-gateway
+E2E_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ztm-agent fsm-ingress fsm-gateway
 MIN_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck
 
 DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))

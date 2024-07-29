@@ -92,6 +92,9 @@ const (
 	// InformerKeyGatewayConnector is the InformerKey for a GatewayConnector informer
 	InformerKeyGatewayConnector InformerKey = "GatewayConnector"
 
+	// InformerKeyZtmAgent is the InformerKey for a ZtmAgent informer
+	InformerKeyZtmAgent InformerKey = "ZtmAgent"
+
 	// InformerKeyK8sIngressClass is the InformerKey for a k8s IngressClass informer
 	InformerKeyK8sIngressClass InformerKey = "IngressClass-k8s"
 	// InformerKeyK8sIngress is the InformerKey for a k8s Ingress informer

@@ -191,6 +191,9 @@ generate_client "connector" "v1alpha1"
 echo "##### Generating networking.flomesh.io client ######"
 generate_client "namespacedingress" "v1alpha1"
 
+echo "##### Generating flomesh.io ztm client ######"
+generate_client "ztm" "v1alpha1"
+
 echo "##### Generating gateway.flomesh.io PolicyAttachment client ######"
 generate_client "policyattachment" "v1alpha1,v1alpha2"
 

@@ -27,7 +27,11 @@ type Broker struct {
 	serviceUpdateCh                    chan serviceUpdateEvent
 	connectorUpdatePubSub              *pubsub.PubSub
 	connectorUpdateCh                  chan connectorUpdateEvent
-	mcsEventPubSub                     *pubsub.PubSub
+	ztmUpdatePubSub                    *pubsub.PubSub
+	ztmUpdateCh                        chan ztmUpdateEvent
+	mcsUpdatePubSub                    *pubsub.PubSub
+	mcsUpdateCh                        chan mcsUpdateEvent
+	mcsEventUpdatePubSub               *pubsub.PubSub
 	kubeEventPubSub                    *pubsub.PubSub
 	certPubSub                         *pubsub.PubSub
 	totalQEventCount                   uint64
@@ -71,6 +75,13 @@ type mcsUpdateEvent struct {
 	topic string
 }
 
+// mcsEventUpdateEvent specifies the PubSubMessage and topic for an event that
+// results in a mcs event update
+type mcsEventUpdateEvent struct {
+	msg   events.PubSubMessage
+	topic string
+}
+
 // serviceUpdateEvent specifies the PubSubMessage and topic for an event that
 // results in a service config update
 type serviceUpdateEvent struct {
@@ -81,6 +92,13 @@ type serviceUpdateEvent struct {
 // connectorUpdateEvent specifies the PubSubMessage and topic for an event that
 // results in a connector config update
 type connectorUpdateEvent struct {
+	msg   events.PubSubMessage
+	topic string
+}
+
+// ztmUpdateEvent specifies the PubSubMessage and topic for an event that
+// results in a ztm agent config update
+type ztmUpdateEvent struct {
 	msg   events.PubSubMessage
 	topic string
 }

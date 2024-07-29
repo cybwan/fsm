@@ -495,6 +495,8 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.vault.secret.name | string | `""` | The Kubernetes secret name storing the Vault token used in FSM |
 | fsm.vault.token | string | `""` | token that should be used to connect to Vault |
 | fsm.webhookConfigNamePrefix | string | `"fsm-webhook"` | Prefix used in name of the webhook configuration resources |
+| fsm.ztm.enabled | bool | `false` |  |
+| fsm.ztm.logLevel | string | `"info"` |  |
 | smi.validateTrafficTarget | bool | `true` | Enables validation of SMI Traffic Target |
 
 <!-- markdownlint-enable MD013 MD034 -->

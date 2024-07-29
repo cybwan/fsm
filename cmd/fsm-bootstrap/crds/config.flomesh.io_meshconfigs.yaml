@@ -2410,10 +2410,35 @@ spec:
                 - outboundPortExclusionList
                 - serviceAccessMode
                 type: object
+              ztm:
+                description: Ztm defines the configurations of ztm info
+                properties:
+                  enabled:
+                    default: false
+                    description: Enabled defines if ztm is enabled.
+                    type: boolean
+                  logLevel:
+                    default: info
+                    description: LogLevel defines the log level of ztm.
+                    enum:
+                    - trace
+                    - debug
+                    - info
+                    - warn
+                    - error
+                    - fatal
+                    - panic
+                    - disabled
+                    type: string
+                required:
+                - enabled
+                - logLevel
+                type: object
             required:
             - connector
             - image
             - misc
+            - ztm
             type: object
         type: object
     served: true

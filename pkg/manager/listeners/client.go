@@ -454,3 +454,13 @@ func (c *client) ServiceLBImage() string {
 	//TODO implement me
 	panic("implement me")
 }
+
+func (c *client) IsZtmEnabled() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) GetZtmLogLevel() string {
+	//TODO implement me
+	panic("implement me")
+}

@@ -26,6 +26,9 @@ import (
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 	gatewayApiInformers "sigs.k8s.io/gateway-api/pkg/client/informers/externalversions"
 
+	ztmClientset "github.com/flomesh-io/fsm/pkg/gen/client/ztm/clientset/versioned"
+	ztmInformers "github.com/flomesh-io/fsm/pkg/gen/client/ztm/informers/externalversions"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	configInformers "github.com/flomesh-io/fsm/pkg/gen/client/config/informers/externalversions"
@@ -198,6 +201,15 @@ func WithConnectorClient(connectorClient connectorClientset.Interface) InformerC
 		ic.informers[InformerKeyNacosConnector] = informerFactory.Connector().V1alpha1().NacosConnectors().Informer()
 		ic.informers[InformerKeyMachineConnector] = informerFactory.Connector().V1alpha1().MachineConnectors().Informer()
 		ic.informers[InformerKeyGatewayConnector] = informerFactory.Connector().V1alpha1().GatewayConnectors().Informer()
+	}
+}
+
+// WithZtmClient sets the ztm client for the InformerCollection
+func WithZtmClient(ztmClient ztmClientset.Interface) InformerCollectionOption {
+	return func(ic *InformerCollection) {
+		informerFactory := ztmInformers.NewSharedInformerFactory(ztmClient, DefaultKubeEventResyncInterval)
+
+		ic.informers[InformerKeyZtmAgent] = informerFactory.Ztm().V1alpha1().Agents().Informer()
 	}
 }
 
