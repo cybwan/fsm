@@ -53,8 +53,6 @@ spec:
             "agent",
             "--listen",
             "127.0.0.1:7777",
-            "--database",
-            "ztm.db",
           ]
           resources:
             limits:

@@ -9,7 +9,6 @@ import (
 
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	ztmv1 "github.com/flomesh-io/fsm/pkg/apis/ztm/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/service"
 )
@@ -62,15 +61,15 @@ func (c *client) startSync() {
 				log.Error().Msg(joinErr.Error())
 				continue
 			}
-			meshEndpoints, epErr := agentClient.ListMeshEndpoints(mesh.MeshName)
+			meshEndpoints, epErr := agentClient.ListEndpoints(mesh.MeshName)
 			if epErr != nil {
 				log.Error().Msg(epErr.Error())
 				continue
 			}
 
-			var localEndpoint *ztm.MeshEndpoint
+			var localEndpoint *ztm.Endpoint
 			for _, meshEndpoint := range meshEndpoints {
-				if meshEndpoint.IsLocal {
+				if meshEndpoint.Local {
 					localEndpoint = meshEndpoint
 					break
 				}
@@ -87,27 +86,15 @@ func (c *client) startSync() {
 					endpoints := c.kubeProvider.ListEndpointsForService(svc)
 					for _, endpoint := range endpoints {
 						fmt.Println(serviceExport.Namespace, serviceExport.Name, endpoint.IP, endpoint.Port)
-						if err := agentClient.CreateEndpointService(
-							mesh.MeshName,
-							localEndpoint.UUID,
-							constants.ProtocolTCP,
-							svc.Name,
-							endpoint.IP.String(),
-							uint16(endpoint.Port)); err != nil {
-							log.Error().Msg(err.Error())
-						}
-					}
-				}
-
-				for _, service := range mesh.ServiceImports {
-					if err := agentClient.CreateEndpointPort(
-						mesh.MeshName,
-						localEndpoint.UUID,
-						service.Protocol,
-						service.IP,
-						service.Port,
-						service.ServiceName); err != nil {
-						log.Error().Msg(err.Error())
+						//if err := agentClient.CreateEndpointService(
+						//	mesh.MeshName,
+						//	localEndpoint.UUID,
+						//	constants.ProtocolTCP,
+						//	svc.Name,
+						//	endpoint.IP.String(),
+						//	uint16(endpoint.Port)); err != nil {
+						//	log.Error().Msg(err.Error())
+						//}
 					}
 				}
 			}

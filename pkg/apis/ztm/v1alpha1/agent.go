@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	ztm "github.com/cybwan/ztm-go-sdk"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -69,17 +68,7 @@ type PermitSpec struct {
 }
 
 type JoinMeshSpec struct {
-	MeshName       string              `json:"meshName"`
-	ServiceImports []ServiceImportSpec `json:"serviceImports,omitempty"`
-}
-
-type ServiceImportSpec struct {
-	// +kubebuilder:default=tcp
-	// +optional
-	Protocol    ztm.MeshProtocol `json:"protocol"`
-	ServiceName string           `json:"name"`
-	IP          string           `json:"ip"`
-	Port        uint16           `json:"port"`
+	MeshName string `json:"meshName"`
 }
 
 // AgentStatus is the type used to represent the status of a ztm agent resource.
