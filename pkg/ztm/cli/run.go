@@ -61,6 +61,7 @@ func (c *client) startSync() {
 				log.Error().Msg(joinErr.Error())
 				continue
 			}
+
 			meshEndpoints, epErr := agentClient.ListEndpoints(mesh.MeshName)
 			if epErr != nil {
 				log.Error().Msg(epErr.Error())
@@ -76,6 +77,11 @@ func (c *client) startSync() {
 			}
 
 			if localEndpoint != nil {
+				if _, appErr := agentClient.StartApp(mesh.MeshName, localEndpoint.UUID, "ztm", "tunnel", ""); appErr != nil {
+					log.Error().Msg(appErr.Error())
+					continue
+				}
+
 				serviceExports := c.informers.List(fsminformers.InformerKeyServiceExport)
 				for _, serviceExportIf := range serviceExports {
 					serviceExport := serviceExportIf.(*mcsv1alpha1.ServiceExport)
@@ -86,15 +92,20 @@ func (c *client) startSync() {
 					endpoints := c.kubeProvider.ListEndpointsForService(svc)
 					for _, endpoint := range endpoints {
 						fmt.Println(serviceExport.Namespace, serviceExport.Name, endpoint.IP, endpoint.Port)
-						//if err := agentClient.CreateEndpointService(
-						//	mesh.MeshName,
-						//	localEndpoint.UUID,
-						//	constants.ProtocolTCP,
-						//	svc.Name,
-						//	endpoint.IP.String(),
-						//	uint16(endpoint.Port)); err != nil {
-						//	log.Error().Msg(err.Error())
-						//}
+						if portErr := agentClient.OpenOutbound(mesh.MeshName,
+							localEndpoint.UUID,
+							"ztm",
+							"tunnel",
+							ztm.TCP,
+							svc.Name,
+							[]ztm.Target{
+								{
+									Host: endpoint.IP.String(),
+									Port: uint16(endpoint.Port),
+								},
+							}); portErr != nil {
+							log.Error().Msg(portErr.Error())
+						}
 					}
 				}
 			}
