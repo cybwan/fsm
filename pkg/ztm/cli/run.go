@@ -8,7 +8,6 @@ import (
 	"time"
 
 	ztm "github.com/cybwan/ztm-sdk-go"
-	"github.com/mitchellh/hashstructure/v2"
 	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -88,7 +87,6 @@ func (c *client) startSync() {
 					continue
 				}
 				for {
-
 					// Outbound
 					serviceExports := c.informers.List(fsminformers.InformerKeyServiceExport)
 					for _, serviceExportIf := range serviceExports {
