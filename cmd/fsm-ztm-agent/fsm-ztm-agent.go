@@ -5,12 +5,16 @@ package main
 import (
 	"context"
 	"net/http"
+	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -105,6 +109,17 @@ func main() {
 	k8sController := k8s.NewKubernetesController(informerCollection, nil, nil, msgBroker)
 	kubeProvider := kube.NewClient(k8sController, cfg)
 
+	lock := &resourcelock.LeaseLock{
+		LeaseMeta: metav1.ObjectMeta{
+			Name:      cli.Cfg.ZtmAgent,
+			Namespace: ztmAgentPod.Namespace,
+		},
+		Client: kubeClient.CoordinationV1(),
+		LockConfig: resourcelock.ResourceLockConfig{
+			Identity: ztmAgentPod.Name,
+		},
+	}
+
 	agentController := cli.NewAgentController(ctx,
 		cli.Cfg.ZtmAgent,
 		kubeConfig,
@@ -119,7 +134,25 @@ func main() {
 	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
 	agentController.SetClusterSet(clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
 
-	go agentController.BroadcastListener(stop)
+	go func() {
+		leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
+			Lock:            lock,
+			ReleaseOnCancel: true,
+			LeaseDuration:   30 * time.Second,
+			RenewDeadline:   10 * time.Second,
+			RetryPeriod:     5 * time.Second,
+			Callbacks: leaderelection.LeaderCallbacks{
+				OnStartedLeading: func(ctx context.Context) {
+					agentController.BroadcastListener(stop)
+				},
+				OnStoppedLeading: func() {
+				},
+				OnNewLeader: func(identity string) {
+					log.Info().Msgf("new leader %s", identity)
+				},
+			},
+		})
+	}()
 
 	version.SetMetric()
 	/*
