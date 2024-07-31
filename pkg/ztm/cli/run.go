@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	ztm "github.com/cybwan/ztm-go-sdk"
+	ztm "github.com/cybwan/ztm-sdk-go"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
@@ -83,11 +83,10 @@ func (c *client) startSync() {
 			}
 
 			if localEndpoint != nil {
-				if _, appErr := agentClient.StartApp(mesh.MeshName, localEndpoint.UUID, "ztm", "tunnel", ""); appErr != nil {
+				if _, appErr := agentClient.StartApp(mesh.MeshName, localEndpoint.UUID, ztm.ZTM, ztm.APP_TUNNEL, ""); appErr != nil {
 					log.Error().Msg(appErr.Error())
 					continue
 				}
-
 				for {
 
 					// Outbound
@@ -119,8 +118,8 @@ func (c *client) startSync() {
 
 							if portErr := agentClient.OpenOutbound(mesh.MeshName,
 								localEndpoint.UUID,
-								"ztm",
-								"tunnel",
+								ztm.ZTM,
+								ztm.APP_TUNNEL,
 								ztm.TCP,
 								string(service.UID),
 								targets); portErr != nil {
@@ -141,8 +140,8 @@ func (c *client) startSync() {
 						} else {
 							agentClient.CloseOutbound(mesh.MeshName,
 								localEndpoint.UUID,
-								"ztm",
-								"tunnel",
+								ztm.ZTM,
+								ztm.APP_TUNNEL,
 								ztm.TCP,
 								string(service.UID))
 							agentClient.EraseFile(mesh.MeshName, string(service.UID))
@@ -183,8 +182,8 @@ func (c *client) startSync() {
 
 							agentClient.OpenInbound(mesh.MeshName,
 								localEndpoint.UUID,
-								"ztm",
-								"tunnel",
+								ztm.ZTM,
+								ztm.APP_TUNNEL,
 								ztm.TCP,
 								svcMeta.ID,
 								[]ztm.Listen{
@@ -218,7 +217,6 @@ func (c *client) startSync() {
 
 					time.Sleep(time.Second * 5)
 				}
-
 			}
 		}
 	}
