@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	ztmv1 "github.com/flomesh-io/fsm/pkg/apis/ztm/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
+	multiclusterClientset "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
 	ztmClientset "github.com/flomesh-io/fsm/pkg/gen/client/ztm/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
@@ -25,7 +27,9 @@ func NewAgentController(context context.Context,
 	k8sController k8s.Controller,
 	kubeProvider endpoint.Provider,
 	configClient configClientset.Interface,
+	mcsClient multiclusterClientset.Interface,
 	ztmClient ztmClientset.Interface,
+	agentPod *corev1.Pod,
 	informerCollection *fsminformers.InformerCollection,
 	msgBroker *messaging.Broker,
 	selectInformers ...k8s.InformerKey) ztm.AgentController {
@@ -35,7 +39,9 @@ func NewAgentController(context context.Context,
 		k8sController,
 		kubeProvider,
 		configClient,
+		mcsClient,
 		ztmClient,
+		agentPod,
 		informerCollection,
 		msgBroker,
 		selectInformers...)
@@ -47,7 +53,9 @@ func newClient(agentName string,
 	k8sController k8s.Controller,
 	kubeProvider endpoint.Provider,
 	configClient configClientset.Interface,
+	mcsClient multiclusterClientset.Interface,
 	ztmClient ztmClientset.Interface,
+	agentPod *corev1.Pod,
 	informerCollection *fsminformers.InformerCollection,
 	msgBroker *messaging.Broker,
 	selectInformers ...k8s.InformerKey) *client {
@@ -60,7 +68,9 @@ func newClient(agentName string,
 		k8sController: k8sController,
 		kubeProvider:  kubeProvider,
 		configClient:  configClient,
+		mcsClient:     mcsClient,
 		ztmClient:     ztmClient,
+		agentPod:      agentPod,
 
 		informers:         informerCollection,
 		msgBroker:         msgBroker,

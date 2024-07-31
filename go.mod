@@ -79,7 +79,7 @@ require (
 	github.com/cert-manager/cert-manager v1.11.0
 	github.com/cilium/ebpf v0.10.0
 	github.com/containernetworking/cni v1.1.2
-	github.com/cybwan/ztm-go-sdk v0.1.0
+	github.com/cybwan/ztm-go-sdk v0.1.2
 	github.com/deckarep/golang-set v1.8.0
 	github.com/florianl/go-tc v0.4.2
 	github.com/fsnotify/fsnotify v1.7.0

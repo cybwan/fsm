@@ -111,7 +111,9 @@ func main() {
 		k8sController,
 		kubeProvider,
 		configClient,
+		mcsClient,
 		ztmClient,
+		ztmAgentPod,
 		informerCollection,
 		msgBroker)
 	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
