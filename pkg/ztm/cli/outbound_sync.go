@@ -92,7 +92,7 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 				SlicesAsSets:    true,
 			}); err == nil {
 			if hash != serviceMetadata.TunnelMetaHash {
-				if bytes, err := json.MarshalIndent(meta, "", " "); err == nil {
+				if bytes, err := json.Marshal(meta); err == nil {
 					err = agentClient.PublishFile(ztmMesh,
 						fmt.Sprintf("/home/root/%s", serviceUID), bytes)
 					if err != nil {
@@ -110,16 +110,16 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 
 	if len(oldCache) > 0 {
 		for serviceUID := range oldCache {
+			if err := agentClient.EraseFile(ztmMesh, fmt.Sprintf("/home/root/%s", serviceUID)); err != nil {
+				log.Error().Msg(err.Error())
+			}
+
 			if err := agentClient.CloseOutbound(ztmMesh,
 				ztmEndpoint,
 				ztm.ZTM,
 				ztm.APP_TUNNEL,
 				ztm.TCP,
 				serviceUID); err != nil {
-				log.Error().Msg(err.Error())
-			}
-
-			if err := agentClient.EraseFile(ztmMesh, fmt.Sprintf("/home/root/%s", serviceUID)); err != nil {
 				log.Error().Msg(err.Error())
 			}
 		}
