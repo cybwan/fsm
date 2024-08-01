@@ -36,6 +36,14 @@ func (c *client) SyncInbound(ztmMesh, ztmEndpoint string) {
 		c.inboundCache[ztmMesh] = cache
 	}
 
+	c.syncInboundCache(ztmMesh, ztmEndpoint, agentClient, cache)
+
+	services := make(map[string]map[string][]int32)
+
+	c.syncInboundImportCache(cache, services)
+}
+
+func (c *client) syncInboundCache(ztmMesh string, ztmEndpoint string, agentClient *ztm.AgentClient, cache *InboundMetadata) {
 	if metadatas, metaErr := agentClient.ListFiles(ztmMesh); metaErr == nil {
 		for _, meta := range metadatas {
 			serviceUID := strings.TrimPrefix(meta.Name, "/home/root/")
@@ -128,9 +136,9 @@ func (c *client) SyncInbound(ztmMesh, ztmEndpoint string) {
 			cache.tunnelCache = newTunnelCache
 		}
 	}
+}
 
-	services := make(map[string]map[string][]int32)
-
+func (c *client) syncInboundImportCache(cache *InboundMetadata, services map[string]map[string][]int32) {
 	for _, tunnelMetadata := range cache.tunnelCache {
 		svcCache, exists := services[tunnelMetadata.ServiceMetadata.Namespace]
 		if !exists {
