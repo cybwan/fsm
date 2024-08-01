@@ -28,6 +28,7 @@ func (c *client) allocInboundPort() int32 {
 func (c *client) SyncInbound(ztmMesh, ztmEndpoint string) {
 	agentClient := ztm.NewAgentClient("127.0.0.1:7777", false)
 
+	services := make(map[string]map[string][]int32)
 	cache, exists := c.inboundCache[ztmMesh]
 	if !exists {
 		cache = new(InboundMetadata)
@@ -36,14 +37,11 @@ func (c *client) SyncInbound(ztmMesh, ztmEndpoint string) {
 		c.inboundCache[ztmMesh] = cache
 	}
 
-	c.syncInboundCache(ztmMesh, ztmEndpoint, agentClient, cache)
-
-	services := make(map[string]map[string][]int32)
-
+	c.syncInboundTunnelCache(ztmMesh, ztmEndpoint, agentClient, cache)
 	c.syncInboundImportCache(cache, services)
 }
 
-func (c *client) syncInboundCache(ztmMesh string, ztmEndpoint string, agentClient *ztm.AgentClient, cache *InboundMetadata) {
+func (c *client) syncInboundTunnelCache(ztmMesh string, ztmEndpoint string, agentClient *ztm.AgentClient, cache *InboundMetadata) {
 	if metadatas, metaErr := agentClient.ListFiles(ztmMesh); metaErr == nil {
 		for _, meta := range metadatas {
 			serviceUID := strings.TrimPrefix(meta.Name, "/home/root/")
