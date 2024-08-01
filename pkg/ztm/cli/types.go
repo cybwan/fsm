@@ -47,14 +47,15 @@ type client struct {
 	mcsClient     multiclusterClientset.Interface
 	ztmClient     ztmClientset.Interface
 
-	outboundCache map[string]map[string]*ServiceMetadata
+	outboundCache map[string]map[string]*OutboundMetadata
+	inboundCache  map[string]*InboundMetadata
 
 	lock        sync.Mutex
 	context     context.Context
 	cancelFuncs []context.CancelFunc
 }
 
-type TunnelMeta struct {
+type ServiceMetadata struct {
 	ID                 string               `json:"id,omitempty"`
 	ClusterSet         string               `json:"clusterSet,omitempty"`
 	ServiceAccountName string               `json:"serviceAccountName,omitempty"`
@@ -63,7 +64,19 @@ type TunnelMeta struct {
 	Ports              []corev1.ServicePort `json:"ports,omitempty"`
 }
 
-type ServiceMetadata struct {
+type OutboundMetadata struct {
 	TargetsHash    uint64
 	TunnelMetaHash uint64
+	Ports          []int32
+}
+
+type TunnelMetadata struct {
+	Hash            string
+	ServiceMetadata *ServiceMetadata
+	Inbounds        map[string]int32
+}
+
+type InboundMetadata struct {
+	tunnelCache map[string]*TunnelMetadata
+	importCache map[string]uint64
 }

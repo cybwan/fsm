@@ -18,10 +18,10 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 
 	oldCache, exists := c.outboundCache[ztmMesh]
 	if !exists {
-		oldCache = make(map[string]*ServiceMetadata)
+		oldCache = make(map[string]*OutboundMetadata)
 	}
 
-	newCache := make(map[string]*ServiceMetadata)
+	newCache := make(map[string]*OutboundMetadata)
 	c.outboundCache[ztmMesh] = newCache
 
 	serviceExports := c.informers.List(fsminformers.InformerKeyServiceExport)
@@ -41,9 +41,9 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 		}
 		service := svcIf.(*corev1.Service)
 		serviceUID := string(service.UID)
-		serviceMetadata := oldCache[serviceUID]
-		if serviceMetadata == nil {
-			serviceMetadata = new(ServiceMetadata)
+		outboundMetadata := oldCache[serviceUID]
+		if outboundMetadata == nil {
+			outboundMetadata = new(OutboundMetadata)
 		}
 
 		endpoints := c.kubeProvider.ListEndpointsForService(svc)
@@ -51,39 +51,49 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 			continue
 		}
 
-		targets := make([]ztm.Target, 0)
-		for _, ep := range endpoints {
-			targets = append(targets, ztm.Target{Host: ep.IP.String(), Port: uint16(ep.Port)})
-		}
-
-		if hash, err := hashstructure.Hash(targets, hashstructure.FormatV2,
-			&hashstructure.HashOptions{
-				ZeroNil:         true,
-				IgnoreZeroValue: true,
-				SlicesAsSets:    true,
-			}); err == nil {
-			if hash != serviceMetadata.TargetsHash {
-				if portErr := agentClient.OpenOutbound(ztmMesh,
-					ztmEndpoint,
-					ztm.ZTM,
-					ztm.APP_TUNNEL,
-					ztm.TCP,
-					serviceUID,
-					targets); portErr != nil {
-					log.Error().Msg(portErr.Error())
-				} else {
-					serviceMetadata.TargetsHash = hash
-				}
-			}
-		}
-
-		meta := new(TunnelMeta)
+		meta := new(ServiceMetadata)
 		meta.ID = serviceUID
 		meta.ClusterSet = c.GetClusterSet()
 		meta.ServiceAccountName = serviceExport.Spec.ServiceAccountName
 		meta.Namespace = service.Namespace
 		meta.Name = service.Name
-		meta.Ports = service.Spec.Ports
+
+		for _, rule := range serviceExport.Spec.Rules {
+			targets := make([]ztm.Target, 0)
+			for _, port := range service.Spec.Ports {
+				if uint32(port.Port) == uint32(rule.PortNumber) {
+					meta.Ports = append(meta.Ports, port)
+					outboundMetadata.Ports = append(outboundMetadata.Ports, rule.PortNumber)
+					for _, ep := range endpoints {
+						if uint32(ep.Port) == uint32(port.TargetPort.IntVal) {
+							targets = append(targets, ztm.Target{Host: ep.IP.String(), Port: uint16(ep.Port)})
+						}
+					}
+					break
+				}
+			}
+
+			if hash, err := hashstructure.Hash(targets, hashstructure.FormatV2,
+				&hashstructure.HashOptions{
+					ZeroNil:         true,
+					IgnoreZeroValue: true,
+					SlicesAsSets:    true,
+				}); err == nil {
+				if hash != outboundMetadata.TargetsHash {
+					if portErr := agentClient.OpenOutbound(ztmMesh,
+						ztmEndpoint,
+						ztm.ZTM,
+						ztm.APP_TUNNEL,
+						ztm.TCP,
+						fmt.Sprintf("%s_%d", serviceUID, rule.PortNumber),
+						targets); portErr != nil {
+						log.Error().Msg(portErr.Error())
+					} else {
+						outboundMetadata.TargetsHash = hash
+					}
+				}
+			}
+		}
 
 		if hash, err := hashstructure.Hash(meta, hashstructure.FormatV2,
 			&hashstructure.HashOptions{
@@ -91,36 +101,38 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 				IgnoreZeroValue: true,
 				SlicesAsSets:    true,
 			}); err == nil {
-			if hash != serviceMetadata.TunnelMetaHash {
-				if bytes, err := json.Marshal(meta); err == nil {
+			if hash != outboundMetadata.TunnelMetaHash {
+				if bytes, err := json.MarshalIndent(meta, "", " "); err == nil {
 					err = agentClient.PublishFile(ztmMesh,
 						fmt.Sprintf("/home/root/%s", serviceUID), bytes)
 					if err != nil {
 						log.Error().Msg(err.Error())
 					} else {
-						serviceMetadata.TunnelMetaHash = hash
+						outboundMetadata.TunnelMetaHash = hash
 					}
 				}
 			}
 		}
 
-		newCache[serviceUID] = serviceMetadata
+		newCache[serviceUID] = outboundMetadata
 		delete(oldCache, serviceUID)
 	}
 
 	if len(oldCache) > 0 {
-		for serviceUID := range oldCache {
+		for serviceUID, outboundMetadata := range oldCache {
 			if err := agentClient.EraseFile(ztmMesh, fmt.Sprintf("/home/root/%s", serviceUID)); err != nil {
 				log.Error().Msg(err.Error())
 			}
 
-			if err := agentClient.CloseOutbound(ztmMesh,
-				ztmEndpoint,
-				ztm.ZTM,
-				ztm.APP_TUNNEL,
-				ztm.TCP,
-				serviceUID); err != nil {
-				log.Error().Msg(err.Error())
+			for _, port := range outboundMetadata.Ports {
+				if err := agentClient.CloseOutbound(ztmMesh,
+					ztmEndpoint,
+					ztm.ZTM,
+					ztm.APP_TUNNEL,
+					ztm.TCP,
+					fmt.Sprintf("%s_%d", serviceUID, port)); err != nil {
+					log.Error().Msg(err.Error())
+				}
 			}
 		}
 	}

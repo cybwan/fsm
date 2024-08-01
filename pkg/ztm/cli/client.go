@@ -77,7 +77,8 @@ func newClient(agentName string,
 		ztmClient:     ztmClient,
 		agentPod:      agentPod,
 
-		outboundCache: make(map[string]map[string]*ServiceMetadata),
+		outboundCache: make(map[string]map[string]*OutboundMetadata),
+		inboundCache:  make(map[string]*InboundMetadata),
 
 		informers:         informerCollection,
 		msgBroker:         msgBroker,
