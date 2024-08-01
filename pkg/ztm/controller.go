@@ -11,4 +11,6 @@ type AgentController interface {
 
 	GetClusterSet() string
 	SetClusterSet(name, group, zone, region string)
+
+	SyncOutbound(ztmMesh, ztmEndpoint string)
 }

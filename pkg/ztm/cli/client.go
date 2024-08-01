@@ -15,9 +15,14 @@ import (
 	ztmClientset "github.com/flomesh-io/fsm/pkg/gen/client/ztm/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
+	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/workerpool"
 	"github.com/flomesh-io/fsm/pkg/ztm"
+)
+
+var (
+	log = logger.New("fsm-ztm-agent")
 )
 
 // NewAgentController returns a new agent.Controller which means to provide access to locally-cached agent resources
@@ -71,6 +76,8 @@ func newClient(agentName string,
 		mcsClient:     mcsClient,
 		ztmClient:     ztmClient,
 		agentPod:      agentPod,
+
+		outboundCache: make(map[string]map[string]*ServiceMetadata),
 
 		informers:         informerCollection,
 		msgBroker:         msgBroker,

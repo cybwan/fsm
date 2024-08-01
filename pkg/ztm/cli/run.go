@@ -3,20 +3,15 @@ package cli
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
 	ztm "github.com/cybwan/ztm-sdk-go"
 	"github.com/mitchellh/hashstructure/v2"
-	"github.com/rs/zerolog/log"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	ztmv1 "github.com/flomesh-io/fsm/pkg/apis/ztm/v1alpha1"
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
-	"github.com/flomesh-io/fsm/pkg/service"
 )
 
 func (c *client) Refresh() {
@@ -95,67 +90,11 @@ func (c *client) startSync() {
 			continue
 		}
 
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		c.cancelFuncs = append(c.cancelFuncs, cancelFunc)
+		go c.OutboundListener(ctx.Done(), mesh.MeshName, localEndpoint.UUID)
+
 		for {
-			// Outbound
-			serviceExports := c.informers.List(fsminformers.InformerKeyServiceExport)
-			for _, serviceExportIf := range serviceExports {
-				serviceExport := serviceExportIf.(*mcsv1alpha1.ServiceExport)
-				svc := service.MeshService{
-					Namespace: serviceExport.Namespace,
-					Name:      serviceExport.Name,
-				}
-
-				svcIf, ok, svcErr := c.informers.GetByKey(fsminformers.InformerKeyService, svc.String())
-				if svcErr != nil {
-					log.Error().Msg(svcErr.Error())
-					continue
-				}
-				if !ok {
-					continue
-				}
-				service := svcIf.(*corev1.Service)
-
-				endpoints := c.kubeProvider.ListEndpointsForService(svc)
-				if len(endpoints) > 0 {
-					targets := make([]ztm.Target, 0)
-					for _, endpoint := range endpoints {
-						targets = append(targets, ztm.Target{Host: endpoint.IP.String(), Port: uint16(endpoint.Port)})
-					}
-
-					if portErr := agentClient.OpenOutbound(mesh.MeshName,
-						localEndpoint.UUID,
-						ztm.ZTM,
-						ztm.APP_TUNNEL,
-						ztm.TCP,
-						string(service.UID),
-						targets); portErr != nil {
-						log.Error().Msg(portErr.Error())
-					}
-
-					meta := new(Metadata)
-					meta.ID = string(service.UID)
-					meta.ClusterSet = c.GetClusterSet()
-					meta.ServiceAccountName = serviceExport.Spec.ServiceAccountName
-					meta.Namespace = service.Namespace
-					meta.Name = service.Name
-					meta.Ports = service.Spec.Ports
-					bytes, _ := json.MarshalIndent(meta, "", " ")
-					err := agentClient.PublishFile(mesh.MeshName, fmt.Sprintf("/home/root/%s", string(service.UID)), bytes)
-					if err != nil {
-						log.Error().Msg(err.Error())
-						continue
-					}
-				} else {
-					agentClient.CloseOutbound(mesh.MeshName,
-						localEndpoint.UUID,
-						ztm.ZTM,
-						ztm.APP_TUNNEL,
-						ztm.TCP,
-						string(service.UID))
-					agentClient.EraseFile(mesh.MeshName, string(service.UID))
-				}
-			}
-
 			// Inbound
 			metadatas, metaErr := agentClient.ListFiles(mesh.MeshName)
 			if metaErr != nil {
@@ -169,7 +108,7 @@ func (c *client) startSync() {
 					log.Error().Msg(fileErr.Error())
 					continue
 				}
-				svcMeta := new(Metadata)
+				svcMeta := new(TunnelMeta)
 				json.Unmarshal([]byte(content), svcMeta)
 				if strings.EqualFold(svcMeta.ClusterSet, c.GetClusterSet()) {
 					continue

@@ -45,19 +45,25 @@ type client struct {
 	kubeProvider  endpoint.Provider
 	configClient  configClientset.Interface
 	mcsClient     multiclusterClientset.Interface
+	ztmClient     ztmClientset.Interface
 
-	ztmClient ztmClientset.Interface
+	outboundCache map[string]map[string]*ServiceMetadata
 
 	lock        sync.Mutex
 	context     context.Context
 	cancelFuncs []context.CancelFunc
 }
 
-type Metadata struct {
+type TunnelMeta struct {
 	ID                 string               `json:"id,omitempty"`
 	ClusterSet         string               `json:"clusterSet,omitempty"`
 	ServiceAccountName string               `json:"serviceAccountName,omitempty"`
 	Namespace          string               `json:"namespace,omitempty"`
 	Name               string               `json:"name,omitempty"`
 	Ports              []corev1.ServicePort `json:"ports,omitempty"`
+}
+
+type ServiceMetadata struct {
+	TargetsHash    uint64
+	TunnelMetaHash uint64
 }
