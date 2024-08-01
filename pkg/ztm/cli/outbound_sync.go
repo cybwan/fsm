@@ -34,7 +34,6 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 
 		svcIf, ok, svcErr := c.informers.GetByKey(fsminformers.InformerKeyService, svc.String())
 		if svcErr != nil {
-			log.Error().Msg(svcErr.Error())
 			continue
 		}
 		if !ok {
@@ -107,18 +106,22 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 
 		newCache[serviceUID] = serviceMetadata
 		delete(oldCache, serviceUID)
-
 	}
 
 	if len(oldCache) > 0 {
 		for serviceUID := range oldCache {
-			agentClient.CloseOutbound(ztmMesh,
+			if err := agentClient.CloseOutbound(ztmMesh,
 				ztmEndpoint,
 				ztm.ZTM,
 				ztm.APP_TUNNEL,
 				ztm.TCP,
-				serviceUID)
-			agentClient.EraseFile(ztmMesh, serviceUID)
+				serviceUID); err != nil {
+				log.Error().Msg(err.Error())
+			}
+
+			if err := agentClient.EraseFile(ztmMesh, fmt.Sprintf("/home/root/%s", serviceUID)); err != nil {
+				log.Error().Msg(err.Error())
+			}
 		}
 	}
 }
