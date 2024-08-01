@@ -77,6 +77,6 @@ type TunnelMetadata struct {
 }
 
 type InboundMetadata struct {
-	tunnelCache map[string]*TunnelMetadata
-	importCache map[string]uint64
+	TunnelCache map[string]*TunnelMetadata
+	ImportCache map[string]uint64
 }

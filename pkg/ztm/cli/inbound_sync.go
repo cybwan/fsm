@@ -32,8 +32,8 @@ func (c *client) SyncInbound(ztmMesh, ztmEndpoint string) {
 	cache, exists := c.inboundCache[ztmMesh]
 	if !exists {
 		cache = new(InboundMetadata)
-		cache.tunnelCache = make(map[string]*TunnelMetadata)
-		cache.importCache = make(map[string]uint64)
+		cache.TunnelCache = make(map[string]*TunnelMetadata)
+		cache.ImportCache = make(map[string]uint64)
 		c.inboundCache[ztmMesh] = cache
 	}
 
@@ -43,6 +43,9 @@ func (c *client) SyncInbound(ztmMesh, ztmEndpoint string) {
 
 func (c *client) syncInboundTunnelCache(ztmMesh string, ztmEndpoint string, agentClient *ztm.AgentClient, cache *InboundMetadata) {
 	if metadatas, metaErr := agentClient.ListFiles(ztmMesh); metaErr == nil {
+		oldTunnelCache := cache.TunnelCache
+		newTunnelCache := make(map[string]*TunnelMetadata)
+
 		for _, meta := range metadatas {
 			serviceUID := strings.TrimPrefix(meta.Name, "/home/root/")
 			desc, descErr := agentClient.DescribeFile(ztmMesh, meta.Name)
@@ -50,9 +53,6 @@ func (c *client) syncInboundTunnelCache(ztmMesh string, ztmEndpoint string, agen
 				log.Error().Msg(descErr.Error())
 				continue
 			}
-
-			oldTunnelCache := cache.tunnelCache
-			newTunnelCache := make(map[string]*TunnelMetadata)
 
 			tunnelMetadata := oldTunnelCache[serviceUID]
 			if tunnelMetadata == nil {
@@ -131,13 +131,17 @@ func (c *client) syncInboundTunnelCache(ztmMesh string, ztmEndpoint string, agen
 			tunnelMetadata.ServiceMetadata = serviceMetadata
 			tunnelMetadata.Inbounds = newInboundCache
 			newTunnelCache[serviceUID] = tunnelMetadata
-			cache.tunnelCache = newTunnelCache
 		}
+
+		cache.TunnelCache = newTunnelCache
 	}
 }
 
 func (c *client) syncInboundImportCache(cache *InboundMetadata, services map[string]map[string][]int32) {
-	for _, tunnelMetadata := range cache.tunnelCache {
+	oldImportCache := cache.ImportCache
+	newImportCache := make(map[string]uint64)
+
+	for _, tunnelMetadata := range cache.TunnelCache {
 		svcCache, exists := services[tunnelMetadata.ServiceMetadata.Namespace]
 		if !exists {
 			svcCache = make(map[string][]int32)
@@ -164,8 +168,6 @@ func (c *client) syncInboundImportCache(cache *InboundMetadata, services map[str
 		}
 	}
 
-	oldImportCache := cache.importCache
-	newImportCache := make(map[string]uint64)
 	for ns, svcCache := range services {
 		for svc, portCache := range svcCache {
 			serviceImport := mcsv1alpha1.ServiceImport{
@@ -185,7 +187,7 @@ func (c *client) syncInboundImportCache(cache *InboundMetadata, services map[str
 			ports := make([]mcsv1alpha1.ServicePort, 0)
 			for _, portNum := range portCache {
 				var servicePort *mcsv1alpha1.ServicePort = nil
-				for _, tunnelMetadata := range cache.tunnelCache {
+				for _, tunnelMetadata := range cache.TunnelCache {
 					if strings.EqualFold(tunnelMetadata.ServiceMetadata.Namespace, ns) &&
 						strings.EqualFold(tunnelMetadata.ServiceMetadata.Name, svc) {
 						for _, port := range tunnelMetadata.ServiceMetadata.Ports {
@@ -229,9 +231,9 @@ func (c *client) syncInboundImportCache(cache *InboundMetadata, services map[str
 					IgnoreZeroValue: true,
 					SlicesAsSets:    true,
 				}); err == nil {
+				newImportCache[importName] = hash
+				delete(oldImportCache, importName)
 				if hash == importHash {
-					newImportCache[importName] = hash
-					delete(oldImportCache, importName)
 					continue
 				}
 			}
@@ -239,6 +241,7 @@ func (c *client) syncInboundImportCache(cache *InboundMetadata, services map[str
 			impIf, _, impErr := c.informers.GetByKey(fsminformers.InformerKeyServiceImport, importName)
 
 			if impErr != nil {
+				log.Error().Msg(impErr.Error())
 				continue
 			}
 
@@ -270,5 +273,5 @@ func (c *client) syncInboundImportCache(cache *InboundMetadata, services map[str
 		}
 	}
 
-	cache.importCache = newImportCache
+	cache.ImportCache = newImportCache
 }
