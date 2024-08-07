@@ -22,6 +22,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/utils"
+	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
 const (
@@ -51,6 +52,8 @@ type CtoKSyncer struct {
 
 	kubeClient kubernetes.Interface
 
+	informer cache.SharedIndexInformer
+
 	microAggregator Aggregator
 
 	// ctx is used to cancel the CtoKSyncer.
@@ -62,6 +65,8 @@ type CtoKSyncer struct {
 	lock sync.Mutex
 
 	triggerCh chan struct{}
+
+	syncWorkQueues *workerpool.WorkerPool
 }
 
 // NewCtoKSyncer creates a new mesh syncer
@@ -70,13 +75,15 @@ func NewCtoKSyncer(
 	discClient connector.ServiceDiscoveryClient,
 	kubeClient kubernetes.Interface,
 	ctx context.Context,
-	fsmNamespace string) *CtoKSyncer {
+	fsmNamespace string,
+	nWorkers uint) *CtoKSyncer {
 	syncer := CtoKSyncer{
-		controller:   controller,
-		discClient:   discClient,
-		kubeClient:   kubeClient,
-		ctx:          ctx,
-		fsmNamespace: fsmNamespace,
+		controller:     controller,
+		discClient:     discClient,
+		kubeClient:     kubeClient,
+		ctx:            ctx,
+		fsmNamespace:   fsmNamespace,
+		syncWorkQueues: workerpool.NewWorkerPool(int(nWorkers)),
 	}
 	return &syncer
 }
@@ -127,27 +134,30 @@ func (s *CtoKSyncer) Ready() {
 // Informer implements the controller.Resource interface.
 // It tells Kubernetes that we want to watch for changes to Services.
 func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
-	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
-			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				serviceList, err := s.kubeClient.CoreV1().Services(s.namespace()).List(s.ctx, options)
-				if err != nil {
-					log.Error().Msgf("cache.NewSharedIndexInformer Services ListFunc:%v", err)
-				}
-				return serviceList, err
+	if s.informer == nil {
+		s.informer = cache.NewSharedIndexInformer(
+			&cache.ListWatch{
+				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+					serviceList, err := s.kubeClient.CoreV1().Services(s.namespace()).List(s.ctx, options)
+					if err != nil {
+						log.Error().Msgf("cache.NewSharedIndexInformer Services ListFunc:%v", err)
+					}
+					return serviceList, err
+				},
+				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+					service, err := s.kubeClient.CoreV1().Services(s.namespace()).Watch(s.ctx, options)
+					if err != nil {
+						log.Error().Msgf("cache.NewSharedIndexInformer Services WatchFunc:%v", err)
+					}
+					return service, err
+				},
 			},
-			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				service, err := s.kubeClient.CoreV1().Services(s.namespace()).Watch(s.ctx, options)
-				if err != nil {
-					log.Error().Msgf("cache.NewSharedIndexInformer Services WatchFunc:%v", err)
-				}
-				return service, err
-			},
-		},
-		&apiv1.Service{},
-		0,
-		cache.Indexers{},
-	)
+			&apiv1.Service{},
+			0,
+			cache.Indexers{},
+		)
+	}
+	return s.informer
 }
 
 // Upsert implements the controller.Resource interface.
@@ -222,6 +232,8 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 	}
 	s.lock.Unlock()
 
+	svcClient := s.kubeClient.CoreV1().Services(s.namespace())
+
 	for {
 		select {
 		case <-ch:
@@ -243,19 +255,51 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 		s.lock.Unlock()
 		if len(creates) > 0 || len(deletes) > 0 {
 			log.Info().Msgf("sync triggered, create:%d delete:%d", len(creates), len(deletes))
-		}
-		svcClient := s.kubeClient.CoreV1().Services(s.namespace())
-		for _, name := range deletes {
-			if err := svcClient.Delete(s.ctx, name, metav1.DeleteOptions{}); err != nil {
-				log.Warn().Msgf("warn deleting service, name:%s warn:%v", name, err)
-			}
+		} else {
+			continue
 		}
 
-		for _, svc := range creates {
-			if _, err := svcClient.Create(s.ctx, svc, metav1.CreateOptions{}); err != nil {
-				log.Error().Msgf("creating service, name:%s error:%v", svc.Name, err)
+		fromTs := time.Now()
+		if len(deletes) > 0 {
+			var wg sync.WaitGroup
+			wg.Add(len(deletes))
+			for _, serviceName := range deletes {
+				syncJob := &DeleteSyncJob{
+					SyncJob: &SyncJob{
+						done: make(chan struct{}),
+					},
+					ctx:         s.ctx,
+					wg:          &wg,
+					syncer:      s,
+					svcClient:   svcClient,
+					serviceName: serviceName,
+				}
+				s.syncWorkQueues.AddJob(syncJob)
 			}
+			wg.Wait()
 		}
+
+		if len(creates) > 0 {
+			var wg sync.WaitGroup
+			wg.Add(len(creates))
+			for _, service := range creates {
+				syncJob := &CreateSyncJob{
+					SyncJob: &SyncJob{
+						done: make(chan struct{}),
+					},
+					ctx:       s.ctx,
+					wg:        &wg,
+					syncer:    s,
+					svcClient: svcClient,
+					service:   *service,
+				}
+				s.syncWorkQueues.AddJob(syncJob)
+			}
+			wg.Wait()
+		}
+		toTs := time.Now()
+		duration := toTs.Sub(fromTs)
+		fmt.Printf("k8s service sync deletes:%4d creates:%4d from %v escape %v\n", len(deletes), len(creates), fromTs, duration)
 	}
 }
 
@@ -279,6 +323,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 				extendServices[string(microSvcName)] = cloudSvcName
 			}
 			preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
+
 			// If this is an already registered service, then update it
 			if svc, ok := s.controller.GetC2KContext().ServiceMapCache[string(microSvcName)]; ok {
 				if svc.Spec.ExternalName == cloudSvcName {
