@@ -3,6 +3,7 @@ package ctok
 import (
 	"context"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 
@@ -82,26 +83,10 @@ func (t *endpointsResource) Upsert(key string, raw interface{}) error {
 			if len(endpoints.Annotations) == 0 {
 				endpoints.Annotations = make(map[string]string)
 			}
-			if clusterId, clusterIDExists := service.Annotations[connector.AnnotationCloudServiceInheritedClusterID]; clusterIDExists {
-				endpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = clusterId
-			}
-			if clusterSet, clusterSetyExists := service.Annotations[connector.AnnotationCloudServiceClusterSet]; clusterSetyExists {
-				endpoints.Annotations[connector.AnnotationCloudServiceClusterSet] = clusterSet
-			}
-			if viaGateway, viaGatewayExists := service.Annotations[connector.AnnotationCloudServiceViaGateway]; viaGatewayExists {
-				endpoints.Annotations[connector.AnnotationCloudServiceViaGateway] = viaGateway
-			}
-			if t.controller.GetC2KWithGateway() {
-				endpoints.Annotations[connector.AnnotationCloudServiceWithGateway] = "true"
-				endpoints.Annotations[connector.AnnotationCloudServiceWithMultiGateways] = fmt.Sprintf("%t", t.controller.GetC2KMultiGateways())
-				if syncer.discClient.IsInternalServices() {
-					endpoints.Annotations[connector.AnnotationMeshServiceInternalSync] = True
-				}
-			}
 
 			endpointSubset := apiv1.EndpointSubset{}
 			ported := false
-			for k := range service.Annotations {
+			for k, v := range service.Annotations {
 				if !ported {
 					if len(service.Spec.Ports) > 0 {
 						for _, port := range service.Spec.Ports {
@@ -116,11 +101,15 @@ func (t *endpointsResource) Upsert(key string, raw interface{}) error {
 					ported = true
 				}
 				if strings.HasPrefix(k, connector.AnnotationMeshEndpointAddr) {
-					ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", connector.AnnotationMeshEndpointAddr))
-					if ipInt, err := strconv.ParseUint(ipIntStr, 10, 32); err == nil {
-						ip := utils.Int2IP4(uint32(ipInt))
-						endpointSubset.Addresses = append(endpointSubset.Addresses, apiv1.EndpointAddress{IP: ip.To4().String()})
-					}
+					endpointMeta := new(connector.MicroEndpointMeta)
+					endpointMeta.Decode(v)
+
+					endpointSubset.Addresses = append(endpointSubset.Addresses, apiv1.EndpointAddress{IP: string(endpointMeta.Address)})
+
+					base64Enc := endpointMeta.Encode()
+					endpoints.Annotations[k] = base64Enc
+					jsonEnc := endpointMeta.Marshal()
+					endpoints.Annotations[fmt.Sprintf("json-%s", k)] = jsonEnc
 				}
 			}
 			if len(endpointSubset.Addresses) > 0 {
@@ -181,15 +170,46 @@ func (t *endpointsResource) updateGatewayEndpointSlice(ctx context.Context, endp
 		var epts []discoveryv1.Endpoint
 		var viaAddr string
 		var viaPort int32
-		if viaGateway, viaGatewayExists := endpointsDup.Annotations[connector.AnnotationCloudServiceViaGateway]; viaGatewayExists {
-			if segs := strings.Split(viaGateway, ":"); len(segs) == 2 {
-				if port, convErr := strconv.Atoi(segs[1]); convErr == nil {
-					viaPort = int32(port & 0xFFFF)
-					viaAddr = segs[0]
-				}
-			}
-		}
 		for _, subsets := range endpointsDup.Subsets {
+			if len(subsets.Addresses) > 0 {
+				var ready = true
+				var addrs []string
+				ept := discoveryv1.Endpoint{
+					Conditions: discoveryv1.EndpointConditions{
+						Ready: &ready,
+					},
+				}
+
+				for _, addr := range subsets.Addresses {
+					if len(endpointsDup.Annotations) > 0 {
+						ip := net.ParseIP(addr.IP)
+						k := fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(ip.To4()))
+						if v, exists := endpointsDup.Annotations[k]; exists {
+							endpointMeta := new(connector.MicroEndpointMeta)
+							endpointMeta.Decode(v)
+
+							if len(endpointMeta.ViaGateway) > 0 {
+								if segs := strings.Split(endpointMeta.ViaGateway, ":"); len(segs) == 2 {
+									if port, convErr := strconv.Atoi(segs[1]); convErr == nil {
+										viaPort = int32(port & 0xFFFF)
+										viaAddr = segs[0]
+										if len(viaAddr) > 0 {
+											addrs = append(addrs, viaAddr)
+											continue
+										}
+									}
+								}
+							}
+						}
+					}
+
+					addrs = append(addrs, addr.IP)
+				}
+
+				ept.Addresses = addrs
+				epts = append(epts, ept)
+			}
+
 			for _, port := range subsets.Ports {
 				shadow := port
 				if viaPort > 0 {
@@ -207,25 +227,6 @@ func (t *endpointsResource) updateGatewayEndpointSlice(ctx context.Context, endp
 						AppProtocol: shadow.AppProtocol,
 					})
 				}
-			}
-			if len(subsets.Addresses) > 0 {
-				var ready = true
-				var addrs []string
-				ept := discoveryv1.Endpoint{
-					Conditions: discoveryv1.EndpointConditions{
-						Ready: &ready,
-					},
-				}
-				if len(viaAddr) > 0 {
-					addrs = append(addrs, viaAddr)
-				} else {
-					for _, addr := range subsets.Addresses {
-						addrs = append(addrs, addr.IP)
-					}
-				}
-
-				ept.Addresses = addrs
-				epts = append(epts, ept)
 			}
 		}
 		newEpSlice.Ports = ports

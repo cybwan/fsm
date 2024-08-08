@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -103,7 +102,7 @@ func (s *CtoKSyncer) SetMicroAggregator(microAggregator Aggregator) {
 // SetServices is called with the services that should be created.
 // The key is the service name and the destination is the external DNS
 // entry to point to.
-func (s *CtoKSyncer) SetServices(svcs map[MicroSvcName]MicroSvcDomainName) {
+func (s *CtoKSyncer) SetServices(svcs map[connector.MicroSvcName]connector.MicroSvcDomainName) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -311,7 +310,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
 	for k8sSvcName, cloudSvcName := range s.controller.GetC2KContext().SourceServices {
-		svcMetaMap := s.microAggregator.Aggregate(s.ctx, MicroSvcName(k8sSvcName))
+		svcMetaMap := s.microAggregator.Aggregate(s.ctx, connector.MicroSvcName(k8sSvcName))
 		if len(svcMetaMap) == 0 {
 			continue
 		}
@@ -335,11 +334,6 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 					// Ensure we don't sync the service back to cloud
 					connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
 					connector.AnnotationCloudServiceInheritedFrom: cloudSvcName,
-				}
-				if s.controller.GetC2KWithGateway() {
-					if s.discClient.IsInternalServices() {
-						svc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
-					}
 				}
 				if svcMeta.HealthCheck {
 					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
@@ -376,11 +370,6 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 					IPFamilyPolicy: &ipFamilyPolicy,
 				},
 			}
-			if s.controller.GetC2KWithGateway() {
-				if s.discClient.IsInternalServices() {
-					createSvc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
-				}
-			}
 			if svcMeta.HealthCheck {
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
@@ -411,10 +400,9 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	return createSvcs, deleteSvcs
 }
 
-func (s *CtoKSyncer) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {
-	ports := make([]int, 0)
+func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *apiv1.Service) {
 	for port, appProtocol := range svcMeta.Ports {
-		if exists := s.existPort(createSvc, MicroSvcPort(port), appProtocol); !exists {
+		if exists := s.existPort(createSvc, connector.MicroSvcPort(port), appProtocol); !exists {
 			specPort := apiv1.ServicePort{
 				Name:       fmt.Sprintf("%s%d", appProtocol, port),
 				Protocol:   apiv1.ProtocolTCP,
@@ -429,23 +417,25 @@ func (s *CtoKSyncer) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service
 			}
 			createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 		}
-		ports = append(ports, int(port))
 	}
-	sort.Ints(ports)
-	createSvc.ObjectMeta.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = svcMeta.ClusterId
-	if len(svcMeta.ViaGateway) > 0 {
-		createSvc.ObjectMeta.Annotations[connector.AnnotationCloudServiceViaGateway] = svcMeta.ViaGateway
-	}
-	if len(svcMeta.ViaGateway) > 0 && !strings.EqualFold(svcMeta.ClusterSet, s.controller.GetClusterSet()) {
-		createSvc.ObjectMeta.Annotations[connector.AnnotationCloudServiceClusterSet] = svcMeta.ClusterSet
-		delete(createSvc.ObjectMeta.Annotations, connector.AnnotationMeshServiceInternalSync)
-	}
-	for addr := range svcMeta.Addresses {
-		createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+	for addr, endpointMeta := range svcMeta.Addresses {
+		if s.controller.GetC2KWithGateway() {
+			endpointMeta.WithGateway = true
+			endpointMeta.WithMultiGateways = s.controller.GetC2KMultiGateways()
+			endpointMeta.InternalSync = s.discClient.IsInternalServices()
+		}
+		if len(endpointMeta.ViaGateway) > 0 && !strings.EqualFold(endpointMeta.ClusterSet, s.controller.GetClusterSet()) {
+			endpointMeta.InternalSync = false
+		}
+		key := fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(addr.To4()))
+		base64Enc := endpointMeta.Encode()
+		createSvc.ObjectMeta.Annotations[key] = base64Enc
+		jsonEnc := endpointMeta.Marshal()
+		createSvc.ObjectMeta.Annotations[fmt.Sprintf("json-%s", key)] = jsonEnc
 	}
 }
 
-func (s *CtoKSyncer) existPort(svc *apiv1.Service, port MicroSvcPort, appProtocol MicroSvcAppProtocol) bool {
+func (s *CtoKSyncer) existPort(svc *apiv1.Service, port connector.MicroSvcPort, appProtocol connector.MicroSvcAppProtocol) bool {
 	if len(svc.Spec.Ports) > 0 {
 		for _, specPort := range svc.Spec.Ports {
 			if specPort.Port == int32(port) ||

@@ -2,8 +2,8 @@
 package kube
 
 import (
+	"fmt"
 	"net"
-	"strconv"
 	"strings"
 
 	mapset "github.com/deckarep/golang-set"
@@ -17,6 +17,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/service"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // Ensure interface compliance
@@ -81,10 +82,16 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 					}
 				}
 				if len(kubernetesEndpoints.Annotations) > 0 {
-					ept.ClusterID = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID]
-					ept.ViaGateway = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceViaGateway]
-					ept.WithGateway, _ = strconv.ParseBool(kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceWithGateway])
-					ept.WithMultiGateways, _ = strconv.ParseBool(kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceWithMultiGateways])
+					k := fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(ip.To4()))
+					if v, exists := kubernetesEndpoints.Annotations[k]; exists {
+						endpointMeta := new(connector.MicroEndpointMeta)
+						endpointMeta.Decode(v)
+
+						ept.ClusterID = endpointMeta.ClusterId
+						ept.ViaGateway = endpointMeta.ViaGateway
+						ept.WithGateway = endpointMeta.WithGateway
+						ept.WithMultiGateways = endpointMeta.WithMultiGateways
+					}
 				}
 				endpoints = append(endpoints, ept)
 			}
