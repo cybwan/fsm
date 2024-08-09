@@ -220,7 +220,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 					"some-label": "test",
 				},
 			},
-		}).AnyTimes()
+		})
 
 		mockKubeController.EXPECT().GetEndpoints(meshSvc).Return(&corev1.Endpoints{
 			ObjectMeta: metav1.ObjectMeta{
@@ -272,7 +272,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 					"some-label": "test",
 				},
 			},
-		}).AnyTimes()
+		})
 
 		mockKubeController.EXPECT().GetEndpoints(meshSvc).Return(&corev1.Endpoints{
 			ObjectMeta: metav1.ObjectMeta{
