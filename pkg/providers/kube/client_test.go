@@ -40,13 +40,18 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 		Expect(c.GetID()).To(Equal(providerName))
 	})
 
-	meshSvc := service.MeshService{
-		Name:       "test",
-		Namespace:  "default",
-		TargetPort: 90,
-	}
+	//meshSvc := service.MeshService{
+	//	Name:       "test",
+	//	Namespace:  "default",
+	//	TargetPort: 90,
+	//}
 
 	It("should correctly return a list of endpoints for a service", func() {
+		meshSvc := service.MeshService{
+			Name:       "test",
+			Namespace:  "default",
+			TargetPort: 90,
+		}
 		mockKubeController.EXPECT().GetService(meshSvc).Return(&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      meshSvc.Name,
@@ -210,6 +215,11 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 	})
 
 	It("GetResolvableEndpoints should properly return actual endpoints without ClusterIP when ClusterIP is not set", func() {
+		meshSvc := service.MeshService{
+			Name:       "test",
+			Namespace:  "default",
+			TargetPort: 90,
+		}
 		// Expect the individual pod endpoints, when no cluster IP is assigned to the service
 		mockKubeController.EXPECT().GetService(meshSvc).Return(&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
