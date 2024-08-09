@@ -55,7 +55,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 	}
 
 	It("should correctly return a list of endpoints for a service", func() {
-		mockKubeController.EXPECT().GetService(meshSvc).Return(nil).AnyTimes()
+		mockKubeController.EXPECT().GetService(gomock.Any()).Return(nil).AnyTimes()
 		// Should be empty for now
 		mockKubeController.EXPECT().GetEndpoints(meshSvc).Return(&corev1.Endpoints{
 			ObjectMeta: metav1.ObjectMeta{
@@ -94,7 +94,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 			Namespace:  "default",
 			TargetPort: 90,
 		}
-		mockKubeController.EXPECT().GetService(subdomainedSvc).Return(nil).AnyTimes()
+		mockKubeController.EXPECT().GetService(gomock.Any()).Return(nil).AnyTimes()
 		// Should be empty for now
 		mockKubeController.EXPECT().GetEndpoints(subdomainedSvc).Return(&corev1.Endpoints{
 			ObjectMeta: metav1.ObjectMeta{
@@ -139,7 +139,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 			// No TargetPort
 		}
 
-		mockKubeController.EXPECT().GetService(svc).Return(nil).AnyTimes()
+		mockKubeController.EXPECT().GetService(gomock.Any()).Return(nil).AnyTimes()
 		mockKubeController.EXPECT().GetEndpoints(svc).Return(&corev1.Endpoints{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: svc.Namespace,
