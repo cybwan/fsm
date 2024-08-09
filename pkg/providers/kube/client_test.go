@@ -216,7 +216,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 
 	It("GetResolvableEndpoints should properly return actual endpoints without ClusterIP when ClusterIP is not set", func() {
 		meshSvc := service.MeshService{
-			Name:       "test",
+			Name:       "test1",
 			Namespace:  "default",
 			TargetPort: 90,
 		}
@@ -233,7 +233,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 					Port:     int32(meshSvc.Port),
 				}},
 				Selector: map[string]string{
-					"some-label": "test",
+					"some-label": "test1",
 				},
 			},
 		})
