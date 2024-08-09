@@ -2,10 +2,12 @@ package kube
 
 import (
 	"net"
+	"testing"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	tassert "github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -13,6 +15,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
+	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/tests"
@@ -320,95 +323,95 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 	})
 })
 
-//func TestGetServicesForServiceIdentity(t *testing.T) {
-//	testCases := []struct {
-//		name        string
-//		svcIdentity identity.ServiceIdentity
-//		pods        []*corev1.Pod
-//		services    []*corev1.Service
-//		expected    []service.MeshService
-//	}{
-//		{
-//			name:        "Returns the list of MeshServices matching the given identity",
-//			svcIdentity: identity.ServiceIdentity("sa1.ns1"), // Matches pod ns1/p1
-//			pods: []*corev1.Pod{
-//				{
-//					ObjectMeta: metav1.ObjectMeta{
-//						Namespace: "ns1",
-//						Name:      "p1",
-//						Labels: map[string]string{
-//							"k1": "v1", // matches selector for service ns1/s1
-//						},
-//					},
-//					Spec: corev1.PodSpec{
-//						ServiceAccountName: "sa1",
-//					},
-//				},
-//				{
-//					ObjectMeta: metav1.ObjectMeta{
-//						Namespace: "ns1",
-//						Name:      "p2",
-//						Labels: map[string]string{
-//							"k1": "v2", // does not match selector for service ns1/s1
-//						},
-//					},
-//					Spec: corev1.PodSpec{
-//						ServiceAccountName: "sa2",
-//					},
-//				},
-//			},
-//			services: []*corev1.Service{
-//				{
-//					ObjectMeta: metav1.ObjectMeta{
-//						Name:      "s1",
-//						Namespace: "ns1",
-//					},
-//					Spec: corev1.ServiceSpec{
-//						Selector: map[string]string{
-//							"k1": "v1", // matches labels on pod ns1/p1
-//						},
-//						Ports: []corev1.ServicePort{{}},
-//					},
-//				},
-//				{
-//					ObjectMeta: metav1.ObjectMeta{
-//						Name:      "s2",
-//						Namespace: "ns1",
-//					},
-//					Spec: corev1.ServiceSpec{
-//						Selector: map[string]string{
-//							"k1": "v2", // does not match labels on pod ns1/p1
-//						},
-//					},
-//				},
-//			},
-//			expected: []service.MeshService{
-//				{Namespace: "ns1", Name: "s1", Protocol: "http"}, // ns1/s1 matches pod ns1/p1 with service account ns1/sa1
-//			},
-//		},
-//	}
-//
-//	for _, tc := range testCases {
-//		t.Run(tc.name, func(t *testing.T) {
-//			assert := tassert.New(t)
-//			mockCtrl := gomock.NewController(t)
-//			defer mockCtrl.Finish()
-//
-//			mockKubeController := k8s.NewMockController(mockCtrl)
-//			c := &client{
-//				kubeController: mockKubeController,
-//			}
-//
-//			mockKubeController.EXPECT().ListVms().Return(nil)
-//			mockKubeController.EXPECT().ListPods().Return(tc.pods)
-//			mockKubeController.EXPECT().ListServices().Return(tc.services)
-//			mockKubeController.EXPECT().GetEndpoints(gomock.Any()).Return(nil, nil).AnyTimes()
-//
-//			actual := c.GetServicesForServiceIdentity(tc.svcIdentity)
-//			assert.ElementsMatch(tc.expected, actual)
-//		})
-//	}
-//}
+func TestGetServicesForServiceIdentity(t *testing.T) {
+	testCases := []struct {
+		name        string
+		svcIdentity identity.ServiceIdentity
+		pods        []*corev1.Pod
+		services    []*corev1.Service
+		expected    []service.MeshService
+	}{
+		{
+			name:        "Returns the list of MeshServices matching the given identity",
+			svcIdentity: identity.ServiceIdentity("sa1.ns1"), // Matches pod ns1/p1
+			pods: []*corev1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "ns1",
+						Name:      "p1",
+						Labels: map[string]string{
+							"k1": "v1", // matches selector for service ns1/s1
+						},
+					},
+					Spec: corev1.PodSpec{
+						ServiceAccountName: "sa1",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "ns1",
+						Name:      "p2",
+						Labels: map[string]string{
+							"k1": "v2", // does not match selector for service ns1/s1
+						},
+					},
+					Spec: corev1.PodSpec{
+						ServiceAccountName: "sa2",
+					},
+				},
+			},
+			services: []*corev1.Service{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "s1",
+						Namespace: "ns1",
+					},
+					Spec: corev1.ServiceSpec{
+						Selector: map[string]string{
+							"k1": "v1", // matches labels on pod ns1/p1
+						},
+						Ports: []corev1.ServicePort{{}},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "s2",
+						Namespace: "ns1",
+					},
+					Spec: corev1.ServiceSpec{
+						Selector: map[string]string{
+							"k1": "v2", // does not match labels on pod ns1/p1
+						},
+					},
+				},
+			},
+			expected: []service.MeshService{
+				{Namespace: "ns1", Name: "s1", Protocol: "http"}, // ns1/s1 matches pod ns1/p1 with service account ns1/sa1
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert := tassert.New(t)
+			mockCtrl := gomock.NewController(t)
+			defer mockCtrl.Finish()
+
+			mockKubeController := k8s.NewMockController(mockCtrl)
+			c := &client{
+				kubeController: mockKubeController,
+			}
+
+			mockKubeController.EXPECT().ListVms().Return(nil)
+			mockKubeController.EXPECT().ListPods().Return(tc.pods)
+			mockKubeController.EXPECT().ListServices().Return(tc.services)
+			mockKubeController.EXPECT().GetEndpoints(gomock.Any()).Return(nil, nil).AnyTimes()
+
+			actual := c.GetServicesForServiceIdentity(tc.svcIdentity)
+			assert.ElementsMatch(tc.expected, actual)
+		})
+	}
+}
 
 //func TestListEndpointsForIdentity(t *testing.T) {
 //	testCases := []struct {
