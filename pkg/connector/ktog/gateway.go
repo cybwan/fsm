@@ -96,6 +96,21 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 			log.Warn().Msgf("error list gateways in namespace:%s", svcResource.fsmNamespace)
 			return nil
 		}
+		externalSource := false
+		internalSource := false
+		if len(k8sSvc.Annotations) > 0 {
+			for k, v := range k8sSvc.Annotations {
+				if strings.HasPrefix(k, connector.AnnotationMeshEndpointAddr) {
+					endpointMeta := new(connector.MicroEndpointMeta)
+					endpointMeta.Decode(v)
+					if endpointMeta.InternalSync {
+						internalSource = true
+					} else {
+						externalSource = true
+					}
+				}
+			}
+		}
 		for _, portSpec := range k8sSvc.Spec.Ports {
 			protocol := string(portSpec.Protocol)
 			if portSpec.AppProtocol != nil && len(*portSpec.AppProtocol) > 0 {
@@ -103,20 +118,11 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 			}
 			protocol = strings.ToUpper(protocol)
 
-			internalSource := true
-			if len(k8sSvc.Annotations) > 0 {
-				if _, externalSource := k8sSvc.Annotations[connector.AnnotationMeshServiceSync]; externalSource {
-					_, internalSource = k8sSvc.Annotations[connector.AnnotationMeshServiceInternalSync]
-				}
-			}
-
-			var parentRefs []gwv1.ParentReference
-			for _, gatewayEntry := range gatewayList {
-				gateway := gatewayEntry.(*gwv1.Gateway)
-				for _, gatewayListener := range gateway.Spec.Listeners {
-					//glProtocol := strings.ToUpper(string(gatewayListener.Protocol))
-					//glName := strings.ToUpper(string(gatewayListener.Name))
-					if internalSource {
+			if internalSource {
+				var parentRefs []gwv1.ParentReference
+				for _, gatewayEntry := range gatewayList {
+					gateway := gatewayEntry.(*gwv1.Gateway)
+					for _, gatewayListener := range gateway.Spec.Listeners {
 						if httpPort := gw.serviceResource.controller.GetViaIngressHTTPPort(); httpPort > 0 &&
 							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
 							uint(gatewayListener.Port) == httpPort {
@@ -137,7 +143,27 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 								Name:      gwv1.ObjectName(gateway.Name),
 								Port:      &gatewayPort})
 						}
+					}
+				}
+
+				if len(parentRefs) > 0 {
+					if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
+						gw.updateGatewayHTTPRoute(k8sSvc, portSpec, parentRefs)
+					} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) {
+						gw.updateGatewayGRPCRoute(k8sSvc, portSpec, parentRefs)
 					} else {
+						gw.updateGatewayTCPRoute(k8sSvc, portSpec, parentRefs)
+					}
+				} else {
+					log.Warn().Msgf("error match gateways in namespace:%s for svc:%s/%s protocol:%s", svcResource.fsmNamespace, k8sSvc.Namespace, k8sSvc.Name, protocol)
+				}
+			}
+
+			if externalSource {
+				var parentRefs []gwv1.ParentReference
+				for _, gatewayEntry := range gatewayList {
+					gateway := gatewayEntry.(*gwv1.Gateway)
+					for _, gatewayListener := range gateway.Spec.Listeners {
 						if httpPort := gw.serviceResource.controller.GetViaEgressHTTPPort(); httpPort > 0 &&
 							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
 							uint(gatewayListener.Port) == httpPort {
@@ -160,18 +186,18 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 						}
 					}
 				}
-			}
 
-			if len(parentRefs) > 0 {
-				if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
-					gw.updateGatewayHTTPRoute(k8sSvc, portSpec, parentRefs)
-				} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) {
-					gw.updateGatewayGRPCRoute(k8sSvc, portSpec, parentRefs)
+				if len(parentRefs) > 0 {
+					if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
+						gw.updateGatewayHTTPRoute(k8sSvc, portSpec, parentRefs)
+					} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) {
+						gw.updateGatewayGRPCRoute(k8sSvc, portSpec, parentRefs)
+					} else {
+						gw.updateGatewayTCPRoute(k8sSvc, portSpec, parentRefs)
+					}
 				} else {
-					gw.updateGatewayTCPRoute(k8sSvc, portSpec, parentRefs)
+					log.Warn().Msgf("error match gateways in namespace:%s for svc:%s/%s protocol:%s", svcResource.fsmNamespace, k8sSvc.Namespace, k8sSvc.Name, protocol)
 				}
-			} else {
-				log.Warn().Msgf("error match gateways in namespace:%s for svc:%s/%s protocol:%s", svcResource.fsmNamespace, k8sSvc.Namespace, k8sSvc.Name, protocol)
 			}
 		}
 		return nil
