@@ -134,52 +134,52 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 		}))
 	})
 
-	//It("should not filter the endpoints of a MeshService whose TargetPort is not known", func() {
-	//	svc := service.MeshService{
-	//		Name:      "test",
-	//		Namespace: "default",
-	//		// No TargetPort
-	//	}
-	//	mockKubeController.EXPECT().GetService(svc).Return(&corev1.Service{
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Name:      svc.Name,
-	//			Namespace: svc.Namespace,
-	//		},
-	//	})
-	//	mockKubeController.EXPECT().GetEndpoints(svc).Return(&corev1.Endpoints{
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Namespace: svc.Namespace,
-	//		},
-	//		Subsets: []corev1.EndpointSubset{
-	//			{
-	//				Addresses: []corev1.EndpointAddress{
-	//					{
-	//						IP: "8.8.8.8",
-	//					},
-	//				},
-	//				Ports: []corev1.EndpointPort{
-	//					{
-	//						Port: 80,
-	//					},
-	//					{
-	//						Port: 90,
-	//					},
-	//				},
-	//			},
-	//		},
-	//	}, nil)
-	//
-	//	Expect(c.ListEndpointsForService(svc)).To(Equal([]endpoint.Endpoint{
-	//		{
-	//			IP:   net.IPv4(8, 8, 8, 8),
-	//			Port: 80,
-	//		},
-	//		{
-	//			IP:   net.IPv4(8, 8, 8, 8),
-	//			Port: 90,
-	//		},
-	//	}))
-	//})
+	It("should not filter the endpoints of a MeshService whose TargetPort is not known", func() {
+		svc := service.MeshService{
+			Name:      "test",
+			Namespace: "default",
+			// No TargetPort
+		}
+		mockKubeController.EXPECT().GetService(svc).Return(&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      svc.Name,
+				Namespace: svc.Namespace,
+			},
+		})
+		mockKubeController.EXPECT().GetEndpoints(svc).Return(&corev1.Endpoints{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: svc.Namespace,
+			},
+			Subsets: []corev1.EndpointSubset{
+				{
+					Addresses: []corev1.EndpointAddress{
+						{
+							IP: "8.8.8.8",
+						},
+					},
+					Ports: []corev1.EndpointPort{
+						{
+							Port: 80,
+						},
+						{
+							Port: 90,
+						},
+					},
+				},
+			},
+		}, nil)
+
+		Expect(c.ListEndpointsForService(svc)).To(Equal([]endpoint.Endpoint{
+			{
+				IP:   net.IPv4(8, 8, 8, 8),
+				Port: 80,
+			},
+			{
+				IP:   net.IPv4(8, 8, 8, 8),
+				Port: 90,
+			},
+		}))
+	})
 
 	//It("GetResolvableEndpoints should properly return endpoints based on ClusterIP when set", func() {
 	//	// If the service has cluster IP, expect the cluster IP + port
