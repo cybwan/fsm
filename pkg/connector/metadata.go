@@ -47,7 +47,7 @@ type MicroEndpointMeta struct {
 
 func (m *MicroEndpointMeta) Decode(str string) {
 	if bytes, err := base64.StdEncoding.DecodeString(str); err == nil {
-		json.Unmarshal(bytes, m)
+		_ = json.Unmarshal(bytes, m)
 	}
 }
 
@@ -59,7 +59,7 @@ func (m *MicroEndpointMeta) Encode() string {
 }
 
 func (m *MicroEndpointMeta) Unmarshal(str string) {
-	json.Unmarshal([]byte(str), m)
+	_ = json.Unmarshal([]byte(str), m)
 }
 
 func (m *MicroEndpointMeta) Marshal() string {
