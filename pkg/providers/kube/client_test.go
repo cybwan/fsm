@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -39,12 +40,6 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 	It("tests GetID", func() {
 		Expect(c.GetID()).To(Equal(providerName))
 	})
-
-	//meshSvc := service.MeshService{
-	//	Name:       "test",
-	//	Namespace:  "default",
-	//	TargetPort: 90,
-	//}
 
 	It("should correctly return a list of endpoints for a service", func() {
 		meshSvc := service.MeshService{
@@ -268,57 +263,61 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 		}))
 	})
 
-	//It("GetResolvableEndpoints should properly return actual endpoints when ClusterIP is none", func() {
-	//
-	//	// If the service has cluster IP set to none, expect the individual pod endpoints
-	//	mockKubeController.EXPECT().GetService(meshSvc).Return(&corev1.Service{
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Name:      meshSvc.Name,
-	//			Namespace: meshSvc.Namespace,
-	//		},
-	//		Spec: corev1.ServiceSpec{
-	//			ClusterIP: corev1.ClusterIPNone,
-	//			Ports: []corev1.ServicePort{{
-	//				Name:       "servicePort",
-	//				Protocol:   corev1.ProtocolTCP,
-	//				Port:       int32(meshSvc.Port),
-	//				TargetPort: intstr.FromInt(int(meshSvc.TargetPort)),
-	//			}},
-	//			Selector: map[string]string{
-	//				"some-label": "test",
-	//			},
-	//		},
-	//	})
-	//
-	//	mockKubeController.EXPECT().GetEndpoints(meshSvc).Return(&corev1.Endpoints{
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Namespace: meshSvc.Namespace,
-	//		},
-	//		Subsets: []corev1.EndpointSubset{
-	//			{
-	//				Addresses: []corev1.EndpointAddress{
-	//					{
-	//						IP: "8.8.8.8",
-	//					},
-	//				},
-	//				Ports: []corev1.EndpointPort{
-	//					{
-	//						Name:     "port",
-	//						Port:     int32(meshSvc.TargetPort),
-	//						Protocol: corev1.ProtocolTCP,
-	//					},
-	//				},
-	//			},
-	//		},
-	//	}, nil)
-	//
-	//	Expect(c.GetResolvableEndpointsForService(meshSvc)).To(Equal([]endpoint.Endpoint{
-	//		{
-	//			IP:   net.IPv4(8, 8, 8, 8),
-	//			Port: endpoint.Port(meshSvc.TargetPort),
-	//		},
-	//	}))
-	//})
+	It("GetResolvableEndpoints should properly return actual endpoints when ClusterIP is none", func() {
+		meshSvc := service.MeshService{
+			Name:       "test2",
+			Namespace:  "default",
+			TargetPort: 90,
+		}
+		// If the service has cluster IP set to none, expect the individual pod endpoints
+		mockKubeController.EXPECT().GetService(meshSvc).Return(&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      meshSvc.Name,
+				Namespace: meshSvc.Namespace,
+			},
+			Spec: corev1.ServiceSpec{
+				ClusterIP: corev1.ClusterIPNone,
+				Ports: []corev1.ServicePort{{
+					Name:       "servicePort",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       int32(meshSvc.Port),
+					TargetPort: intstr.FromInt(int(meshSvc.TargetPort)),
+				}},
+				Selector: map[string]string{
+					"some-label": "test2",
+				},
+			},
+		})
+
+		mockKubeController.EXPECT().GetEndpoints(meshSvc).Return(&corev1.Endpoints{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: meshSvc.Namespace,
+			},
+			Subsets: []corev1.EndpointSubset{
+				{
+					Addresses: []corev1.EndpointAddress{
+						{
+							IP: "8.8.8.8",
+						},
+					},
+					Ports: []corev1.EndpointPort{
+						{
+							Name:     "port",
+							Port:     int32(meshSvc.TargetPort),
+							Protocol: corev1.ProtocolTCP,
+						},
+					},
+				},
+			},
+		}, nil)
+
+		Expect(c.GetResolvableEndpointsForService(meshSvc)).To(Equal([]endpoint.Endpoint{
+			{
+				IP:   net.IPv4(8, 8, 8, 8),
+				Port: endpoint.Port(meshSvc.TargetPort),
+			},
+		}))
+	})
 })
 
 //func TestGetServicesForServiceIdentity(t *testing.T) {
