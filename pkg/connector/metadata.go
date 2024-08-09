@@ -45,33 +45,33 @@ type MicroEndpointMeta struct {
 	ViaGateway        string
 }
 
-func (m *MicroEndpointMeta) Decode(str string) {
+// MicroSvcMeta defines micro service meta
+type MicroSvcMeta struct {
+	Ports       map[MicroSvcPort]MicroSvcAppProtocol
+	Endpoints   map[MicroEndpointAddr]*MicroEndpointMeta
+	HealthCheck bool
+}
+
+func (m *MicroSvcMeta) Decode(str string) {
 	if bytes, err := base64.StdEncoding.DecodeString(str); err == nil {
 		_ = json.Unmarshal(bytes, m)
 	}
 }
 
-func (m *MicroEndpointMeta) Encode() string {
+func (m *MicroSvcMeta) Encode() string {
 	if bytes, err := json.Marshal(m); err == nil {
 		return base64.StdEncoding.EncodeToString(bytes)
 	}
 	return ""
 }
 
-func (m *MicroEndpointMeta) Unmarshal(str string) {
+func (m *MicroSvcMeta) Unmarshal(str string) {
 	_ = json.Unmarshal([]byte(str), m)
 }
 
-func (m *MicroEndpointMeta) Marshal() string {
+func (m *MicroSvcMeta) Marshal() string {
 	if bytes, err := json.Marshal(m); err == nil {
 		return string(bytes)
 	}
 	return ""
-}
-
-// MicroSvcMeta defines micro service meta
-type MicroSvcMeta struct {
-	Ports       map[MicroSvcPort]MicroSvcAppProtocol
-	Addresses   map[MicroEndpointAddr]*MicroEndpointMeta
-	HealthCheck bool
 }

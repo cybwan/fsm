@@ -99,10 +99,10 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 		externalSource := false
 		internalSource := false
 		if len(k8sSvc.Annotations) > 0 {
-			for k, v := range k8sSvc.Annotations {
-				if strings.HasPrefix(k, connector.AnnotationMeshEndpointAddr) {
-					endpointMeta := new(connector.MicroEndpointMeta)
-					endpointMeta.Decode(v)
+			if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+				svcMeta := new(connector.MicroSvcMeta)
+				svcMeta.Decode(v)
+				for _, endpointMeta := range svcMeta.Endpoints {
 					if endpointMeta.InternalSync {
 						internalSource = true
 					} else {

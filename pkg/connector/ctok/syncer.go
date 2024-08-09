@@ -315,7 +315,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 			continue
 		}
 		for microSvcName, svcMeta := range svcMetaMap {
-			if len(svcMeta.Addresses) == 0 {
+			if len(svcMeta.Endpoints) == 0 {
 				continue
 			}
 			if !strings.EqualFold(string(microSvcName), k8sSvcName) {
@@ -418,7 +418,7 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 			createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 		}
 	}
-	for addr, endpointMeta := range svcMeta.Addresses {
+	for _, endpointMeta := range svcMeta.Endpoints {
 		if s.controller.GetC2KWithGateway() {
 			endpointMeta.WithGateway = true
 			endpointMeta.WithMultiGateways = s.controller.GetC2KMultiGateways()
@@ -427,12 +427,11 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 		if len(endpointMeta.ViaGateway) > 0 && !strings.EqualFold(endpointMeta.ClusterSet, s.controller.GetClusterSet()) {
 			endpointMeta.InternalSync = false
 		}
-		key := fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(addr.To4()))
-		base64Enc := endpointMeta.Encode()
-		createSvc.ObjectMeta.Annotations[key] = base64Enc
-		jsonEnc := endpointMeta.Marshal()
-		createSvc.ObjectMeta.Annotations[fmt.Sprintf("json-%s", key)] = jsonEnc
 	}
+	base64Enc := svcMeta.Encode()
+	createSvc.ObjectMeta.Annotations[connector.AnnotationMeshEndpointAddr] = base64Enc
+	jsonEnc := svcMeta.Marshal()
+	createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-json", connector.AnnotationMeshEndpointAddr)] = jsonEnc
 }
 
 func (s *CtoKSyncer) existPort(svc *apiv1.Service, port connector.MicroSvcPort, appProtocol connector.MicroSvcAppProtocol) bool {

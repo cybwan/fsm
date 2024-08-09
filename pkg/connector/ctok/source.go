@@ -43,9 +43,6 @@ func NewCtoKSource(controller connector.ConnectController,
 // Run is the long-running loop for watching cloud services and
 // updating the CtoKSyncer.
 func (s *CtoKSource) Run(ctx context.Context) {
-	// Register a controller for Endpoints
-	go (&connector.CacheController{Resource: newEndpointsResource(s.controller, s.syncer)}).Run(ctx.Done())
-
 	opts := (&connector.QueryOptions{
 		AllowStale: true,
 		WaitIndex:  1,
@@ -122,7 +119,7 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName connector.MicroSvcNa
 			if !exists {
 				svcMeta = new(connector.MicroSvcMeta)
 				svcMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
-				svcMeta.Addresses = make(map[connector.MicroEndpointAddr]*connector.MicroEndpointMeta)
+				svcMeta.Endpoints = make(map[connector.MicroEndpointAddr]*connector.MicroEndpointMeta)
 				svcMetaMap[serviceName] = svcMeta
 			}
 			svcMeta.HealthCheck = instance.HealthCheck
@@ -153,7 +150,7 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName connector.MicroSvcNa
 					}
 				}
 			}
-			svcMeta.Addresses[connector.MicroEndpointAddr(instance.Address)] = endpointMeta
+			svcMeta.Endpoints[connector.MicroEndpointAddr(instance.Address)] = endpointMeta
 		}
 	}
 	return svcMetaMap

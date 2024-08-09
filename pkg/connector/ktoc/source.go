@@ -221,10 +221,10 @@ func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 
 	if len(svc.Annotations) > 0 {
 		hasLocalInstance := false
-		for k, v := range svc.Annotations {
-			if strings.HasPrefix(k, connector.AnnotationMeshEndpointAddr) {
-				endpointMeta := new(connector.MicroEndpointMeta)
-				endpointMeta.Decode(v)
+		if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+			svcMeta := new(connector.MicroSvcMeta)
+			svcMeta.Decode(v)
+			for _, endpointMeta := range svcMeta.Endpoints {
 				if len(endpointMeta.ClusterSet) == 0 || strings.EqualFold(endpointMeta.ClusterSet, t.controller.GetClusterSet()) {
 					hasLocalInstance = true
 				}
