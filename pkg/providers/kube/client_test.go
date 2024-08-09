@@ -1,16 +1,19 @@
 package kube
 
 import (
+	"context"
 	"net"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tassert "github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	testclient "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -413,83 +416,83 @@ func TestGetServicesForServiceIdentity(t *testing.T) {
 	}
 }
 
-//func TestListEndpointsForIdentity(t *testing.T) {
-//	testCases := []struct {
-//		name                            string
-//		serviceAccount                  identity.ServiceIdentity
-//		outboundServiceAccountEndpoints map[identity.ServiceIdentity][]endpoint.Endpoint
-//		expectedEndpoints               []endpoint.Endpoint
-//	}{
-//		{
-//			name:           "get endpoints for pod with only one ip",
-//			serviceAccount: tests.BookstoreServiceIdentity,
-//			outboundServiceAccountEndpoints: map[identity.ServiceIdentity][]endpoint.Endpoint{
-//				tests.BookstoreServiceIdentity: {{
-//					IP: net.ParseIP(tests.ServiceIP),
-//				}},
-//			},
-//			expectedEndpoints: []endpoint.Endpoint{{
-//				IP: net.ParseIP(tests.ServiceIP),
-//			}},
-//		},
-//		{
-//			name:           "get endpoints for pod with multiple ips",
-//			serviceAccount: tests.BookstoreServiceIdentity,
-//			outboundServiceAccountEndpoints: map[identity.ServiceIdentity][]endpoint.Endpoint{
-//				tests.BookstoreServiceIdentity: {
-//					endpoint.Endpoint{
-//						IP: net.ParseIP(tests.ServiceIP),
-//					},
-//					endpoint.Endpoint{
-//						IP: net.ParseIP("9.9.9.9"),
-//					},
-//				},
-//			},
-//			expectedEndpoints: []endpoint.Endpoint{{
-//				IP: net.ParseIP(tests.ServiceIP),
-//			},
-//				{
-//					IP: net.ParseIP("9.9.9.9"),
-//				}},
-//		},
-//	}
-//
-//	for _, tc := range testCases {
-//		t.Run(tc.name, func(t *testing.T) {
-//			assert := tassert.New(t)
-//
-//			mockCtrl := gomock.NewController(t)
-//			kubeClient := testclient.NewSimpleClientset()
-//			defer mockCtrl.Finish()
-//
-//			mockKubeController := k8s.NewMockController(mockCtrl)
-//			mockConfigurator := configurator.NewMockConfigurator(mockCtrl)
-//
-//			provider := NewClient(mockKubeController, mockConfigurator)
-//
-//			var pods []*corev1.Pod
-//			for serviceIdentity, endpoints := range tc.outboundServiceAccountEndpoints {
-//				podlabels := map[string]string{
-//					constants.AppLabel:                 tests.SelectorValue,
-//					constants.SidecarUniqueIDLabelName: uuid.New().String(),
-//				}
-//				sa := serviceIdentity.ToK8sServiceAccount()
-//				pod := tests.NewPodFixture(sa.Namespace, sa.Name, sa.Name, podlabels)
-//				var podIps []corev1.PodIP
-//				for _, ep := range endpoints {
-//					podIps = append(podIps, corev1.PodIP{IP: ep.IP.String()})
-//				}
-//				pod.Status.PodIPs = podIps
-//				_, err := kubeClient.CoreV1().Pods(sa.Namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
-//				assert.Nil(err)
-//				pods = append(pods, pod)
-//			}
-//			mockKubeController.EXPECT().ListPods().Return(pods).AnyTimes()
-//			mockKubeController.EXPECT().ListVms().Return(nil)
-//
-//			actual := provider.ListEndpointsForIdentity(tc.serviceAccount)
-//			assert.NotNil(actual)
-//			assert.ElementsMatch(actual, tc.expectedEndpoints)
-//		})
-//	}
-//}
+func TestListEndpointsForIdentity(t *testing.T) {
+	testCases := []struct {
+		name                            string
+		serviceAccount                  identity.ServiceIdentity
+		outboundServiceAccountEndpoints map[identity.ServiceIdentity][]endpoint.Endpoint
+		expectedEndpoints               []endpoint.Endpoint
+	}{
+		{
+			name:           "get endpoints for pod with only one ip",
+			serviceAccount: tests.BookstoreServiceIdentity,
+			outboundServiceAccountEndpoints: map[identity.ServiceIdentity][]endpoint.Endpoint{
+				tests.BookstoreServiceIdentity: {{
+					IP: net.ParseIP(tests.ServiceIP),
+				}},
+			},
+			expectedEndpoints: []endpoint.Endpoint{{
+				IP: net.ParseIP(tests.ServiceIP),
+			}},
+		},
+		{
+			name:           "get endpoints for pod with multiple ips",
+			serviceAccount: tests.BookstoreServiceIdentity,
+			outboundServiceAccountEndpoints: map[identity.ServiceIdentity][]endpoint.Endpoint{
+				tests.BookstoreServiceIdentity: {
+					endpoint.Endpoint{
+						IP: net.ParseIP(tests.ServiceIP),
+					},
+					endpoint.Endpoint{
+						IP: net.ParseIP("9.9.9.9"),
+					},
+				},
+			},
+			expectedEndpoints: []endpoint.Endpoint{{
+				IP: net.ParseIP(tests.ServiceIP),
+			},
+				{
+					IP: net.ParseIP("9.9.9.9"),
+				}},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert := tassert.New(t)
+
+			mockCtrl := gomock.NewController(t)
+			kubeClient := testclient.NewSimpleClientset()
+			defer mockCtrl.Finish()
+
+			mockKubeController := k8s.NewMockController(mockCtrl)
+			mockConfigurator := configurator.NewMockConfigurator(mockCtrl)
+
+			provider := NewClient(mockKubeController, mockConfigurator)
+
+			var pods []*corev1.Pod
+			for serviceIdentity, endpoints := range tc.outboundServiceAccountEndpoints {
+				podlabels := map[string]string{
+					constants.AppLabel:                 tests.SelectorValue,
+					constants.SidecarUniqueIDLabelName: uuid.New().String(),
+				}
+				sa := serviceIdentity.ToK8sServiceAccount()
+				pod := tests.NewPodFixture(sa.Namespace, sa.Name, sa.Name, podlabels)
+				var podIps []corev1.PodIP
+				for _, ep := range endpoints {
+					podIps = append(podIps, corev1.PodIP{IP: ep.IP.String()})
+				}
+				pod.Status.PodIPs = podIps
+				_, err := kubeClient.CoreV1().Pods(sa.Namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
+				assert.Nil(err)
+				pods = append(pods, pod)
+			}
+			mockKubeController.EXPECT().ListPods().Return(pods).AnyTimes()
+			mockKubeController.EXPECT().ListVms().Return(nil)
+
+			actual := provider.ListEndpointsForIdentity(tc.serviceAccount)
+			assert.NotNil(actual)
+			assert.ElementsMatch(actual, tc.expectedEndpoints)
+		})
+	}
+}
