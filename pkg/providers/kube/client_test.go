@@ -214,59 +214,59 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 		}))
 	})
 
-	//It("GetResolvableEndpoints should properly return actual endpoints without ClusterIP when ClusterIP is not set", func() {
-	//	meshSvc := service.MeshService{
-	//		Name:       "test1",
-	//		Namespace:  "default",
-	//		TargetPort: 90,
-	//	}
-	//	// Expect the individual pod endpoints, when no cluster IP is assigned to the service
-	//	mockKubeController.EXPECT().GetService(meshSvc).Return(&corev1.Service{
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Name:      meshSvc.Name,
-	//			Namespace: meshSvc.Namespace,
-	//		},
-	//		Spec: corev1.ServiceSpec{
-	//			Ports: []corev1.ServicePort{{
-	//				Name:     "servicePort",
-	//				Protocol: corev1.ProtocolTCP,
-	//				Port:     int32(meshSvc.Port),
-	//			}},
-	//			Selector: map[string]string{
-	//				"some-label": "test1",
-	//			},
-	//		},
-	//	})
-	//
-	//	mockKubeController.EXPECT().GetEndpoints(meshSvc).Return(&corev1.Endpoints{
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Namespace: meshSvc.Namespace,
-	//		},
-	//		Subsets: []corev1.EndpointSubset{
-	//			{
-	//				Addresses: []corev1.EndpointAddress{
-	//					{
-	//						IP: "8.8.8.8",
-	//					},
-	//				},
-	//				Ports: []corev1.EndpointPort{
-	//					{
-	//						Name:     "port",
-	//						Port:     int32(meshSvc.TargetPort),
-	//						Protocol: corev1.ProtocolTCP,
-	//					},
-	//				},
-	//			},
-	//		},
-	//	}, nil)
-	//
-	//	Expect(c.GetResolvableEndpointsForService(meshSvc)).To(Equal([]endpoint.Endpoint{
-	//		{
-	//			IP:   net.IPv4(8, 8, 8, 8),
-	//			Port: endpoint.Port(meshSvc.TargetPort),
-	//		},
-	//	}))
-	//})
+	It("GetResolvableEndpoints should properly return actual endpoints without ClusterIP when ClusterIP is not set", func() {
+		meshSvc := service.MeshService{
+			Name:       "test",
+			Namespace:  "default",
+			TargetPort: 91,
+		}
+		// Expect the individual pod endpoints, when no cluster IP is assigned to the service
+		mockKubeController.EXPECT().GetService(meshSvc).Return(&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      meshSvc.Name,
+				Namespace: meshSvc.Namespace,
+			},
+			Spec: corev1.ServiceSpec{
+				Ports: []corev1.ServicePort{{
+					Name:     "servicePort",
+					Protocol: corev1.ProtocolTCP,
+					Port:     int32(meshSvc.Port),
+				}},
+				Selector: map[string]string{
+					"some-label": "test",
+				},
+			},
+		})
+
+		mockKubeController.EXPECT().GetEndpoints(meshSvc).Return(&corev1.Endpoints{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: meshSvc.Namespace,
+			},
+			Subsets: []corev1.EndpointSubset{
+				{
+					Addresses: []corev1.EndpointAddress{
+						{
+							IP: "8.8.8.8",
+						},
+					},
+					Ports: []corev1.EndpointPort{
+						{
+							Name:     "port",
+							Port:     int32(meshSvc.TargetPort),
+							Protocol: corev1.ProtocolTCP,
+						},
+					},
+				},
+			},
+		}, nil)
+
+		Expect(c.GetResolvableEndpointsForService(meshSvc)).To(Equal([]endpoint.Endpoint{
+			{
+				IP:   net.IPv4(8, 8, 8, 8),
+				Port: endpoint.Port(meshSvc.TargetPort),
+			},
+		}))
+	})
 
 	//It("GetResolvableEndpoints should properly return actual endpoints when ClusterIP is none", func() {
 	//	meshSvc := service.MeshService{
