@@ -219,8 +219,18 @@ func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 		return false
 	}
 
-	if clusterSet, ok := svc.Annotations[connector.AnnotationCloudServiceClusterSet]; ok {
-		if len(clusterSet) > 0 && !strings.EqualFold(clusterSet, t.controller.GetClusterSet()) {
+	if len(svc.Annotations) > 0 {
+		hasLocalInstance := false
+		for k, v := range svc.Annotations {
+			if strings.HasPrefix(k, connector.AnnotationMeshEndpointAddr) {
+				endpointMeta := new(connector.MicroEndpointMeta)
+				endpointMeta.Decode(v)
+				if len(endpointMeta.ClusterSet) == 0 || strings.EqualFold(endpointMeta.ClusterSet, t.controller.GetClusterSet()) {
+					hasLocalInstance = true
+				}
+			}
+		}
+		if !hasLocalInstance {
 			return false
 		}
 	}
