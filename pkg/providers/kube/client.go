@@ -86,7 +86,7 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 	}
 
 	k8sSvc := c.kubeController.GetService(svc)
-	if len(k8sSvc.Annotations) > 0 {
+	if k8sSvc != nil && len(k8sSvc.Annotations) > 0 {
 		if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 			svcMeta := new(connector.MicroSvcMeta)
 			svcMeta.Decode(v)
