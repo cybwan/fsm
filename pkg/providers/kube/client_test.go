@@ -55,7 +55,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 	}
 
 	It("should correctly return a list of endpoints for a service", func() {
-		mockKubeController.EXPECT().GetService(meshSvc).Return(nil)
+		mockKubeController.EXPECT().GetService(&meshSvc).Return(nil)
 		// Should be empty for now
 		mockKubeController.EXPECT().GetEndpoints(meshSvc).Return(&corev1.Endpoints{
 			ObjectMeta: metav1.ObjectMeta{
