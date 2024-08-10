@@ -109,6 +109,8 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 						externalSource = true
 					}
 				}
+			} else {
+				internalSource = true
 			}
 		}
 		for _, portSpec := range k8sSvc.Spec.Ports {

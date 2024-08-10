@@ -261,8 +261,11 @@ func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 			for _, endpointMeta := range svcMeta.Endpoints {
 				if len(endpointMeta.ClusterSet) == 0 || strings.EqualFold(endpointMeta.ClusterSet, t.controller.GetClusterSet()) {
 					hasLocalInstance = true
+					break
 				}
 			}
+		} else {
+			hasLocalInstance = true
 		}
 		if !hasLocalInstance {
 			return false
