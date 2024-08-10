@@ -135,16 +135,16 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 			agentService.FromConsul(svc.Service)
 			agentService.ClusterId = dc.connectController.GetClusterId()
 			agentServices = append(agentServices, agentService)
+		} else if dc.IsInternalServices() {
+			checkService := new(connector.AgentService)
+			checkService.FromConsul(svc.Service)
+			checkService.ClusterId = dc.connectController.GetClusterId()
+			checkService.Service = fmt.Sprintf("%s-health-check", svc.Service.Service)
+			checkService.HealthCheck = true
+			checkService.Tags = nil
+			checkService.Meta = nil
+			agentServices = append(agentServices, checkService)
 		}
-
-		checkService := new(connector.AgentService)
-		checkService.FromConsul(svc.Service)
-		checkService.ClusterId = dc.connectController.GetClusterId()
-		checkService.Service = fmt.Sprintf("%s-check", svc.Service.Service)
-		checkService.HealthCheck = true
-		checkService.Tags = nil
-		checkService.Meta = nil
-		agentServices = append(agentServices, checkService)
 	}
 	return agentServices, nil
 }

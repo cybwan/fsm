@@ -43,9 +43,6 @@ func NewCtoKSource(controller connector.ConnectController,
 // Run is the long-running loop for watching cloud services and
 // updating the CtoKSyncer.
 func (s *CtoKSource) Run(ctx context.Context) {
-	// Register a controller for Endpoints
-	go (&connector.CacheController{Resource: newEndpointsResource(s.controller, s.syncer)}).Run(ctx.Done())
-
 	opts := (&connector.QueryOptions{
 		AllowStale: true,
 		WaitIndex:  1,
@@ -72,9 +69,9 @@ func (s *CtoKSource) Run(ctx context.Context) {
 		}
 
 		// Setup the services
-		services := make(map[MicroSvcName]MicroSvcDomainName, len(catalogServices))
+		services := make(map[connector.MicroSvcName]connector.MicroSvcDomainName, len(catalogServices))
 		for _, svc := range catalogServices {
-			services[MicroSvcName(s.controller.GetPrefix()+svc.Service)] = MicroSvcDomainName(fmt.Sprintf("%s.service.%s", svc.Service, s.domain))
+			services[connector.MicroSvcName(s.controller.GetPrefix()+svc.Service)] = connector.MicroSvcDomainName(fmt.Sprintf("%s.service.%s", svc.Service, s.domain))
 		}
 		log.Trace().Msgf("received services from cloud, count:%d", len(services))
 		s.syncer.SetServices(services)
@@ -83,7 +80,7 @@ func (s *CtoKSource) Run(ctx context.Context) {
 }
 
 // Aggregate micro services
-func (s *CtoKSource) Aggregate(ctx context.Context, svcName MicroSvcName) map[MicroSvcName]*MicroSvcMeta {
+func (s *CtoKSource) Aggregate(ctx context.Context, svcName connector.MicroSvcName) map[connector.MicroSvcName]*connector.MicroSvcMeta {
 	cloudSvcName, exists := s.syncer.controller.GetC2KContext().RawServices[string(svcName)]
 	if !exists {
 		return nil
@@ -104,13 +101,13 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName MicroSvcName) map[Mi
 		return nil
 	}
 
-	svcMetaMap := make(map[MicroSvcName]*MicroSvcMeta)
+	svcMetaMap := make(map[connector.MicroSvcName]*connector.MicroSvcMeta)
 
 	for _, instance := range instanceEntries {
 		instance.Service = strings.ToLower(instance.Service)
 		httpPort := instance.HTTPPort
 		grpcPort := instance.GRPCPort
-		svcNames := []MicroSvcName{MicroSvcName(instance.Service)}
+		svcNames := []connector.MicroSvcName{connector.MicroSvcName(instance.Service)}
 		if len(instance.Tags) > 0 {
 			svcNames = s.aggregateTag(svcName, instance, svcNames)
 		}
@@ -120,40 +117,46 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName MicroSvcName) map[Mi
 		for _, serviceName := range svcNames {
 			svcMeta, exists := svcMetaMap[serviceName]
 			if !exists {
-				svcMeta = new(MicroSvcMeta)
-				svcMeta.Ports = make(map[MicroSvcPort]MicroSvcAppProtocol)
-				svcMeta.Addresses = make(map[MicroEndpointAddr]int)
+				svcMeta = new(connector.MicroSvcMeta)
+				svcMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
+				svcMeta.Endpoints = make(map[connector.MicroEndpointAddr]*connector.MicroEndpointMeta)
 				svcMetaMap[serviceName] = svcMeta
 			}
-			svcMeta.Ports[MicroSvcPort(httpPort)] = constants.ProtocolHTTP
-			if grpcPort > 0 {
-				svcMeta.Ports[MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
-			}
-			svcMeta.Addresses[MicroEndpointAddr(instance.Address)] = 1
-			svcMeta.ClusterId = instance.ClusterId
-			svcMeta.WithGateway = s.controller.GetC2KWithGateway()
 			svcMeta.HealthCheck = instance.HealthCheck
-			if viaGateway, ok := instance.Meta[connector.CloudK8SVia]; ok {
-				if viaGateway, str := viaGateway.(string); str {
+
+			endpointMeta := new(connector.MicroEndpointMeta)
+			endpointMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
+			svcMeta.Ports[connector.MicroSvcPort(httpPort)] = constants.ProtocolHTTP
+			endpointMeta.Ports[connector.MicroSvcPort(httpPort)] = constants.ProtocolHTTP
+			if grpcPort > 0 {
+				svcMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
+				endpointMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
+			}
+			endpointMeta.Address = connector.MicroEndpointAddr(instance.Address)
+			endpointMeta.ClusterId = instance.ClusterId
+			endpointMeta.WithGateway = s.controller.GetC2KWithGateway()
+			if viaGatewayIf, ok := instance.Meta[connector.CloudK8SVia]; ok {
+				if viaGateway, str := viaGatewayIf.(string); str {
 					if len(viaGateway) > 0 {
-						svcMeta.ViaGateway = viaGateway
+						endpointMeta.ViaGateway = viaGateway
 					}
 				}
 			}
-			if clusterSet, ok := instance.Meta[connector.ClusterSetKey]; ok {
-				if clusterSet, str := clusterSet.(string); str {
+			if clusterSetIf, ok := instance.Meta[connector.ClusterSetKey]; ok {
+				if clusterSet, str := clusterSetIf.(string); str {
 					if len(clusterSet) > 0 {
-						svcMeta.ClusterSet = clusterSet
-						svcMeta.ClusterId = clusterSet
+						endpointMeta.ClusterSet = clusterSet
+						endpointMeta.ClusterId = clusterSet
 					}
 				}
 			}
+			svcMeta.Endpoints[connector.MicroEndpointAddr(instance.Address)] = endpointMeta
 		}
 	}
 	return svcMetaMap
 }
 
-func (s *CtoKSource) aggregateTag(svcName MicroSvcName, svc *connector.AgentService, svcNames []MicroSvcName) []MicroSvcName {
+func (s *CtoKSource) aggregateTag(svcName connector.MicroSvcName, svc *connector.AgentService, svcNames []connector.MicroSvcName) []connector.MicroSvcName {
 	svcPrefix := ""
 	svcSuffix := ""
 	for _, tag := range svc.Tags {
@@ -180,12 +183,12 @@ func (s *CtoKSource) aggregateTag(svcName MicroSvcName, svc *connector.AgentServ
 		if len(svcSuffix) > 0 {
 			extSvcName = fmt.Sprintf("%s-%s", extSvcName, svcSuffix)
 		}
-		svcNames = append(svcNames, MicroSvcName(extSvcName))
+		svcNames = append(svcNames, connector.MicroSvcName(extSvcName))
 	}
 	return svcNames
 }
 
-func (s *CtoKSource) aggregateMetadata(svcName MicroSvcName, svc *connector.AgentService, svcNames []MicroSvcName) []MicroSvcName {
+func (s *CtoKSource) aggregateMetadata(svcName connector.MicroSvcName, svc *connector.AgentService, svcNames []connector.MicroSvcName) []connector.MicroSvcName {
 	svcPrefix := ""
 	svcSuffix := ""
 	for metaName, metaVal := range svc.Meta {
@@ -212,7 +215,7 @@ func (s *CtoKSource) aggregateMetadata(svcName MicroSvcName, svc *connector.Agen
 		if len(svcSuffix) > 0 {
 			extSvcName = fmt.Sprintf("%s-%s", extSvcName, svcSuffix)
 		}
-		svcNames = append(svcNames, MicroSvcName(extSvcName))
+		svcNames = append(svcNames, connector.MicroSvcName(extSvcName))
 	}
 	return svcNames
 }

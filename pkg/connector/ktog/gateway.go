@@ -96,19 +96,27 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 			log.Warn().Msgf("error list gateways in namespace:%s", svcResource.fsmNamespace)
 			return nil
 		}
+		externalSource := false
+		internalSource := false
+		if len(k8sSvc.Annotations) > 0 {
+			if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+				svcMeta := new(connector.MicroSvcMeta)
+				svcMeta.Decode(v)
+				for _, endpointMeta := range svcMeta.Endpoints {
+					if endpointMeta.InternalSync {
+						internalSource = true
+					} else {
+						externalSource = true
+					}
+				}
+			}
+		}
 		for _, portSpec := range k8sSvc.Spec.Ports {
 			protocol := string(portSpec.Protocol)
 			if portSpec.AppProtocol != nil && len(*portSpec.AppProtocol) > 0 {
 				protocol = *portSpec.AppProtocol
 			}
 			protocol = strings.ToUpper(protocol)
-
-			internalSource := true
-			if len(k8sSvc.Annotations) > 0 {
-				if _, externalSource := k8sSvc.Annotations[connector.AnnotationMeshServiceSync]; externalSource {
-					_, internalSource = k8sSvc.Annotations[connector.AnnotationMeshServiceInternalSync]
-				}
-			}
 
 			var parentRefs []gwv1.ParentReference
 			for _, gatewayEntry := range gatewayList {
@@ -137,7 +145,8 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 								Name:      gwv1.ObjectName(gateway.Name),
 								Port:      &gatewayPort})
 						}
-					} else {
+					}
+					if externalSource {
 						if httpPort := gw.serviceResource.controller.GetViaEgressHTTPPort(); httpPort > 0 &&
 							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
 							uint(gatewayListener.Port) == httpPort {
@@ -349,11 +358,24 @@ func (gw *GatewaySource) getGatewayRouteHostnamesForService(k8sSvc *apiv1.Servic
 		gwv1.Hostname(fmt.Sprintf("%s.%s", k8sSvc.Name, k8sSvc.Namespace)),
 		gwv1.Hostname(fmt.Sprintf("%s.%s.svc", k8sSvc.Name, k8sSvc.Namespace)),
 	}
-	endpointsClient := svcResource.kubeClient.CoreV1().Endpoints(k8sSvc.Namespace)
-	if endpoints, err := endpointsClient.Get(svcResource.ctx, k8sSvc.Name, metav1.GetOptions{}); err == nil {
-		for _, subsets := range endpoints.Subsets {
-			for _, addr := range subsets.Addresses {
-				hostnames = append(hostnames, gwv1.Hostname(addr.IP))
+	cloudService := false
+	if len(k8sSvc.Annotations) > 0 {
+		if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+			cloudService = true
+			svcMeta := new(connector.MicroSvcMeta)
+			svcMeta.Decode(v)
+			for addr := range svcMeta.Endpoints {
+				hostnames = append(hostnames, gwv1.Hostname(addr))
+			}
+		}
+	}
+	if !cloudService {
+		endpointsClient := svcResource.kubeClient.CoreV1().Endpoints(k8sSvc.Namespace)
+		if endpoints, err := endpointsClient.Get(svcResource.ctx, k8sSvc.Name, metav1.GetOptions{}); err == nil {
+			for _, subsets := range endpoints.Subsets {
+				for _, addr := range subsets.Addresses {
+					hostnames = append(hostnames, gwv1.Hostname(addr.IP))
+				}
 			}
 		}
 	}

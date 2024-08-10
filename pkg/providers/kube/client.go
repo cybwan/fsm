@@ -3,7 +3,6 @@ package kube
 
 import (
 	"net"
-	"strconv"
 	"strings"
 
 	mapset "github.com/deckarep/golang-set"
@@ -41,13 +40,14 @@ func (c *client) GetID() string {
 func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.Endpoint {
 	log.Trace().Msgf("Getting Endpoints for MeshService %s on Kubernetes", svc)
 
+	var endpoints []endpoint.Endpoint
+
 	kubernetesEndpoints, err := c.kubeController.GetEndpoints(svc)
 	if err != nil || kubernetesEndpoints == nil {
 		log.Info().Msgf("No k8s endpoints found for MeshService %s", svc)
 		return nil
 	}
 
-	var endpoints []endpoint.Endpoint
 	for _, kubernetesEndpoint := range kubernetesEndpoints.Subsets {
 		for _, port := range kubernetesEndpoint.Ports {
 			// If a TargetPort is specified for the service, filter the endpoint by this port.
@@ -80,13 +80,31 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 						ept.AppProtocol = constants.ProtocolGRPC
 					}
 				}
-				if len(kubernetesEndpoints.Annotations) > 0 {
-					ept.ClusterID = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID]
-					ept.ViaGateway = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceViaGateway]
-					ept.WithGateway, _ = strconv.ParseBool(kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceWithGateway])
-					ept.WithMultiGateways, _ = strconv.ParseBool(kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceWithMultiGateways])
-				}
 				endpoints = append(endpoints, ept)
+			}
+		}
+	}
+
+	k8sSvc := c.kubeController.GetService(svc)
+	if k8sSvc != nil && len(k8sSvc.Annotations) > 0 {
+		if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+			svcMeta := new(connector.MicroSvcMeta)
+			svcMeta.Decode(v)
+			if len(svcMeta.Endpoints) > 0 {
+				for addr, endpointMeta := range svcMeta.Endpoints {
+					for port, protocol := range endpointMeta.Ports {
+						ept := endpoint.Endpoint{
+							IP:                net.ParseIP(string(addr)),
+							Port:              endpoint.Port(port),
+							AppProtocol:       string(protocol),
+							ClusterID:         endpointMeta.ClusterId,
+							ViaGateway:        endpointMeta.ViaGateway,
+							WithGateway:       endpointMeta.WithGateway,
+							WithMultiGateways: endpointMeta.WithMultiGateways,
+						}
+						endpoints = append(endpoints, ept)
+					}
+				}
 			}
 		}
 	}

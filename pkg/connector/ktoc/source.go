@@ -28,6 +28,9 @@ import (
 
 var (
 	log = logger.New("connector-k2c")
+
+	ProtocolHTTP = constants.ProtocolHTTP
+	ProtocolGRPC = constants.ProtocolGRPC
 )
 
 const (
@@ -108,7 +111,7 @@ func (t *KtoCSource) Informer() cache.SharedIndexInformer {
 // Upsert implements the controller.Resource interface.
 func (t *KtoCSource) Upsert(key string, raw interface{}) error {
 	// We expect a RegisteredInstances. If it isn't a service then just ignore it.
-	service, ok := raw.(*corev1.Service)
+	svc, ok := raw.(*corev1.Service)
 	if !ok {
 		log.Warn().Msgf("upsert got invalid type raw:%v", raw)
 		return nil
@@ -117,7 +120,7 @@ func (t *KtoCSource) Upsert(key string, raw interface{}) error {
 	t.Lock()
 	defer t.Unlock()
 
-	if !t.shouldSync(service) {
+	if !t.shouldSync(svc) {
 		// Check if its in our map and delete it.
 		if _, ok = t.controller.GetK2CContext().ServiceMap.Get(key); ok {
 			log.Info().Msgf("service should no longer be synced service:%s", key)
@@ -129,19 +132,50 @@ func (t *KtoCSource) Upsert(key string, raw interface{}) error {
 	}
 
 	// Syncing is enabled, let's keep track of this service.
-	t.controller.GetK2CContext().ServiceMap.Set(key, service)
-	log.Debug().Msgf("[KtoCSource.Upsert] adding service to serviceMap key:%s service:%v", key, service)
+	t.controller.GetK2CContext().ServiceMap.Set(key, svc)
+	log.Debug().Msgf("[KtoCSource.Upsert] adding service to serviceMap key:%s service:%v", key, svc)
 
 	// If we care about endpoints, we should do the initial endpoints load.
 	if t.shouldTrackEndpoints(key) {
-		endpoints, err := t.endpointsResource.getEndpoints(key)
-		if err != nil {
-			log.Debug().Msgf("error loading initial endpoints key%s err:%v",
-				key,
-				err)
-		} else {
-			t.controller.GetK2CContext().EndpointsMap.Set(key, endpoints)
-			log.Debug().Msgf("[KtoCSource.Upsert] adding service's endpoints to endpointsMap key:%s service:%v endpoints:%v", key, service, endpoints)
+		cloudService := false
+		if len(svc.Annotations) > 0 {
+			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+				cloudService = true
+				svcMeta := new(connector.MicroSvcMeta)
+				svcMeta.Decode(v)
+				endpoints := new(corev1.Endpoints)
+				endpointSubset := corev1.EndpointSubset{}
+				for port, protocol := range svcMeta.Ports {
+					endpointPort := corev1.EndpointPort{}
+					endpointPort.Port = int32(port)
+					endpointPort.Protocol = constants.ProtocolTCP
+					if strings.EqualFold(string(protocol), constants.ProtocolHTTP) {
+						endpointPort.AppProtocol = &ProtocolHTTP
+					} else if strings.EqualFold(string(protocol), constants.ProtocolGRPC) {
+						endpointPort.AppProtocol = &ProtocolGRPC
+					}
+					endpointSubset.Ports = append(endpointSubset.Ports, endpointPort)
+				}
+				for ip := range svcMeta.Endpoints {
+					endpointAddress := corev1.EndpointAddress{}
+					endpointAddress.IP = string(ip)
+					endpointSubset.Addresses = append(endpointSubset.Addresses, endpointAddress)
+				}
+				endpoints.Subsets = append(endpoints.Subsets, endpointSubset)
+				t.controller.GetK2CContext().EndpointsMap.Set(key, endpoints)
+				log.Debug().Msgf("[KtoCSource.Upsert] adding service's endpoints to endpointsMap key:%s service:%v endpoints:%v", key, svc, endpoints)
+			}
+		}
+		if !cloudService {
+			endpoints, err := t.endpointsResource.getEndpoints(key)
+			if err != nil {
+				log.Debug().Msgf("error loading initial endpoints key%s err:%v",
+					key,
+					err)
+			} else {
+				t.controller.GetK2CContext().EndpointsMap.Set(key, endpoints)
+				log.Debug().Msgf("[KtoCSource.Upsert] adding service's endpoints to endpointsMap key:%s service:%v endpoints:%v", key, svc, endpoints)
+			}
 		}
 	}
 
@@ -219,8 +253,18 @@ func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 		return false
 	}
 
-	if clusterSet, ok := svc.Annotations[connector.AnnotationCloudServiceClusterSet]; ok {
-		if len(clusterSet) > 0 && !strings.EqualFold(clusterSet, t.controller.GetClusterSet()) {
+	if len(svc.Annotations) > 0 {
+		hasLocalInstance := false
+		if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+			svcMeta := new(connector.MicroSvcMeta)
+			svcMeta.Decode(v)
+			for _, endpointMeta := range svcMeta.Endpoints {
+				if len(endpointMeta.ClusterSet) == 0 || strings.EqualFold(endpointMeta.ClusterSet, t.controller.GetClusterSet()) {
+					hasLocalInstance = true
+				}
+			}
+		}
+		if !hasLocalInstance {
 			return false
 		}
 	}
@@ -599,6 +643,17 @@ func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(key string, baseN
 
 			r := baseNode
 			rs := baseService
+
+			if len(overridePortName) > 0 {
+				for _, p := range svc.Spec.Ports {
+					if overridePortName == p.Name {
+						rs.HTTPPort = int(p.Port)
+						break
+					}
+				}
+			} else if overridePortNumber > 0 {
+				rs.HTTPPort = overridePortNumber
+			}
 			r.Service = &rs
 			r.Service.ID = t.controller.GetServiceInstanceID(r.Service.Service, addr, rs.HTTPPort, rs.GRPCPort)
 			r.Service.Address = addr
@@ -854,6 +909,10 @@ func (t *serviceEndpointsSource) Upsert(key string, raw interface{}) error {
 	endpoints, ok := raw.(*corev1.Endpoints)
 	if !ok {
 		log.Warn().Msgf("upsert got invalid type raw:%v", raw)
+		return nil
+	}
+
+	if len(endpoints.Subsets) == 0 {
 		return nil
 	}
 
