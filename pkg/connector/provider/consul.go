@@ -135,7 +135,9 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 			agentService.FromConsul(svc.Service)
 			agentService.ClusterId = dc.connectController.GetClusterId()
 			agentServices = append(agentServices, agentService)
-		} else if dc.IsInternalServices() {
+		}
+
+		if dc.IsInternalServices() {
 			checkService := new(connector.AgentService)
 			checkService.FromConsul(svc.Service)
 			checkService.ClusterId = dc.connectController.GetClusterId()

@@ -342,11 +342,19 @@ func (c *GatewayProcessor) upstreamsByEndpointSlices(svc *corev1.Service, port *
 			for portMeta := range svcMeta.Ports {
 				if uint16(portMeta) == uint16(*port) {
 					found = true
+					break
 				}
 			}
+			//bindPort := 10080
 			if found {
 				endpointSet := make(map[endpointContext]struct{})
 				for address, metadata := range svcMeta.Endpoints {
+					//if len(metadata.BindFgwPorts) == 0 {
+					//	continue
+					//}
+					//if _, bind := metadata.BindFgwPorts[connector.MicroSvcPort(bindPort)]; !bind {
+					//	continue
+					//}
 					if len(metadata.ViaGateway) == 0 {
 						ep := endpointContext{address: string(address), port: *port}
 						endpointSet[ep] = struct{}{}

@@ -294,6 +294,11 @@ func (c *client) GetResolvableEndpointsForService(svc service.MeshService) []end
 func (c *client) ListServices() []service.MeshService {
 	var services []service.MeshService
 	for _, svc := range c.kubeController.ListServices() {
+		if len(svc.Annotations) > 0 {
+			if _, exists := svc.Annotations[connector.AnnotationCloudHealthCheckService]; exists {
+				continue
+			}
+		}
 		services = append(services, k8s.ServiceToMeshServices(c.kubeController, *svc)...)
 	}
 	return services

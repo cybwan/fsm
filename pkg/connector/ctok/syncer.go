@@ -336,6 +336,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 					connector.AnnotationCloudServiceInheritedFrom: cloudSvcName,
 				}
 				if svcMeta.HealthCheck {
+					svc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
 					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
 					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 				}
@@ -371,6 +372,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 				},
 			}
 			if svcMeta.HealthCheck {
+				createSvc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 			}
@@ -426,6 +428,23 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 		}
 		if len(endpointMeta.ViaGateway) > 0 && !strings.EqualFold(endpointMeta.ClusterSet, s.controller.GetClusterSet()) {
 			endpointMeta.InternalSync = false
+		}
+
+		endpointMeta.BindFgwPorts = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
+		if endpointMeta.InternalSync {
+			if port := s.controller.GetViaIngressHTTPPort(); port > 0 {
+				endpointMeta.BindFgwPorts[connector.MicroSvcPort(port)] = constants.ProtocolHTTP
+			}
+			if port := s.controller.GetViaIngressGRPCPort(); port > 0 {
+				endpointMeta.BindFgwPorts[connector.MicroSvcPort(port)] = constants.ProtocolGRPC
+			}
+		} else {
+			if port := s.controller.GetViaEgressHTTPPort(); port > 0 {
+				endpointMeta.BindFgwPorts[connector.MicroSvcPort(port)] = constants.ProtocolHTTP
+			}
+			if port := s.controller.GetViaEgressGRPCPort(); port > 0 {
+				endpointMeta.BindFgwPorts[connector.MicroSvcPort(port)] = constants.ProtocolGRPC
+			}
 		}
 	}
 	base64Enc := svcMeta.Encode()

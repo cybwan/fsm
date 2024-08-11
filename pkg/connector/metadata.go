@@ -43,6 +43,7 @@ type MicroEndpointMeta struct {
 	WithGateway       bool
 	WithMultiGateways bool
 	ViaGateway        string
+	BindFgwPorts      map[MicroSvcPort]MicroSvcAppProtocol
 }
 
 // MicroSvcMeta defines micro service meta

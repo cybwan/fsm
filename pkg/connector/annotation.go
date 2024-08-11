@@ -43,6 +43,9 @@ const (
 	// whether to sync the k8s Service to fsm gateway.
 	AnnotationServiceSyncK8sToFgw = "flomesh.io/service-sync-k8s-to-fgw"
 
+	// AnnotationCloudHealthCheckService defines health check service annotation
+	AnnotationCloudHealthCheckService = "flomesh.io/cloud-health-check-service"
+
 	// AnnotationServiceName is set to override the name of the service
 	// registered. By default this will be the name of the CatalogService resource.
 	AnnotationServiceName = "flomesh.io/service-name"
