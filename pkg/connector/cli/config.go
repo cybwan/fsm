@@ -155,6 +155,8 @@ type config struct {
 			// any created Consul namespaces to allow cross namespace service discovery.
 			// Only necessary if ACLs are enabled.
 			consulCrossNamespaceACLPolicy string
+
+			consulGenerateInternalServiceHealthCheck bool
 		}
 
 		nacosCfg struct {
@@ -416,6 +418,12 @@ func (c *config) GetConsulCrossNamespaceACLPolicy() string {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.consulCfg.consulCrossNamespaceACLPolicy
+}
+
+func (c *config) GetConsulGenerateInternalServiceHealthCheck() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.consulCfg.consulGenerateInternalServiceHealthCheck
 }
 
 func (c *config) GetNacosGroupId() string {
@@ -775,6 +783,7 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.k2cCfg.consulCfg.consulEnableK8SNSMirroring = spec.SyncFromK8S.ConsulEnableK8SNSMirroring
 	c.k2cCfg.consulCfg.consulK8SNSMirroringPrefix = spec.SyncFromK8S.ConsulK8SNSMirroringPrefix
 	c.k2cCfg.consulCfg.consulCrossNamespaceACLPolicy = spec.SyncFromK8S.ConsulCrossNamespaceACLPolicy
+	c.k2cCfg.consulCfg.consulGenerateInternalServiceHealthCheck = spec.SyncToK8S.GenerateInternalServiceHealthCheck
 
 	c.limiter.SetLimit(rate.Limit(spec.Limiter.Limit))
 	c.limiter.SetBurst(int(spec.Limiter.Limit))

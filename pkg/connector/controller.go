@@ -83,6 +83,7 @@ type ConnectController interface {
 	GetConsulEnableK8SNSMirroring() bool
 	GetConsulK8SNSMirroringPrefix() string
 	GetConsulCrossNamespaceACLPolicy() string
+	GetConsulGenerateInternalServiceHealthCheck() bool
 
 	GetNacosGroupId() string
 	GetNacosClusterId() string

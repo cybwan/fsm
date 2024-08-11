@@ -289,6 +289,9 @@ spec:
                     type: array
                   filterTag:
                     type: string
+                  generateInternalServiceHealthCheck:
+                    default: true
+                    type: boolean
                   passingOnly:
                     default: true
                     type: boolean

@@ -748,10 +748,29 @@ type ConnectorGatewaySpec struct {
 	EgressGRPCPort uint   `json:"egressGRPCPort"`
 }
 
+// LoadBalancerType defines the type of load balancer
+type LoadBalancerType string
+
+const (
+	// ActiveActiveLbType is the type of load balancer that distributes traffic to all targets
+	ActiveActiveLbType LoadBalancerType = "ActiveActive"
+
+	// LocalityLbType is the type of load balancer that distributes traffic to targets in the same locality
+	LocalityLbType LoadBalancerType = "Locality"
+
+	// FailOverLbType is the type of load balancer that distributes traffic to the first available target
+	FailOverLbType LoadBalancerType = "FailOver"
+)
+
 // ConnectorSpec is the type to represent connector configs.
 type ConnectorSpec struct {
-	// +kubebuilder:default="Managed by fsm-connector-gateway."
-	Notice string `json:"DO_NOT_EDIT"`
+	// +kubebuilder:default=Locality
+	// +kubebuilder:validation:Enum=Locality;ActiveActive;FailOver
+	// Type of global load distribution
+	LbType *LoadBalancerType `json:"lbType,omitempty"`
+
+	// +kubebuilder:default="viaGateway Managed by fsm-connector-gateway."
+	Notice string `json:"DO_NOT_EDIT_viaGateway"`
 
 	// ViaGateway defines gateway settings
 	ViaGateway ConnectorGatewaySpec `json:"viaGateway"`
