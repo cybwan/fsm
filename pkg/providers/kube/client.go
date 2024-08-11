@@ -91,6 +91,7 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 			svcMeta := new(connector.MicroSvcMeta)
 			svcMeta.Decode(v)
 			if len(svcMeta.Endpoints) > 0 {
+				lbType := c.meshConfigurator.GetMeshConfig().Spec.Connector.LbType
 				for addr, endpointMeta := range svcMeta.Endpoints {
 					for port, protocol := range endpointMeta.Ports {
 						ept := endpoint.Endpoint{
@@ -101,6 +102,10 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 							ViaGateway:        endpointMeta.ViaGateway,
 							WithGateway:       endpointMeta.WithGateway,
 							WithMultiGateways: endpointMeta.WithMultiGateways,
+						}
+						if !endpointMeta.InternalSync {
+							ept.ClusterKey = endpointMeta.ClusterSet
+							ept.LBType = string(lbType)
 						}
 						endpoints = append(endpoints, ept)
 					}

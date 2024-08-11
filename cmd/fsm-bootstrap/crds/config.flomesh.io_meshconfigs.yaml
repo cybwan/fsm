@@ -1324,10 +1324,9 @@ spec:
                     default: viaGateway Managed by fsm-connector-gateway.
                     type: string
                   lbType:
-                    default: Locality
+                    default: FailOver
                     description: Type of global load distribution
                     enum:
-                    - Locality
                     - ActiveActive
                     - FailOver
                     type: string
