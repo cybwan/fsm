@@ -80,6 +80,10 @@ type MachineSpec struct {
 
 	// +kubebuilder:default=false
 	// +optional
+	Purge bool `json:"purge,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
 	AsInternalServices bool `json:"asInternalServices,omitempty"`
 
 	SyncToK8S MachineSyncToK8SSpec `json:"syncToK8S"`

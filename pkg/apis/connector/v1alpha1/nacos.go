@@ -153,6 +153,10 @@ type NacosSpec struct {
 
 	// +kubebuilder:default=false
 	// +optional
+	Purge bool `json:"purge,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
 	AsInternalServices bool `json:"asInternalServices,omitempty"`
 
 	// +kubebuilder:default={}

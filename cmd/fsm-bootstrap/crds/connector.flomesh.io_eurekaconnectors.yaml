@@ -82,6 +82,9 @@ spec:
                 type: string
               httpAddr:
                 type: string
+              purge:
+                default: false
+                type: boolean
               replicas:
                 default: 1
                 format: int32

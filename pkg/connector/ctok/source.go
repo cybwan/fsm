@@ -51,21 +51,24 @@ func (s *CtoKSource) Run(ctx context.Context) {
 	for {
 		// Get all services.
 		var catalogServices []connector.MicroService
-		err := backoff.Retry(func() error {
-			var err error
-			catalogServices, err = s.discClient.CatalogServices(opts)
-			return err
-		}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 
-		// If the context is ended, then we end
-		if ctx.Err() != nil {
-			return
-		}
+		if !s.controller.Purge() {
+			err := backoff.Retry(func() error {
+				var err error
+				catalogServices, err = s.discClient.CatalogServices(opts)
+				return err
+			}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 
-		// If there was an error, handle that
-		if err != nil {
-			log.Warn().Msgf("error querying services, will retry, err:%s", err)
-			continue
+			// If the context is ended, then we end
+			if ctx.Err() != nil {
+				return
+			}
+
+			// If there was an error, handle that
+			if err != nil {
+				log.Warn().Msgf("error querying services, will retry, err:%s", err)
+				continue
+			}
 		}
 
 		// Setup the services

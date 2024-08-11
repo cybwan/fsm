@@ -132,6 +132,7 @@ type ConnectController interface {
 
 	GetHTTPAddr() string
 	GetDeriveNamespace() string
+	Purge() bool
 	AsInternalServices() bool
 
 	CacheCatalogInstances(key string, catalogFunc func() (interface{}, error)) (interface{}, error)

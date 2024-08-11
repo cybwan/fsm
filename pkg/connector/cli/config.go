@@ -40,6 +40,7 @@ type config struct {
 
 	httpAddr           string
 	deriveNamespace    string
+	purge              bool
 	asInternalServices bool
 
 	// syncPeriod is the interval between full catalog syncs. These will
@@ -570,6 +571,12 @@ func (c *config) GetDeriveNamespace() string {
 	return c.deriveNamespace
 }
 
+func (c *config) Purge() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.purge
+}
+
 func (c *config) AsInternalServices() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -603,6 +610,7 @@ func (c *client) initGatewayConnectorConfig(spec ctv1.GatewaySpec) {
 	c.flock.Lock()
 	defer c.flock.Unlock()
 
+	c.purge = spec.SyncToFgw.Purge
 	c.syncPeriod = spec.SyncToFgw.SyncPeriod.Duration
 	if c.syncPeriod < MinSyncPeriod {
 		c.syncPeriod = MinSyncPeriod
@@ -627,6 +635,7 @@ func (c *client) initMachineConnectorConfig(spec ctv1.MachineSpec) {
 	defer c.flock.Unlock()
 
 	c.deriveNamespace = spec.DeriveNamespace
+	c.purge = spec.Purge
 	c.asInternalServices = spec.AsInternalServices
 
 	c.config.c2kCfg.enable = spec.SyncToK8S.Enable
@@ -645,6 +654,7 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 
 	c.httpAddr = spec.HTTPAddr
 	c.deriveNamespace = spec.DeriveNamespace
+	c.purge = spec.Purge
 	c.asInternalServices = spec.AsInternalServices
 	c.syncPeriod = spec.SyncPeriod.Duration
 	if c.syncPeriod < MinSyncPeriod {
@@ -704,6 +714,7 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 
 	c.httpAddr = spec.HTTPAddr
 	c.deriveNamespace = spec.DeriveNamespace
+	c.purge = spec.Purge
 	c.asInternalServices = spec.AsInternalServices
 	c.syncPeriod = spec.SyncPeriod.Duration
 	if c.syncPeriod < MinSyncPeriod {
@@ -743,6 +754,7 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 
 	c.httpAddr = spec.HTTPAddr
 	c.deriveNamespace = spec.DeriveNamespace
+	c.purge = spec.Purge
 	c.asInternalServices = spec.AsInternalServices
 	c.syncPeriod = spec.SyncPeriod.Duration
 	if c.syncPeriod < MinSyncPeriod {

@@ -56,6 +56,9 @@ spec:
                 type: boolean
               deriveNamespace:
                 type: string
+              purge:
+                default: false
+                type: boolean
               replicas:
                 default: 1
                 format: int32

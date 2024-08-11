@@ -103,6 +103,9 @@ spec:
                 - burst
                 - limit
                 type: object
+              purge:
+                default: false
+                type: boolean
               replicas:
                 default: 1
                 format: int32
