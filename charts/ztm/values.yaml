@@ -43,7 +43,7 @@ fsm:
       # -- ztm image name
       name: ztm-agent
       # -- ztm image tag
-      tag: 0.1.0
+      tag: 0.2.0
 
   #
   # -- ZTM's controller parameters

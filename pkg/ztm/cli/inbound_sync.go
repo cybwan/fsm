@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	ztm "github.com/cybwan/ztm-sdk-go"
+	"github.com/cybwan/ztm-sdk-go/app/tunnel"
 	"github.com/mitchellh/hashstructure/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -47,7 +48,7 @@ func (c *client) syncInboundTunnelCache(ztmMesh string, ztmEndpoint string, agen
 		newTunnelCache := make(map[string]*TunnelMetadata)
 
 		for _, meta := range metadatas {
-			serviceUID := strings.TrimPrefix(meta.Name, "/home/root/")
+			serviceUID := strings.TrimPrefix(meta.Name, fmt.Sprintf("%s/root/", ztm.BaseFolder))
 			desc, descErr := agentClient.DescribeFile(ztmMesh, meta.Name)
 			if descErr != nil {
 				log.Error().Msg(descErr.Error())
@@ -101,7 +102,7 @@ func (c *client) syncInboundTunnelCache(ztmMesh string, ztmEndpoint string, agen
 					if err := agentClient.OpenInbound(ztmMesh,
 						ztmEndpoint,
 						ztm.ZTM,
-						ztm.APP_TUNNEL,
+						tunnel.APP,
 						ztm.TCP,
 						inbound,
 						[]ztm.Listen{
@@ -120,7 +121,7 @@ func (c *client) syncInboundTunnelCache(ztmMesh string, ztmEndpoint string, agen
 					if err := agentClient.CloseInbound(ztmMesh,
 						ztmEndpoint,
 						ztm.ZTM,
-						ztm.APP_TUNNEL,
+						tunnel.APP,
 						ztm.TCP,
 						inbound); err != nil {
 						log.Error().Msg(err.Error())

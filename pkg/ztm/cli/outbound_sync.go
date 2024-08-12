@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	ztm "github.com/cybwan/ztm-sdk-go"
+	"github.com/cybwan/ztm-sdk-go/app/tunnel"
 	"github.com/mitchellh/hashstructure/v2"
 	corev1 "k8s.io/api/core/v1"
 
@@ -83,7 +84,7 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 					if portErr := agentClient.OpenOutbound(ztmMesh,
 						ztmEndpoint,
 						ztm.ZTM,
-						ztm.APP_TUNNEL,
+						tunnel.APP,
 						ztm.TCP,
 						fmt.Sprintf("%s_%d", serviceUID, rule.PortNumber),
 						targets); portErr != nil {
@@ -104,7 +105,7 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 			if hash != outboundMetadata.TunnelMetaHash {
 				if bytes, err := json.MarshalIndent(meta, "", " "); err == nil {
 					err = agentClient.PublishFile(ztmMesh,
-						fmt.Sprintf("/home/root/%s", serviceUID), bytes)
+						fmt.Sprintf("/%s/root/%s", ztm.BaseFolder, serviceUID), bytes)
 					if err != nil {
 						log.Error().Msg(err.Error())
 					} else {
@@ -120,7 +121,7 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 
 	if len(oldCache) > 0 {
 		for serviceUID, outboundMetadata := range oldCache {
-			if err := agentClient.EraseFile(ztmMesh, fmt.Sprintf("/home/root/%s", serviceUID)); err != nil {
+			if err := agentClient.EraseFile(ztmMesh, fmt.Sprintf("%s/root/%s", ztm.BaseFolder, serviceUID)); err != nil {
 				log.Error().Msg(err.Error())
 			}
 
@@ -128,7 +129,7 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 				if err := agentClient.CloseOutbound(ztmMesh,
 					ztmEndpoint,
 					ztm.ZTM,
-					ztm.APP_TUNNEL,
+					tunnel.APP,
 					ztm.TCP,
 					fmt.Sprintf("%s_%d", serviceUID, port)); err != nil {
 					log.Error().Msg(err.Error())
