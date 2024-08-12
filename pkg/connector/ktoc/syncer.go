@@ -321,6 +321,12 @@ func (s *KtoCSyncer) syncFull(ctx context.Context) {
 	s.Lock()
 	defer s.Unlock()
 
+	if s.controller.Purge() {
+		s.controller.GetK2CContext().ServiceMap.Clear()
+		s.controller.GetK2CContext().EndpointsMap.Clear()
+		s.controller.GetK2CContext().RegisteredServiceMap.Clear()
+	}
+
 	log.Info().Msg("registering services")
 
 	// Update the service watchers
@@ -403,10 +409,6 @@ func (s *KtoCSyncer) syncFull(ctx context.Context) {
 
 	// Always clear deregistrations, they'll repopulate if we had errors
 	s.controller.GetK2CContext().Deregs.Clear()
-
-	if s.controller.Purge() {
-		return
-	}
 
 	regCnt := 0
 	regWg := new(sync.WaitGroup)
