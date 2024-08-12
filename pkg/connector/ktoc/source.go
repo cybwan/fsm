@@ -845,6 +845,8 @@ func (t *KtoCSource) filterIPRanges(addr string) (include bool) {
 				break
 			}
 		}
+	} else {
+		include = true
 	}
 	return
 }
