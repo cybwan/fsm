@@ -566,17 +566,12 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 			var found bool
 			for _, address := range node.Status.Addresses {
 				if address.Type == expectedType {
-					if filterIPRanges := t.controller.GetK2CFilterIPRanges(); len(filterIPRanges) > 0 {
-						include := false
-						for _, cidr := range filterIPRanges {
-							if cidr.Contains(address.Address) {
-								include = true
-								break
-							}
-						}
-						if !include {
-							continue
-						}
+					if !t.filterIPRanges(address.Address) {
+						continue
+					}
+
+					if t.excludeIPRanges(address.Address) {
+						continue
 					}
 
 					found = true
@@ -609,17 +604,12 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 			if t.controller.GetNodePortSyncType() == ctv1.ExternalFirst && !found {
 				for _, address := range node.Status.Addresses {
 					if address.Type == corev1.NodeInternalIP {
-						if filterIPRanges := t.controller.GetK2CFilterIPRanges(); len(filterIPRanges) > 0 {
-							include := false
-							for _, cidr := range filterIPRanges {
-								if cidr.Contains(address.Address) {
-									include = true
-									break
-								}
-							}
-							if !include {
-								continue
-							}
+						if !t.filterIPRanges(address.Address) {
+							continue
+						}
+
+						if t.excludeIPRanges(address.Address) {
+							continue
 						}
 
 						r := baseNode
@@ -665,17 +655,12 @@ func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(key string, baseN
 				continue
 			}
 
-			if filterIPRanges := t.controller.GetK2CFilterIPRanges(); len(filterIPRanges) > 0 {
-				include := false
-				for _, cidr := range filterIPRanges {
-					if cidr.Contains(addr) {
-						include = true
-						break
-					}
-				}
-				if !include {
-					continue
-				}
+			if !t.filterIPRanges(addr) {
+				continue
+			}
+
+			if t.excludeIPRanges(addr) {
+				continue
 			}
 
 			if _, ok := seen[addr]; ok {
@@ -787,17 +772,12 @@ func (t *KtoCSource) registerServiceInstance(
 				continue
 			}
 
-			if filterIPRanges := t.controller.GetK2CFilterIPRanges(); len(filterIPRanges) > 0 {
-				include := false
-				for _, cidr := range filterIPRanges {
-					if cidr.Contains(addr) {
-						include = true
-						break
-					}
-				}
-				if !include {
-					continue
-				}
+			if !t.filterIPRanges(addr) {
+				continue
+			}
+
+			if t.excludeIPRanges(addr) {
+				continue
 			}
 
 			if t.controller.GetK2CWithGateway() {
@@ -850,6 +830,30 @@ func (t *KtoCSource) registerServiceInstance(
 				t.joinCatalogRegistrations)
 		}
 	}
+}
+
+func (t *KtoCSource) excludeIPRanges(addr string) (exclude bool) {
+	if ipRanges := t.controller.GetK2CExcludeIPRanges(); len(ipRanges) > 0 {
+		for _, cidr := range ipRanges {
+			if cidr.Contains(addr) {
+				exclude = true
+				break
+			}
+		}
+	}
+	return
+}
+
+func (t *KtoCSource) filterIPRanges(addr string) (include bool) {
+	if ipRanges := t.controller.GetK2CFilterIPRanges(); len(ipRanges) > 0 {
+		for _, cidr := range ipRanges {
+			if cidr.Contains(addr) {
+				include = true
+				break
+			}
+		}
+	}
+	return
 }
 
 func (t *KtoCSource) chooseServiceAddrPort(key string, port int, subsetAddr corev1.EndpointAddress, useHostname bool) (addr string, httpPort int) {
