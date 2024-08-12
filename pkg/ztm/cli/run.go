@@ -4,6 +4,7 @@ import (
 	"context"
 
 	ztm "github.com/cybwan/ztm-sdk-go"
+	"github.com/cybwan/ztm-sdk-go/app/tunnel"
 	"github.com/mitchellh/hashstructure/v2"
 
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
@@ -81,7 +82,7 @@ func (c *client) startSync() {
 			continue
 		}
 
-		if _, appErr := agentClient.StartApp(mesh.MeshName, localEndpoint.UUID, ztm.ZTM, ztm.APP_TUNNEL, ""); appErr != nil {
+		if _, appErr := agentClient.StartApp(mesh.MeshName, localEndpoint.UUID, ztm.ZTM, tunnel.APP, ""); appErr != nil {
 			log.Error().Msg(appErr.Error())
 			continue
 		}
