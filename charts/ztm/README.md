@@ -75,7 +75,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.trustDomain | string | `"cluster.local"` | The trust domain to use as part of the common name when requesting new certificates. |
 | fsm.ztm.image.name | string | `"ztm-agent"` | ztm image name |
 | fsm.ztm.image.registry | string | `"cybwan"` | Registry for ztm image |
-| fsm.ztm.image.tag | string | `"0.1.0"` | ztm image tag |
+| fsm.ztm.image.tag | string | `"0.2.0"` | ztm image tag |
 | fsm.ztmController.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.ztmController.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
 | fsm.ztmController.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |
