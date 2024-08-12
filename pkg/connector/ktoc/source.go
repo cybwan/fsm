@@ -566,6 +566,19 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 			var found bool
 			for _, address := range node.Status.Addresses {
 				if address.Type == expectedType {
+					if filterIPRanges := t.controller.GetK2CFilterIPRanges(); len(filterIPRanges) > 0 {
+						include := false
+						for _, cidr := range filterIPRanges {
+							if cidr.Contains(address.Address) {
+								include = true
+								break
+							}
+						}
+						if !include {
+							continue
+						}
+					}
+
 					found = true
 					r := baseNode
 					rs := baseService
@@ -596,6 +609,19 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 			if t.controller.GetNodePortSyncType() == ctv1.ExternalFirst && !found {
 				for _, address := range node.Status.Addresses {
 					if address.Type == corev1.NodeInternalIP {
+						if filterIPRanges := t.controller.GetK2CFilterIPRanges(); len(filterIPRanges) > 0 {
+							include := false
+							for _, cidr := range filterIPRanges {
+								if cidr.Contains(address.Address) {
+									include = true
+									break
+								}
+							}
+							if !include {
+								continue
+							}
+						}
+
 						r := baseNode
 						rs := baseService
 						r.Service = &rs
@@ -637,6 +663,19 @@ func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(key string, baseN
 			}
 			if addr == "" {
 				continue
+			}
+
+			if filterIPRanges := t.controller.GetK2CFilterIPRanges(); len(filterIPRanges) > 0 {
+				include := false
+				for _, cidr := range filterIPRanges {
+					if cidr.Contains(addr) {
+						include = true
+						break
+					}
+				}
+				if !include {
+					continue
+				}
 			}
 
 			if _, ok := seen[addr]; ok {
@@ -746,6 +785,19 @@ func (t *KtoCSource) registerServiceInstance(
 			addr, httpPort = t.chooseServiceAddrPort(key, httpPort, subsetAddr, useHostname)
 			if len(addr) == 0 {
 				continue
+			}
+
+			if filterIPRanges := t.controller.GetK2CFilterIPRanges(); len(filterIPRanges) > 0 {
+				include := false
+				for _, cidr := range filterIPRanges {
+					if cidr.Contains(addr) {
+						include = true
+						break
+					}
+				}
+				if !include {
+					continue
+				}
 			}
 
 			if t.controller.GetK2CWithGateway() {

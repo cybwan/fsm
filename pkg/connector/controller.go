@@ -6,6 +6,7 @@ import (
 	mapset "github.com/deckarep/golang-set"
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/utils/cidr"
 )
 
 // ConnectController is the controller interface for K8s connectors
@@ -41,8 +42,13 @@ type ConnectController interface {
 
 	GetClusterId() string
 	GetPassingOnly() bool
-	GetFilterTag() string
-	GetFilterMetadatas() []ctv1.Metadata
+	GetC2KFilterTag() string
+	GetC2KFilterMetadatas() []ctv1.Metadata
+	GetC2KExcludeMetadatas() []ctv1.Metadata
+	GetC2KFilterIPRanges() []*cidr.CIDR
+	GetC2KExcludeIPRanges() []*cidr.CIDR
+	GetK2CFilterIPRanges() []*cidr.CIDR
+	GetK2CExcludeIPRanges() []*cidr.CIDR
 	GetPrefix() string
 	GetPrefixTag() string
 	GetSuffixTag() string

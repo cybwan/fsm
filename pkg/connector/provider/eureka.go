@@ -79,7 +79,7 @@ func (dc *EurekaDiscoveryClient) CatalogInstances(service string, _ *connector.Q
 					continue
 				}
 			}
-			if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+			if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 				matched := true
 				for _, meta := range filterMetadatas {
 					if metaSet, metaErr := ins.Metadata.GetString(meta.Key); metaErr == nil {
@@ -93,6 +93,44 @@ func (dc *EurekaDiscoveryClient) CatalogInstances(service string, _ *connector.Q
 					break
 				}
 				if !matched {
+					continue
+				}
+			}
+			if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
+				matched := false
+				for _, meta := range excludeMetadatas {
+					if metaSet, metaErr := ins.Metadata.GetString(meta.Key); metaErr == nil {
+						if strings.EqualFold(metaSet, meta.Value) {
+							matched = true
+							break
+						}
+					}
+				}
+				if matched {
+					continue
+				}
+			}
+			if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
+				include := false
+				for _, cidr := range filterIPRanges {
+					if cidr.Contains(ins.IPAddr) {
+						include = true
+						break
+					}
+				}
+				if !include {
+					continue
+				}
+			}
+			if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
+				exclude := false
+				for _, cidr := range excludeIPRanges {
+					if cidr.Contains(ins.IPAddr) {
+						exclude = true
+						break
+					}
+				}
+				if exclude {
 					continue
 				}
 			}
@@ -127,7 +165,7 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]con
 						continue
 					}
 				}
-				if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+				if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 					matched := true
 					for _, meta := range filterMetadatas {
 						if metaSet, metaErr := svcIns.Metadata.GetString(meta.Key); metaErr == nil {
@@ -141,6 +179,44 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]con
 						break
 					}
 					if !matched {
+						continue
+					}
+				}
+				if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
+					matched := false
+					for _, meta := range excludeMetadatas {
+						if metaSet, metaErr := svcIns.Metadata.GetString(meta.Key); metaErr == nil {
+							if strings.EqualFold(metaSet, meta.Value) {
+								matched = true
+								break
+							}
+						}
+					}
+					if matched {
+						continue
+					}
+				}
+				if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
+					include := false
+					for _, cidr := range filterIPRanges {
+						if cidr.Contains(svcIns.IPAddr) {
+							include = true
+							break
+						}
+					}
+					if !include {
+						continue
+					}
+				}
+				if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
+					exclude := false
+					for _, cidr := range excludeIPRanges {
+						if cidr.Contains(svcIns.IPAddr) {
+							exclude = true
+							break
+						}
+					}
+					if exclude {
 						continue
 					}
 				}

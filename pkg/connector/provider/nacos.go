@@ -151,7 +151,7 @@ func (dc *NacosDiscoveryClient) CatalogInstances(service string, _ *connector.Qu
 					continue
 				}
 			}
-			if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+			if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 				matched := true
 				for _, meta := range filterMetadatas {
 					if metaSet, metaExist := ins.Metadata[meta.Key]; metaExist {
@@ -165,6 +165,44 @@ func (dc *NacosDiscoveryClient) CatalogInstances(service string, _ *connector.Qu
 					break
 				}
 				if !matched {
+					continue
+				}
+			}
+			if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
+				matched := false
+				for _, meta := range excludeMetadatas {
+					if metaSet, metaExist := ins.Metadata[meta.Key]; metaExist {
+						if strings.EqualFold(metaSet, meta.Value) {
+							matched = true
+							break
+						}
+					}
+				}
+				if matched {
+					continue
+				}
+			}
+			if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
+				include := false
+				for _, cidr := range filterIPRanges {
+					if cidr.Contains(ins.Ip) {
+						include = true
+						break
+					}
+				}
+				if !include {
+					continue
+				}
+			}
+			if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
+				exclude := false
+				for _, cidr := range excludeIPRanges {
+					if cidr.Contains(ins.Ip) {
+						exclude = true
+						break
+					}
+				}
+				if exclude {
 					continue
 				}
 			}
@@ -195,7 +233,7 @@ func (dc *NacosDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]conn
 						continue
 					}
 				}
-				if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+				if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 					matched := true
 					for _, meta := range filterMetadatas {
 						if metaSet, metaExist := svcIns.Metadata[meta.Key]; metaExist {
@@ -209,6 +247,44 @@ func (dc *NacosDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]conn
 						break
 					}
 					if !matched {
+						continue
+					}
+				}
+				if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
+					matched := false
+					for _, meta := range excludeMetadatas {
+						if metaSet, metaExist := svcIns.Metadata[meta.Key]; metaExist {
+							if strings.EqualFold(metaSet, meta.Value) {
+								matched = true
+								break
+							}
+						}
+					}
+					if matched {
+						continue
+					}
+				}
+				if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
+					include := false
+					for _, cidr := range filterIPRanges {
+						if cidr.Contains(svcIns.Ip) {
+							include = true
+							break
+						}
+					}
+					if !include {
+						continue
+					}
+				}
+				if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
+					exclude := false
+					for _, cidr := range excludeIPRanges {
+						if cidr.Contains(svcIns.Ip) {
+							exclude = true
+							break
+						}
+					}
+					if exclude {
 						continue
 					}
 				}

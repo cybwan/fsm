@@ -57,6 +57,13 @@ type MachineSyncToK8SSpec struct {
 	// +optional
 	PassingOnly bool `json:"passingOnly,omitempty"`
 
+	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
 	// +kubebuilder:default=""
 	// +optional
 	FilterLabel string `json:"filterLabel,omitempty"`

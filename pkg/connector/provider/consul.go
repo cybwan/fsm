@@ -69,9 +69,14 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]c
 	filters := []string{fmt.Sprintf("Service.Meta.%s != `%s`",
 		connector.ClusterSetKey,
 		dc.connectController.GetClusterSet())}
-	if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+	if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 		for _, meta := range filterMetadatas {
 			filters = append(filters, fmt.Sprintf("Service.Meta.%s == `%s`", meta.Key, meta.Value))
+		}
+	}
+	if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
+		for _, meta := range excludeMetadatas {
+			filters = append(filters, fmt.Sprintf("Service.Meta.%s != `%s`", meta.Key, meta.Value))
 		}
 	}
 	servicesMap, meta, err := dc.consulClient().Catalog().Services(opts)
@@ -97,13 +102,18 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 	filters := []string{fmt.Sprintf("Service.Meta.%s != `%s`",
 		connector.ClusterSetKey,
 		dc.connectController.GetClusterSet())}
-	if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+	if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 		for _, meta := range filterMetadatas {
 			filters = append(filters, fmt.Sprintf("Service.Meta.%s == `%s`", meta.Key, meta.Value))
 		}
 	}
+	if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
+		for _, meta := range excludeMetadatas {
+			filters = append(filters, fmt.Sprintf("Service.Meta.%s != `%s`", meta.Key, meta.Value))
+		}
+	}
 	opts.Filter = strings.Join(filters, " and ")
-	services, _, err := dc.consulClient().Health().Service(service, dc.connectController.GetFilterTag(), false, opts)
+	services, _, err := dc.consulClient().Health().Service(service, dc.connectController.GetC2KFilterTag(), false, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +126,31 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 			agentService.ClusterId = dc.connectController.GetClusterId()
 			agentServices = append(agentServices, agentService)
 			continue
+		}
+
+		if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
+			include := false
+			for _, cidr := range filterIPRanges {
+				if cidr.Contains(svc.Service.Address) {
+					include = true
+					break
+				}
+			}
+			if !include {
+				continue
+			}
+		}
+		if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
+			exclude := false
+			for _, cidr := range excludeIPRanges {
+				if cidr.Contains(svc.Service.Address) {
+					exclude = true
+					break
+				}
+			}
+			if exclude {
+				continue
+			}
 		}
 
 		healthPassing := false

@@ -10,6 +10,7 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/utils/cidr"
 )
 
 const (
@@ -49,11 +50,14 @@ type config struct {
 	syncPeriod time.Duration
 
 	c2kCfg struct {
-		enable          bool
-		clusterId       string
-		passingOnly     bool
-		filterTag       string
-		filterMetadatas []ctv1.Metadata
+		enable           bool
+		clusterId        string
+		passingOnly      bool
+		filterTag        string
+		filterMetadatas  []ctv1.Metadata
+		filterIPRanges   []string
+		excludeMetadatas []ctv1.Metadata
+		excludeIPRanges  []string
 
 		prefix         string // prefix is a prefix to prepend to services
 		prefixTag      string
@@ -121,6 +125,9 @@ type config struct {
 		// means that no namespaces are removed from consideration. This filter
 		// takes precedence over allowK8sNamespacesSet.
 		denyK8sNamespacesSet mapset.Set
+
+		filterIPRanges  []string
+		excludeIPRanges []string
 
 		withGateway bool
 
@@ -451,16 +458,79 @@ func (c *config) GetPassingOnly() bool {
 	return c.c2kCfg.passingOnly
 }
 
-func (c *config) GetFilterTag() string {
+func (c *config) GetC2KFilterTag() string {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.c2kCfg.filterTag
 }
 
-func (c *config) GetFilterMetadatas() []ctv1.Metadata {
+func (c *config) GetC2KFilterMetadatas() []ctv1.Metadata {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.c2kCfg.filterMetadatas
+}
+
+func (c *config) GetC2KFilterIPRanges() []*cidr.CIDR {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	var cidrs []*cidr.CIDR
+	for _, ipRange := range c.c2kCfg.filterIPRanges {
+		if len(ipRange) > 0 {
+			if net, err := cidr.ParseCIDR(ipRange); err == nil {
+				cidrs = append(cidrs, net)
+			}
+		}
+	}
+	return cidrs
+}
+
+func (c *config) GetK2CFilterIPRanges() []*cidr.CIDR {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+
+	var cidrs []*cidr.CIDR
+	for _, ipRange := range c.k2cCfg.filterIPRanges {
+		if len(ipRange) > 0 {
+			if net, err := cidr.ParseCIDR(ipRange); err == nil {
+				cidrs = append(cidrs, net)
+			}
+		}
+	}
+	return cidrs
+}
+
+func (c *config) GetC2KExcludeMetadatas() []ctv1.Metadata {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.c2kCfg.excludeMetadatas
+}
+
+func (c *config) GetC2KExcludeIPRanges() []*cidr.CIDR {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	var cidrs []*cidr.CIDR
+	for _, ipRange := range c.c2kCfg.excludeIPRanges {
+		if len(ipRange) > 0 {
+			if net, err := cidr.ParseCIDR(ipRange); err == nil {
+				cidrs = append(cidrs, net)
+			}
+		}
+	}
+	return cidrs
+}
+
+func (c *config) GetK2CExcludeIPRanges() []*cidr.CIDR {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	var cidrs []*cidr.CIDR
+	for _, ipRange := range c.k2cCfg.excludeIPRanges {
+		if len(ipRange) > 0 {
+			if net, err := cidr.ParseCIDR(ipRange); err == nil {
+				cidrs = append(cidrs, net)
+			}
+		}
+	}
+	return cidrs
 }
 
 func (c *config) GetPrefix() string {
@@ -642,6 +712,9 @@ func (c *client) initMachineConnectorConfig(spec ctv1.MachineSpec) {
 	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
 	c.config.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
 	c.config.c2kCfg.filterTag = spec.SyncToK8S.FilterLabel
+	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
+
 	c.config.c2kCfg.prefixTag = spec.SyncToK8S.PrefixLabel
 	c.config.c2kCfg.suffixTag = spec.SyncToK8S.SuffixLabel
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
@@ -671,6 +744,9 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
 	c.config.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
 	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
+	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.config.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
+	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
@@ -698,6 +774,8 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
+	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
+	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
 	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
 
@@ -724,6 +802,9 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.config.c2kCfg.enable = spec.SyncToK8S.Enable
 	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
 	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
+	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.config.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
+	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
@@ -741,6 +822,8 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
+	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
+	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
 	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
 
@@ -765,9 +848,12 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
 	c.config.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
 	c.config.c2kCfg.filterTag = spec.SyncToK8S.FilterTag
+	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
+	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.config.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
+	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
 	c.config.c2kCfg.prefixTag = spec.SyncToK8S.PrefixTag
 	c.config.c2kCfg.suffixTag = spec.SyncToK8S.SuffixTag
-	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
@@ -786,6 +872,8 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
+	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
+	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
 	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
 

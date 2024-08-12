@@ -57,7 +57,17 @@ type EurekaSyncToK8SSpec struct {
 	ClusterId string `json:"clusterId,omitempty"`
 
 	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
+	// +optional
 	FilterMetadatas []Metadata `json:"filterMetadatas,omitempty"`
+
+	// +optional
+	ExcludeMetadatas []Metadata `json:"excludeMetadatas,omitempty"`
 
 	// +optional
 	PrefixMetadata string `json:"prefixMetadata,omitempty"`
@@ -118,6 +128,13 @@ type EurekaSyncFromK8SSpec struct {
 	// +kubebuilder:default={""}
 	// +optional
 	DenyK8sNamespaces []string `json:"denyK8sNamespaces,omitempty"`
+
+	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
 
 	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
