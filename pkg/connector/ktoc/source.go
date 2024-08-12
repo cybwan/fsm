@@ -566,11 +566,7 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 			var found bool
 			for _, address := range node.Status.Addresses {
 				if address.Type == expectedType {
-					if !t.filterIPRanges(address.Address) {
-						continue
-					}
-
-					if t.excludeIPRanges(address.Address) {
+					if !t.filterIPRanges(address.Address) || t.excludeIPRanges(address.Address) {
 						continue
 					}
 
@@ -655,11 +651,7 @@ func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(key string, baseN
 				continue
 			}
 
-			if !t.filterIPRanges(addr) {
-				continue
-			}
-
-			if t.excludeIPRanges(addr) {
+			if !t.filterIPRanges(addr) || t.excludeIPRanges(addr) {
 				continue
 			}
 
@@ -772,11 +764,7 @@ func (t *KtoCSource) registerServiceInstance(
 				continue
 			}
 
-			if !t.filterIPRanges(addr) {
-				continue
-			}
-
-			if t.excludeIPRanges(addr) {
+			if !t.filterIPRanges(addr) || t.excludeIPRanges(addr) {
 				continue
 			}
 
