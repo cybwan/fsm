@@ -99,22 +99,7 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 		externalSource := false
 		internalSource := false
 		if len(k8sSvc.Annotations) > 0 {
-			if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
-				svcMeta := new(connector.MicroSvcMeta)
-				svcMeta.Decode(v)
-				for _, endpointMeta := range svcMeta.Endpoints {
-					if endpointMeta.InternalSync {
-						internalSource = true
-					} else if endpointMeta.WithGateway && endpointMeta.WithMultiGateways {
-						externalSource = true
-					}
-					if internalSource && externalSource {
-						break
-					}
-				}
-			} else {
-				internalSource = true
-			}
+			internalSource, externalSource = gw.checkServiceType(k8sSvc)
 		}
 		for _, portSpec := range k8sSvc.Spec.Ports {
 			protocol := string(portSpec.Protocol)
@@ -190,6 +175,26 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 		}
 		return nil
 	})
+}
+
+func (gw *GatewaySource) checkServiceType(k8sSvc *apiv1.Service) (internalSource, externalSource bool) {
+	if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+		svcMeta := new(connector.MicroSvcMeta)
+		svcMeta.Decode(v)
+		for _, endpointMeta := range svcMeta.Endpoints {
+			if endpointMeta.InternalSync {
+				internalSource = true
+			} else if endpointMeta.WithGateway && endpointMeta.WithMultiGateways {
+				externalSource = true
+			}
+			if internalSource && externalSource {
+				break
+			}
+		}
+	} else {
+		internalSource = true
+	}
+	return internalSource, externalSource
 }
 
 func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1.ParentReference) {
