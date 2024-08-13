@@ -74,6 +74,9 @@ func (dc *EurekaDiscoveryClient) CatalogInstances(service string, _ *connector.Q
 	agentServices := make([]*connector.AgentService, 0)
 	if services != nil && len(services.Instances) > 0 {
 		for _, ins := range services.Instances {
+			if !strings.EqualFold(strings.ToLower(ins.App), strings.ToLower(service)) {
+				continue
+			}
 			if clusterSet, clusterSetErr := ins.Metadata.GetString(connector.ClusterSetKey); clusterSetErr == nil {
 				if strings.EqualFold(clusterSet, dc.connectController.GetClusterSet()) {
 					continue
@@ -160,6 +163,9 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]con
 				continue
 			}
 			for _, svcIns := range svcApp.Instances {
+				if !strings.EqualFold(strings.ToLower(svcIns.App), svc) {
+					continue
+				}
 				if clusterSet, clusterSetErr := svcIns.Metadata.GetString(connector.ClusterSetKey); clusterSetErr == nil {
 					if strings.EqualFold(clusterSet, dc.connectController.GetClusterSet()) {
 						continue
@@ -247,6 +253,9 @@ func (dc *EurekaDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]
 			}
 			for _, instance := range instances {
 				instance := instance
+				if !strings.EqualFold(strings.ToLower(instance.App), svc) {
+					continue
+				}
 				if connectUID, connectUIDErr := instance.Metadata.GetString(connector.ConnectUIDKey); connectUIDErr == nil {
 					if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
 						registeredServices = append(registeredServices, connector.MicroService{Service: svc})
@@ -269,6 +278,9 @@ func (dc *EurekaDiscoveryClient) RegisteredInstances(service string, _ *connecto
 	catalogServices := make([]*connector.CatalogService, 0)
 	if services != nil && len(services.Instances) > 0 {
 		for _, instance := range services.Instances {
+			if !strings.EqualFold(strings.ToLower(instance.App), strings.ToLower(service)) {
+				continue
+			}
 			if connectUID, connectUIDErr := instance.Metadata.GetString(connector.ConnectUIDKey); connectUIDErr == nil {
 				if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
 					catalogService := new(connector.CatalogService)
