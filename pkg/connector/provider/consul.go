@@ -354,6 +354,9 @@ func (dc *ConsulDiscoveryClient) GetConnectorUidTag() string {
 	return fmt.Sprintf("flomesh_connector_uid=%s", dc.connectController.GetConnectorUID())
 }
 
+func (dc *ConsulDiscoveryClient) Close() {
+}
+
 func GetConsulDiscoveryClient(connectController connector.ConnectController) (*ConsulDiscoveryClient, error) {
 	consulDiscoveryClient := new(ConsulDiscoveryClient)
 	consulDiscoveryClient.connectController = connectController

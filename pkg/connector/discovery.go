@@ -454,6 +454,7 @@ type ServiceDiscoveryClient interface {
 	RegisteredNamespace(kubeNS string) string
 	MicroServiceProvider() ctv1.DiscoveryServiceProvider
 	IsInternalServices() bool
+	Close()
 }
 
 const (

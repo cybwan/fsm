@@ -424,6 +424,9 @@ func (dc *NacosDiscoveryClient) getServiceInstanceID(name, addr string, httpPort
 		addr, httpPort, k2cClusterId, k2cGroupId, name)
 }
 
+func (dc *NacosDiscoveryClient) Close() {
+}
+
 func GetNacosDiscoveryClient(connectController connector.ConnectController) (*NacosDiscoveryClient, error) {
 	level := env.GetString("LOG_LEVEL", "warn")
 	nacosDiscoveryClient := new(NacosDiscoveryClient)

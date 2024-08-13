@@ -91,6 +91,10 @@ type ConnectController interface {
 	GetConsulCrossNamespaceACLPolicy() string
 	GetConsulGenerateInternalServiceHealthCheck() bool
 
+	GetEurekaHeartBeatInstance() bool
+	GetEurekaHeartBeatPeriod() time.Duration
+	GetEurekaCheckServiceInstanceID() bool
+
 	GetNacosGroupId() string
 	GetNacosClusterId() string
 

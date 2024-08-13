@@ -192,6 +192,9 @@ func (dc *MachineDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServicePr
 	return ctv1.MachineDiscoveryService
 }
 
+func (dc *MachineDiscoveryClient) Close() {
+}
+
 func GetMachineDiscoveryClient(connectController connector.ConnectController,
 	machineClient machineClientset.Interface) (*MachineDiscoveryClient, error) {
 	machineDiscoveryClient := new(MachineDiscoveryClient)

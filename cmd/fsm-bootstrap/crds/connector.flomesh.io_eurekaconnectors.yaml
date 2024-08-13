@@ -174,6 +174,9 @@ spec:
                       - value
                       type: object
                     type: array
+                  checkServiceInstanceId:
+                    default: true
+                    type: boolean
                   defaultSync:
                     default: true
                     type: boolean
@@ -194,6 +197,13 @@ spec:
                     items:
                       type: string
                     type: array
+                  heartBeatInstance:
+                    default: true
+                    type: boolean
+                  heartBeatPeriod:
+                    default: 3s
+                    format: duration
+                    type: string
                   nodePortSyncType:
                     default: ExternalOnly
                     enum:

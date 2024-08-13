@@ -13,10 +13,37 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
+type heartbeat struct {
+	stop     chan struct{}
+	dc       *EurekaDiscoveryClient
+	instance *eureka.Instance
+}
+
+func (h *heartbeat) run() {
+	slidingTimer := time.NewTimer(h.dc.connectController.GetEurekaHeartBeatPeriod())
+	defer slidingTimer.Stop()
+	for {
+		select {
+		case <-h.stop:
+			return
+		case <-slidingTimer.C:
+			if err := h.dc.eurekaClient().HeartBeatInstance(h.instance); err != nil {
+				log.Error().Err(err).Msgf("%s/%s heart beat error", h.instance.App, h.instance.InstanceId)
+			}
+			slidingTimer.Reset(h.dc.connectController.GetEurekaHeartBeatPeriod())
+		}
+	}
+}
+func (h *heartbeat) close() {
+	close(h.stop)
+}
+
 type EurekaDiscoveryClient struct {
 	connectController connector.ConnectController
 	namingClient      *eureka.EurekaConnection
 	lock              sync.Mutex
+	heartbeats        map[string]*heartbeat
+	heartbeatLock     sync.Mutex
 }
 
 func (dc *EurekaDiscoveryClient) eurekaClient() *eureka.EurekaConnection {
@@ -74,9 +101,6 @@ func (dc *EurekaDiscoveryClient) CatalogInstances(service string, _ *connector.Q
 	agentServices := make([]*connector.AgentService, 0)
 	if services != nil && len(services.Instances) > 0 {
 		for _, ins := range services.Instances {
-			if !strings.EqualFold(strings.ToLower(ins.App), strings.ToLower(service)) {
-				continue
-			}
 			if clusterSet, clusterSetErr := ins.Metadata.GetString(connector.ClusterSetKey); clusterSetErr == nil {
 				if strings.EqualFold(clusterSet, dc.connectController.GetClusterSet()) {
 					continue
@@ -163,9 +187,6 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]con
 				continue
 			}
 			for _, svcIns := range svcApp.Instances {
-				if !strings.EqualFold(strings.ToLower(svcIns.App), svc) {
-					continue
-				}
 				if clusterSet, clusterSetErr := svcIns.Metadata.GetString(connector.ClusterSetKey); clusterSetErr == nil {
 					if strings.EqualFold(clusterSet, dc.connectController.GetClusterSet()) {
 						continue
@@ -251,17 +272,39 @@ func (dc *EurekaDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]
 			if len(instances) == 0 {
 				continue
 			}
+			hasLocalInstances := false
 			for _, instance := range instances {
 				instance := instance
-				if !strings.EqualFold(strings.ToLower(instance.App), svc) {
-					continue
-				}
 				if connectUID, connectUIDErr := instance.Metadata.GetString(connector.ConnectUIDKey); connectUIDErr == nil {
 					if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
-						registeredServices = append(registeredServices, connector.MicroService{Service: svc})
-						break
+						if dc.connectController.GetEurekaCheckServiceInstanceID() {
+							agentService := new(connector.AgentService)
+							agentService.FromEureka(instance)
+							if !strings.EqualFold(instance.InstanceId, dc.connectController.GetServiceInstanceID(svc, agentService.Address, agentService.HTTPPort, agentService.GRPCPort)) {
+								continue
+							}
+						}
+						if !hasLocalInstances {
+							hasLocalInstances = true
+						}
+						if dc.connectController.GetEurekaHeartBeatInstance() {
+							dc.heartbeatLock.Lock()
+							if _, exists := dc.heartbeats[instance.InstanceId]; !exists {
+								h := &heartbeat{
+									stop:     make(chan struct{}),
+									dc:       dc,
+									instance: instance,
+								}
+								go h.run()
+								dc.heartbeats[instance.InstanceId] = h
+							}
+							dc.heartbeatLock.Unlock()
+						}
 					}
 				}
+			}
+			if hasLocalInstances {
+				registeredServices = append(registeredServices, connector.MicroService{Service: svc})
 			}
 		}
 	}
@@ -278,11 +321,16 @@ func (dc *EurekaDiscoveryClient) RegisteredInstances(service string, _ *connecto
 	catalogServices := make([]*connector.CatalogService, 0)
 	if services != nil && len(services.Instances) > 0 {
 		for _, instance := range services.Instances {
-			if !strings.EqualFold(strings.ToLower(instance.App), strings.ToLower(service)) {
-				continue
-			}
+			instance := instance
 			if connectUID, connectUIDErr := instance.Metadata.GetString(connector.ConnectUIDKey); connectUIDErr == nil {
 				if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
+					if dc.connectController.GetEurekaCheckServiceInstanceID() {
+						agentService := new(connector.AgentService)
+						agentService.FromEureka(instance)
+						if !strings.EqualFold(instance.InstanceId, dc.connectController.GetServiceInstanceID(strings.ToLower(service), agentService.Address, agentService.HTTPPort, agentService.GRPCPort)) {
+							continue
+						}
+					}
 					catalogService := new(connector.CatalogService)
 					catalogService.FromEureka(instance)
 					catalogServices = append(catalogServices, catalogService)
@@ -296,6 +344,14 @@ func (dc *EurekaDiscoveryClient) RegisteredInstances(service string, _ *connecto
 func (dc *EurekaDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
 	ins := dereg.ToEureka()
 	return dc.connectController.CacheDeregisterInstance(ins.InstanceId, func() error {
+		dc.heartbeatLock.Lock()
+		if h, exists := dc.heartbeats[ins.InstanceId]; exists {
+			if h != nil {
+				h.close()
+			}
+			delete(dc.heartbeats, ins.InstanceId)
+		}
+		dc.heartbeatLock.Unlock()
 		err := dc.eurekaClient().DeregisterInstance(ins)
 		if err != nil {
 			if code, present := eureka.HTTPResponseStatusCode(err); present {
@@ -321,7 +377,23 @@ func (dc *EurekaDiscoveryClient) Register(reg *connector.CatalogRegistration) er
 	cacheIns := *ins
 	cacheIns.UniqueID = nil
 	return dc.connectController.CacheRegisterInstance(ins.InstanceId, cacheIns, func() error {
-		return dc.eurekaClient().RegisterInstance(ins)
+		err := dc.eurekaClient().RegisterInstance(ins)
+		if err == nil {
+			if dc.connectController.GetEurekaHeartBeatInstance() {
+				dc.heartbeatLock.Lock()
+				if _, exists := dc.heartbeats[ins.InstanceId]; !exists {
+					h := &heartbeat{
+						stop:     make(chan struct{}),
+						dc:       dc,
+						instance: ins,
+					}
+					go h.run()
+					dc.heartbeats[ins.InstanceId] = h
+				}
+				dc.heartbeatLock.Unlock()
+			}
+		}
+		return err
 	})
 }
 
@@ -345,8 +417,20 @@ func (dc *EurekaDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServicePro
 	return ctv1.EurekaDiscoveryService
 }
 
+func (dc *EurekaDiscoveryClient) Close() {
+	dc.heartbeatLock.Lock()
+	defer dc.heartbeatLock.Unlock()
+	for _, h := range dc.heartbeats {
+		if h != nil {
+			h.close()
+		}
+	}
+	dc.heartbeats = make(map[string]*heartbeat)
+}
+
 func GetEurekaDiscoveryClient(connectController connector.ConnectController) (*EurekaDiscoveryClient, error) {
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
+	eurekaDiscoveryClient.heartbeats = make(map[string]*heartbeat)
 	eurekaDiscoveryClient.connectController = connectController
 	level := env.GetString("LOG_LEVEL", "CRITICAL")
 	if logLevel, err := logging.LogLevel(strings.ToUpper(level)); err == nil {

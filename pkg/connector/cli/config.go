@@ -167,6 +167,12 @@ type config struct {
 			consulGenerateInternalServiceHealthCheck bool
 		}
 
+		eurekaCfg struct {
+			heartBeatInstance      bool
+			heartBeatPeriod        time.Duration
+			checkServiceInstanceID bool
+		}
+
 		nacosCfg struct {
 			clusterId string
 			groupId   string
@@ -432,6 +438,24 @@ func (c *config) GetConsulGenerateInternalServiceHealthCheck() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.consulCfg.consulGenerateInternalServiceHealthCheck
+}
+
+func (c *config) GetEurekaHeartBeatInstance() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.eurekaCfg.heartBeatInstance
+}
+
+func (c *config) GetEurekaHeartBeatPeriod() time.Duration {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.eurekaCfg.heartBeatPeriod
+}
+
+func (c *config) GetEurekaCheckServiceInstanceID() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.eurekaCfg.checkServiceInstanceID
 }
 
 func (c *config) GetNacosGroupId() string {
@@ -826,6 +850,12 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
 	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
+	c.k2cCfg.eurekaCfg.checkServiceInstanceID = spec.SyncFromK8S.CheckServiceInstanceID
+	c.k2cCfg.eurekaCfg.heartBeatInstance = spec.SyncFromK8S.HeartBeatInstance
+	c.k2cCfg.eurekaCfg.heartBeatPeriod = spec.SyncFromK8S.HeartBeatPeriod.Duration
+	if c.k2cCfg.eurekaCfg.heartBeatPeriod < MinSyncPeriod {
+		c.k2cCfg.eurekaCfg.heartBeatPeriod = MinSyncPeriod
+	}
 
 	c.limiter.SetLimit(rate.Limit(spec.Limiter.Limit))
 	c.limiter.SetBurst(int(spec.Limiter.Limit))

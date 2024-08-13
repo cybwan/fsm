@@ -86,6 +86,15 @@ type EurekaSyncFromK8SSpec struct {
 
 	// +kubebuilder:default=true
 	// +optional
+	HeartBeatInstance bool `json:"heartBeatInstance,omitempty"`
+
+	// +kubebuilder:validation:Format="duration"
+	// +kubebuilder:default="3s"
+	// +optional
+	HeartBeatPeriod metav1.Duration `json:"heartBeatPeriod"`
+
+	// +kubebuilder:default=true
+	// +optional
 	DefaultSync bool `json:"defaultSync,omitempty"`
 
 	// +kubebuilder:default=true
@@ -135,6 +144,10 @@ type EurekaSyncFromK8SSpec struct {
 
 	// +optional
 	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	CheckServiceInstanceID bool `json:"checkServiceInstanceId,omitempty"`
 
 	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
