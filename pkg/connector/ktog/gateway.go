@@ -105,8 +105,11 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 				for _, endpointMeta := range svcMeta.Endpoints {
 					if endpointMeta.InternalSync {
 						internalSource = true
-					} else {
+					} else if endpointMeta.WithGateway && endpointMeta.WithMultiGateways {
 						externalSource = true
+					}
+					if internalSource && externalSource {
+						break
 					}
 				}
 			} else {
