@@ -105,7 +105,7 @@ func (c *client) SyncOutbound(ztmMesh, ztmEndpoint string) {
 			if hash != outboundMetadata.TunnelMetaHash {
 				if bytes, err := json.MarshalIndent(meta, "", " "); err == nil {
 					err = agentClient.PublishFile(ztmMesh,
-						fmt.Sprintf("/%s/root/%s", ztm.BaseFolder, serviceUID), bytes)
+						fmt.Sprintf("%s/root/%s", ztm.BaseFolder, serviceUID), bytes)
 					if err != nil {
 						log.Error().Msg(err.Error())
 					} else {
