@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	consul "github.com/hashicorp/consul/api"
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
@@ -91,6 +92,10 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]c
 			if strings.EqualFold(svc, consulServiceName) {
 				continue
 			}
+			if errMsgs := validation.IsDNS1035Label(svc); len(errMsgs) > 0 {
+				log.Info().Msgf("invalid format, ignore service: %s, errors:%s", svc, strings.Join(errMsgs, "; "))
+				continue
+			}
 			catalogServices = append(catalogServices, connector.MicroService{Service: svc})
 		}
 	}
@@ -113,16 +118,16 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 		}
 	}
 	opts.Filter = strings.Join(filters, " and ")
-	services, _, err := dc.consulClient().Health().Service(service, dc.connectController.GetC2KFilterTag(), false, opts)
+	instances, _, err := dc.consulClient().Health().Service(service, dc.connectController.GetC2KFilterTag(), false, opts)
 	if err != nil {
 		return nil, err
 	}
 
 	agentServices := make([]*connector.AgentService, 0)
-	for _, svc := range services {
+	for _, instance := range instances {
 		if !dc.connectController.GetPassingOnly() {
 			agentService := new(connector.AgentService)
-			agentService.FromConsul(svc.Service)
+			agentService.FromConsul(instance.Service)
 			agentService.ClusterId = dc.connectController.GetClusterId()
 			agentServices = append(agentServices, agentService)
 			continue
@@ -131,7 +136,7 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 		if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
 			include := false
 			for _, cidr := range filterIPRanges {
-				if cidr.Contains(svc.Service.Address) {
+				if cidr.Contains(instance.Service.Address) {
 					include = true
 					break
 				}
@@ -143,7 +148,7 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 		if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
 			exclude := false
 			for _, cidr := range excludeIPRanges {
-				if cidr.Contains(svc.Service.Address) {
+				if cidr.Contains(instance.Service.Address) {
 					exclude = true
 					break
 				}
@@ -154,9 +159,9 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 		}
 
 		healthPassing := false
-		if len(svc.Checks) > 0 {
-			for _, chk := range svc.Checks {
-				if strings.EqualFold(chk.ServiceID, svc.Service.ID) {
+		if len(instance.Checks) > 0 {
+			for _, chk := range instance.Checks {
+				if strings.EqualFold(chk.ServiceID, instance.Service.ID) {
 					if strings.EqualFold(chk.Status, consul.HealthPassing) {
 						healthPassing = true
 					}
@@ -167,16 +172,16 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 
 		if healthPassing {
 			agentService := new(connector.AgentService)
-			agentService.FromConsul(svc.Service)
+			agentService.FromConsul(instance.Service)
 			agentService.ClusterId = dc.connectController.GetClusterId()
 			agentServices = append(agentServices, agentService)
 		}
 
 		if dc.IsInternalServices() && dc.connectController.GetConsulGenerateInternalServiceHealthCheck() {
 			checkService := new(connector.AgentService)
-			checkService.FromConsul(svc.Service)
+			checkService.FromConsul(instance.Service)
 			checkService.ClusterId = dc.connectController.GetClusterId()
-			checkService.Service = fmt.Sprintf("%s-health-check", svc.Service.Service)
+			checkService.Service = fmt.Sprintf("%s-health-check", instance.Service.Service)
 			checkService.HealthCheck = true
 			checkService.Tags = nil
 			checkService.Meta = nil

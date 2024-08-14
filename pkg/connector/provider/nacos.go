@@ -12,6 +12,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/env"
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
@@ -223,6 +224,10 @@ func (dc *NacosDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]conn
 	var catalogServices []connector.MicroService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
+			if errMsgs := validation.IsDNS1035Label(svc); len(errMsgs) > 0 {
+				log.Info().Msgf("invalid format, ignore service: %s, errors:%s", svc, strings.Join(errMsgs, "; "))
+				continue
+			}
 			instances, _ := dc.selectInstances(svc)
 			if len(instances) == 0 {
 				continue

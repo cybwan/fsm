@@ -7,6 +7,7 @@ import (
 
 	eureka "github.com/hudl/fargo"
 	"github.com/op/go-logging"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/env"
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
@@ -179,8 +180,8 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]con
 	if len(servicesMap) > 0 {
 		for svc, svcApp := range servicesMap {
 			svc := strings.ToLower(svc)
-			if strings.Contains(svc, "_") {
-				log.Info().Msgf("invalid format, ignore service: %s", svc)
+			if errMsgs := validation.IsDNS1035Label(svc); len(errMsgs) > 0 {
+				log.Info().Msgf("invalid format, ignore service: %s, errors:%s", svc, strings.Join(errMsgs, "; "))
 				continue
 			}
 			if len(svcApp.Instances) == 0 {
