@@ -76,6 +76,10 @@ type EgressSelectorSpec struct {
 type SyncToFgwSpec struct {
 	Enable bool `json:"enable"`
 
+	// +kubebuilder:default=false
+	// +optional
+	Purge bool `json:"purge,omitempty"`
+
 	// +kubebuilder:validation:Format="duration"
 	// +kubebuilder:default="5s"
 	// +optional

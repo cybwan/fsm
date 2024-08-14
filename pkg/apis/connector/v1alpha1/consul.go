@@ -61,6 +61,13 @@ type ConsulSyncToK8SSpec struct {
 	PassingOnly bool `json:"passingOnly,omitempty"`
 
 	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
+	// +optional
 	FilterTag string `json:"filterTag,omitempty"`
 
 	// +optional
@@ -73,6 +80,9 @@ type ConsulSyncToK8SSpec struct {
 	FilterMetadatas []Metadata `json:"filterMetadatas,omitempty"`
 
 	// +optional
+	ExcludeMetadatas []Metadata `json:"excludeMetadatas,omitempty"`
+
+	// +optional
 	PrefixMetadata string `json:"prefixMetadata,omitempty"`
 
 	// +optional
@@ -81,6 +91,10 @@ type ConsulSyncToK8SSpec struct {
 	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	GenerateInternalServiceHealthCheck bool `json:"generateInternalServiceHealthCheck,omitempty"`
 }
 
 // ConsulSyncFromK8SSpec is the type used to represent the sync from K8S to Consul specification.
@@ -135,6 +149,13 @@ type ConsulSyncFromK8SSpec struct {
 	// +optional
 	DenyK8sNamespaces []string `json:"denyK8sNamespaces,omitempty"`
 
+	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
 	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
 	WithGateway K2CGateway `json:"withGateway,omitempty"`
@@ -167,6 +188,10 @@ type ConsulSyncFromK8SSpec struct {
 type ConsulSpec struct {
 	HTTPAddr        string `json:"httpAddr"`
 	DeriveNamespace string `json:"deriveNamespace"`
+
+	// +kubebuilder:default=false
+	// +optional
+	Purge bool `json:"purge,omitempty"`
 
 	// +kubebuilder:default=false
 	// +optional

@@ -2,7 +2,6 @@ package registry
 
 import (
 	"fmt"
-	"net"
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
@@ -14,7 +13,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy"
-	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // ProxyServiceMapper knows how to map Sidecar instances to services.
@@ -101,8 +99,12 @@ func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.Me
 		ns := kubeController.GetNamespace(svc.Namespace)
 		if ctok.IsSyncCloudNamespace(ns) {
 			if len(svc.Annotations) > 0 {
-				if _, exists := svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(net.ParseIP(pod.Status.PodIP).To4()))]; exists {
-					serviceList = append(serviceList, *svc)
+				if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+					svcMeta := new(connector.MicroSvcMeta)
+					svcMeta.Decode(v)
+					if _, ok := svcMeta.Endpoints[connector.MicroEndpointAddr(pod.Status.PodIP)]; ok {
+						serviceList = append(serviceList, *svc)
+					}
 				}
 			}
 		} else {
@@ -139,8 +141,12 @@ func listServicesForVm(vm *machinev1alpha1.VirtualMachine, kubeController k8s.Co
 		ns := kubeController.GetNamespace(svc.Namespace)
 		if ctok.IsSyncCloudNamespace(ns) {
 			if len(svc.Annotations) > 0 {
-				if _, exists := svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(net.ParseIP(vm.Spec.MachineIP).To4()))]; exists {
-					serviceList = append(serviceList, *svc)
+				if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+					svcMeta := new(connector.MicroSvcMeta)
+					svcMeta.Decode(v)
+					if _, ok := svcMeta.Endpoints[connector.MicroEndpointAddr(vm.Spec.MachineIP)]; ok {
+						serviceList = append(serviceList, *svc)
+					}
 				}
 			}
 		} else {

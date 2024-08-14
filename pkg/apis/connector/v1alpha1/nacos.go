@@ -61,7 +61,17 @@ type NacosSyncToK8SSpec struct {
 	PassingOnly bool `json:"passingOnly,omitempty"`
 
 	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
+	// +optional
 	FilterMetadatas []Metadata `json:"filterMetadatas,omitempty"`
+
+	// +optional
+	ExcludeMetadatas []Metadata `json:"excludeMetadatas,omitempty"`
 
 	// +optional
 	PrefixMetadata string `json:"prefixMetadata,omitempty"`
@@ -141,6 +151,13 @@ type NacosSyncFromK8SSpec struct {
 	// +optional
 	DenyK8sNamespaces []string `json:"denyK8sNamespaces,omitempty"`
 
+	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
 	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
 	WithGateway K2CGateway `json:"withGateway,omitempty"`
@@ -150,6 +167,10 @@ type NacosSyncFromK8SSpec struct {
 type NacosSpec struct {
 	HTTPAddr        string `json:"httpAddr"`
 	DeriveNamespace string `json:"deriveNamespace"`
+
+	// +kubebuilder:default=false
+	// +optional
+	Purge bool `json:"purge,omitempty"`
 
 	// +kubebuilder:default=false
 	// +optional

@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	mapset "github.com/deckarep/golang-set"
@@ -23,7 +21,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // PipyConfGeneratorJob is the job to generate pipy policy json
@@ -394,17 +391,12 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 				pipyConf.DNSResolveDB = make(map[string][]interface{})
 			}
 			resolvableIPSet := mapset.NewSet()
-			for anno := range svc.Annotations {
-				if !strings.HasPrefix(anno, connector.AnnotationMeshEndpointAddr) {
-					continue
+			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+				svcMeta := new(connector.MicroSvcMeta)
+				svcMeta.Decode(v)
+				for addr := range svcMeta.Endpoints {
+					resolvableIPSet.Add(string(addr))
 				}
-				ipStr := strings.TrimPrefix(anno, fmt.Sprintf("%s-", connector.AnnotationMeshEndpointAddr))
-				ipNum, err := strconv.Atoi(ipStr)
-				if err != nil {
-					continue
-				}
-				ip := utils.Int2IP4(uint32(ipNum))
-				resolvableIPSet.Add(ip.To4().String())
 			}
 			if resolvableIPSet.Cardinality() > 0 {
 				if addrs, exists := pipyConf.DNSResolveDB[svc.Name]; exists {

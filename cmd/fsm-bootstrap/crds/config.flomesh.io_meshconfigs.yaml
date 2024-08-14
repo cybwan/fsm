@@ -1320,8 +1320,15 @@ spec:
               connector:
                 description: Connector defines the configurations of connector info
                 properties:
-                  DO_NOT_EDIT:
-                    default: Managed by fsm-connector-gateway.
+                  DO_NOT_EDIT_viaGateway:
+                    default: viaGateway Managed by fsm-connector-gateway.
+                    type: string
+                  lbType:
+                    default: FailOver
+                    description: Type of global load distribution
+                    enum:
+                    - ActiveActive
+                    - FailOver
                     type: string
                   viaGateway:
                     description: ViaGateway defines gateway settings
@@ -1353,7 +1360,7 @@ spec:
                     - ingressHTTPPort
                     type: object
                 required:
-                - DO_NOT_EDIT
+                - DO_NOT_EDIT_viaGateway
                 - viaGateway
                 type: object
               egressGateway:

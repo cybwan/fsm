@@ -57,7 +57,17 @@ type EurekaSyncToK8SSpec struct {
 	ClusterId string `json:"clusterId,omitempty"`
 
 	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
+	// +optional
 	FilterMetadatas []Metadata `json:"filterMetadatas,omitempty"`
+
+	// +optional
+	ExcludeMetadatas []Metadata `json:"excludeMetadatas,omitempty"`
 
 	// +optional
 	PrefixMetadata string `json:"prefixMetadata,omitempty"`
@@ -73,6 +83,15 @@ type EurekaSyncToK8SSpec struct {
 // EurekaSyncFromK8SSpec is the type used to represent the sync from K8S to Eureka specification.
 type EurekaSyncFromK8SSpec struct {
 	Enable bool `json:"enable"`
+
+	// +kubebuilder:default=true
+	// +optional
+	HeartBeatInstance bool `json:"heartBeatInstance,omitempty"`
+
+	// +kubebuilder:validation:Format="duration"
+	// +kubebuilder:default="3s"
+	// +optional
+	HeartBeatPeriod metav1.Duration `json:"heartBeatPeriod"`
 
 	// +kubebuilder:default=true
 	// +optional
@@ -119,6 +138,17 @@ type EurekaSyncFromK8SSpec struct {
 	// +optional
 	DenyK8sNamespaces []string `json:"denyK8sNamespaces,omitempty"`
 
+	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	CheckServiceInstanceID bool `json:"checkServiceInstanceId,omitempty"`
+
 	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
 	WithGateway K2CGateway `json:"withGateway,omitempty"`
@@ -128,6 +158,10 @@ type EurekaSyncFromK8SSpec struct {
 type EurekaSpec struct {
 	HTTPAddr        string `json:"httpAddr"`
 	DeriveNamespace string `json:"deriveNamespace"`
+
+	// +kubebuilder:default=false
+	// +optional
+	Purge bool `json:"purge,omitempty"`
 
 	// +kubebuilder:default=false
 	// +optional
