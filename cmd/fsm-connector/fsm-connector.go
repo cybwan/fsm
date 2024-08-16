@@ -15,6 +15,8 @@ import (
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/cli"
@@ -76,6 +78,7 @@ func main() {
 	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
 	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
 	connectorClient := connectorClientset.NewForConfigOrDie(kubeConfig)
+	gatewayApiClient := gatewayApiClientset.NewForConfigOrDie(kubeConfig)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-connector pod resource
 	connectorPod, err := cli.GetConnectorPod(kubeClient)
@@ -102,6 +105,7 @@ func main() {
 		informers.WithConfigClient(configClient, cli.Cfg.FsmMeshConfigName, cli.Cfg.FsmNamespace),
 		informers.WithMachineClient(machineClient),
 		informers.WithConnectorClient(connectorClient),
+		informers.WithGatewayAPIClient(gatewayApiClient),
 	)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")

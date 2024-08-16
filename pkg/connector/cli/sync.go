@@ -118,6 +118,7 @@ func (c *client) syncKtoG() {
 		ctx)
 
 	gatewaySource.SetServiceResource(serviceResource)
+	gatewaySource.SetInformers(c.informers)
 
 	// Build the controller and start it
 	gwCtl := &connector.CacheController{Resource: gatewaySource}

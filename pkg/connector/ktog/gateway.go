@@ -16,6 +16,7 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
 var (
@@ -35,10 +36,15 @@ var (
 type GatewaySource struct {
 	serviceResource  *KtoGSource
 	gatewaysInformer cache.SharedIndexInformer
+	informers        *fsminformers.InformerCollection
 }
 
 func (gw *GatewaySource) SetServiceResource(serviceResource *KtoGSource) {
 	gw.serviceResource = serviceResource
+}
+
+func (gw *GatewaySource) SetInformers(informers *fsminformers.InformerCollection) {
+	gw.informers = informers
 }
 
 func (gw *GatewaySource) Informer() cache.SharedIndexInformer {
@@ -216,10 +222,7 @@ func (gw *GatewaySource) checkServiceType(k8sSvc *apiv1.Service) (internalSource
 func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1.ParentReference) {
 	svcResource := gw.serviceResource
 	httpRouteClient := svcResource.gatewayClient.GatewayV1().HTTPRoutes(k8sSvc.Namespace)
-	existRt, err := httpRouteClient.Get(svcResource.ctx, k8sSvc.Name, metav1.GetOptions{})
-	if err != nil {
-		existRt = nil
-	}
+	existRt := gw.GetHTTPRoute(k8sSvc.Name, k8sSvc.Namespace)
 
 	weight := int32(constants.ClusterWeightAcceptAll)
 	servicePort := gwv1.PortNumber(portSpec.Port)
@@ -255,8 +258,7 @@ func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec 
 	}}
 
 	if existRt == nil {
-		_, err = httpRouteClient.Create(svcResource.ctx, newRt, metav1.CreateOptions{})
-		if err != nil {
+		if _, err := httpRouteClient.Create(svcResource.ctx, newRt, metav1.CreateOptions{}); err != nil {
 			log.Error().Msgf("warn creating http route, name:%s warn:%v", k8sSvc.Name, err)
 		}
 	} else {
@@ -272,11 +274,9 @@ func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec 
 				IgnoreZeroValue: true,
 				SlicesAsSets:    true,
 			})
-
 		if existRtHash != newRtHash {
 			existRt.Spec = newRt.Spec
-			_, err = httpRouteClient.Update(svcResource.ctx, existRt, metav1.UpdateOptions{})
-			if err != nil {
+			if _, err := httpRouteClient.Update(svcResource.ctx, existRt, metav1.UpdateOptions{}); err != nil {
 				log.Error().Msgf("warn updating http route, name:%s warn:%v", k8sSvc.Name, err)
 			}
 		}
@@ -286,10 +286,7 @@ func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec 
 func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1.ParentReference) {
 	svcResource := gw.serviceResource
 	grpcRouteClient := svcResource.gatewayClient.GatewayV1().GRPCRoutes(k8sSvc.Namespace)
-	existRt, err := grpcRouteClient.Get(svcResource.ctx, k8sSvc.Name, metav1.GetOptions{})
-	if err != nil {
-		existRt = nil
-	}
+	existRt := gw.GetGRPCRoute(k8sSvc.Name, k8sSvc.Namespace)
 
 	grpMethodType := gwv1.GRPCMethodMatchExact
 	grpMethodSvc := "grpc.GrpcService"
@@ -327,8 +324,7 @@ func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec 
 	}}
 
 	if existRt == nil {
-		_, err = grpcRouteClient.Create(svcResource.ctx, newRt, metav1.CreateOptions{})
-		if err != nil {
+		if _, err := grpcRouteClient.Create(svcResource.ctx, newRt, metav1.CreateOptions{}); err != nil {
 			log.Error().Msgf("warn creating grpc route, name:%s warn:%v", k8sSvc.Name, err)
 		}
 	} else {
@@ -347,8 +343,7 @@ func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec 
 
 		if existRtHash != newRtHash {
 			existRt.Spec = newRt.Spec
-			_, err = grpcRouteClient.Update(svcResource.ctx, newRt, metav1.UpdateOptions{})
-			if err != nil {
+			if _, err := grpcRouteClient.Update(svcResource.ctx, newRt, metav1.UpdateOptions{}); err != nil {
 				log.Error().Msgf("warn updating grpc route, name:%s warn:%v", k8sSvc.Name, err)
 			}
 		}
@@ -358,10 +353,7 @@ func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec 
 func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1.ParentReference) {
 	svcResource := gw.serviceResource
 	tcpRouteClient := svcResource.gatewayClient.GatewayV1alpha2().TCPRoutes(k8sSvc.Namespace)
-	existRt, err := tcpRouteClient.Get(svcResource.ctx, k8sSvc.Name, metav1.GetOptions{})
-	if err != nil {
-		existRt = nil
-	}
+	existRt := gw.GetTCPRoute(k8sSvc.Name, k8sSvc.Namespace)
 
 	servicePort := gwv1.PortNumber(portSpec.Port)
 	weight := int32(constants.ClusterWeightAcceptAll)
@@ -388,8 +380,7 @@ func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec a
 	}}
 
 	if existRt == nil {
-		_, err = tcpRouteClient.Create(svcResource.ctx, newRt, metav1.CreateOptions{})
-		if err != nil {
+		if _, err := tcpRouteClient.Create(svcResource.ctx, newRt, metav1.CreateOptions{}); err != nil {
 			log.Error().Msgf("warn creating tcp route, name:%s warn:%v", k8sSvc.Name, err)
 		}
 	} else {
@@ -408,8 +399,7 @@ func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec a
 
 		if existRtHash != newRtHash {
 			existRt.Spec = newRt.Spec
-			_, err = tcpRouteClient.Update(svcResource.ctx, newRt, metav1.UpdateOptions{})
-			if err != nil {
+			if _, err := tcpRouteClient.Update(svcResource.ctx, newRt, metav1.UpdateOptions{}); err != nil {
 				log.Error().Msgf("warn updating tcp route, name:%s warn:%v", k8sSvc.Name, err)
 			}
 		}
@@ -418,14 +408,20 @@ func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec a
 
 func (gw *GatewaySource) deleteGatewayRoute(name, namespace string) {
 	svcResource := gw.serviceResource
-	httpRouteClient := svcResource.gatewayClient.GatewayV1().HTTPRoutes(namespace)
-	_ = httpRouteClient.Delete(svcResource.ctx, name, metav1.DeleteOptions{})
+	if routeIf := gw.GetHTTPRoute(name, namespace); routeIf != nil {
+		httpRouteClient := svcResource.gatewayClient.GatewayV1().HTTPRoutes(namespace)
+		_ = httpRouteClient.Delete(svcResource.ctx, name, metav1.DeleteOptions{})
+	}
 
-	grpcRouteClient := svcResource.gatewayClient.GatewayV1().GRPCRoutes(namespace)
-	_ = grpcRouteClient.Delete(svcResource.ctx, name, metav1.DeleteOptions{})
+	if routeIf := gw.GetGRPCRoute(name, namespace); routeIf != nil {
+		grpcRouteClient := svcResource.gatewayClient.GatewayV1().GRPCRoutes(namespace)
+		_ = grpcRouteClient.Delete(svcResource.ctx, name, metav1.DeleteOptions{})
+	}
 
-	tcpRouteClient := svcResource.gatewayClient.GatewayV1alpha2().TCPRoutes(namespace)
-	_ = tcpRouteClient.Delete(svcResource.ctx, name, metav1.DeleteOptions{})
+	if routeIf := gw.GetTCPRoute(name, namespace); routeIf != nil {
+		tcpRouteClient := svcResource.gatewayClient.GatewayV1alpha2().TCPRoutes(namespace)
+		_ = tcpRouteClient.Delete(svcResource.ctx, name, metav1.DeleteOptions{})
+	}
 }
 
 func (gw *GatewaySource) getGatewayRouteHostnamesForService(k8sSvc *apiv1.Service) []gwv1.Hostname {
@@ -457,4 +453,31 @@ func (gw *GatewaySource) getGatewayRouteHostnamesForService(k8sSvc *apiv1.Servic
 		}
 	}
 	return hostnames
+}
+
+// GetHTTPRoute returns a HTTPRoute resource if found, nil otherwise.
+func (gw *GatewaySource) GetHTTPRoute(route, namespace string) *gwv1.HTTPRoute {
+	routeIf, exists, err := gw.informers.GetByKey(fsminformers.InformerKeyGatewayAPIHTTPRoute, fmt.Sprintf("%s/%s", namespace, route))
+	if exists && err == nil {
+		return routeIf.(*gwv1.HTTPRoute)
+	}
+	return nil
+}
+
+// GetGRPCRoute returns a GRPCRoute resource if found, nil otherwise.
+func (gw *GatewaySource) GetGRPCRoute(route, namespace string) *gwv1.GRPCRoute {
+	routeIf, exists, err := gw.informers.GetByKey(fsminformers.InformerKeyGatewayAPIGRPCRoute, fmt.Sprintf("%s/%s", namespace, route))
+	if exists && err == nil {
+		return routeIf.(*gwv1.GRPCRoute)
+	}
+	return nil
+}
+
+// GetTCPRoute returns a TCPRoute resource if found, nil otherwise.
+func (gw *GatewaySource) GetTCPRoute(route, namespace string) *gwv1alpha2.TCPRoute {
+	routeIf, exists, err := gw.informers.GetByKey(fsminformers.InformerKeyGatewayAPITCPRoute, fmt.Sprintf("%s/%s", namespace, route))
+	if exists && err == nil {
+		return routeIf.(*gwv1alpha2.TCPRoute)
+	}
+	return nil
 }
