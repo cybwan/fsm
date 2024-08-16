@@ -167,6 +167,9 @@ spec:
                     type: array
                   enable:
                     type: boolean
+                  purge:
+                    default: false
+                    type: boolean
                   syncPeriod:
                     default: 5s
                     format: duration

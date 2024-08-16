@@ -57,6 +57,13 @@ type MachineSyncToK8SSpec struct {
 	// +optional
 	PassingOnly bool `json:"passingOnly,omitempty"`
 
+	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
 	// +kubebuilder:default=""
 	// +optional
 	FilterLabel string `json:"filterLabel,omitempty"`
@@ -77,6 +84,10 @@ type MachineSyncToK8SSpec struct {
 // MachineSpec is the type used to represent the Machine Connector specification.
 type MachineSpec struct {
 	DeriveNamespace string `json:"deriveNamespace"`
+
+	// +kubebuilder:default=false
+	// +optional
+	Purge bool `json:"purge,omitempty"`
 
 	// +kubebuilder:default=false
 	// +optional

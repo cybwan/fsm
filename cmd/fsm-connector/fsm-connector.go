@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -13,6 +14,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
+
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/connector"
@@ -68,10 +71,14 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Error creating kube config (kubeconfig=%s)", cli.Cfg.KubeConfigFile)
 	}
+	kubeConfig.QPS = float32(cli.Cfg.Limit)
+	kubeConfig.Burst = int(cli.Cfg.Burst)
+	kubeConfig.Timeout = time.Second * time.Duration(cli.Cfg.Timeout)
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
 	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
 	connectorClient := connectorClientset.NewForConfigOrDie(kubeConfig)
+	gatewayApiClient := gatewayApiClientset.NewForConfigOrDie(kubeConfig)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-connector pod resource
 	connectorPod, err := cli.GetConnectorPod(kubeClient)
@@ -98,6 +105,7 @@ func main() {
 		informers.WithConfigClient(configClient, cli.Cfg.FsmMeshConfigName, cli.Cfg.FsmNamespace),
 		informers.WithMachineClient(machineClient),
 		informers.WithConnectorClient(connectorClient),
+		informers.WithGatewayAPIClient(gatewayApiClient),
 	)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")

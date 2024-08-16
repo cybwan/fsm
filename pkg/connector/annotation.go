@@ -30,18 +30,6 @@ const (
 	// AnnotationCloudServiceInheritedClusterID defines cloud service cluster id annotation
 	AnnotationCloudServiceInheritedClusterID = "flomesh.io/cloud-service-inherited-cluster-id"
 
-	// AnnotationCloudServiceWithGateway defines cloud service with gateway annotation
-	AnnotationCloudServiceWithGateway = "flomesh.io/cloud-service-with-gateway"
-
-	// AnnotationCloudServiceWithMultiGateways defines cloud service with multi gateways annotation
-	AnnotationCloudServiceWithMultiGateways = "flomesh.io/cloud-service-with-multi-gateways"
-
-	// AnnotationCloudServiceViaGateway defines cloud service via gateway annotation
-	AnnotationCloudServiceViaGateway = "flomesh.io/cloud-service-via-gateway"
-
-	// AnnotationCloudServiceClusterSet defines cloud service cluster set annotation
-	AnnotationCloudServiceClusterSet = "flomesh.io/cloud-service-cluster-set"
-
 	// AnnotationMeshEndpointAddr defines mesh endpoint addr annotation
 	AnnotationMeshEndpointAddr = "flomesh.io/cloud-endpoint-addr"
 )
@@ -54,6 +42,9 @@ const (
 	// AnnotationServiceSyncK8sToFgw is the key of the annotation that determines
 	// whether to sync the k8s Service to fsm gateway.
 	AnnotationServiceSyncK8sToFgw = "flomesh.io/service-sync-k8s-to-fgw"
+
+	// AnnotationCloudHealthCheckService defines health check service annotation
+	AnnotationCloudHealthCheckService = "flomesh.io/cloud-health-check-service"
 
 	// AnnotationServiceName is set to override the name of the service
 	// registered. By default this will be the name of the CatalogService resource.
