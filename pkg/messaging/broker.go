@@ -876,10 +876,11 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 		// Endpoint event
 		announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated:
 		if msg.NewObj != nil {
-			endpoints := msg.NewObj.(*corev1.Endpoints)
-			if len(endpoints.Labels) > 0 {
-				if _, exists := endpoints.Labels[constants.CloudSourcedServiceLabel]; exists {
-					return nil
+			if endpoints, ok := msg.NewObj.(*corev1.Endpoints); ok {
+				if len(endpoints.Labels) > 0 {
+					if _, exists := endpoints.Labels[constants.CloudSourcedServiceLabel]; exists {
+						return nil
+					}
 				}
 			}
 		}
@@ -891,25 +892,27 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 		// Service event
 		announcements.ServiceAdded, announcements.ServiceDeleted, announcements.ServiceUpdated:
 		if msg.NewObj != nil {
-			service := msg.NewObj.(*corev1.Service)
-			if len(service.Labels) > 0 {
-				if _, exists := service.Labels[constants.CloudSourcedServiceLabel]; exists {
-					if !lru.MicroSvcMetaExists(service) {
-						return &proxyUpdateEvent{
-							msg:   msg,
-							topic: announcements.ProxyUpdate.String(),
+			if service, ok := msg.NewObj.(*corev1.Service); ok {
+				if len(service.Labels) > 0 {
+					if _, exists := service.Labels[constants.CloudSourcedServiceLabel]; exists {
+						if !lru.MicroSvcMetaExists(service) {
+							return &proxyUpdateEvent{
+								msg:   msg,
+								topic: announcements.ProxyUpdate.String(),
+							}
 						}
 					}
 				}
 			}
 		}
 		if msg.OldObj != nil {
-			service := msg.OldObj.(*corev1.Service)
-			if len(service.Labels) > 0 {
-				if _, exists := service.Labels[constants.CloudSourcedServiceLabel]; exists {
-					return &proxyUpdateEvent{
-						msg:   msg,
-						topic: announcements.ProxyUpdate.String(),
+			if service, ok := msg.OldObj.(*corev1.Service); ok {
+				if len(service.Labels) > 0 {
+					if _, exists := service.Labels[constants.CloudSourcedServiceLabel]; exists {
+						return &proxyUpdateEvent{
+							msg:   msg,
+							topic: announcements.ProxyUpdate.String(),
+						}
 					}
 				}
 			}
