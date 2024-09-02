@@ -138,7 +138,6 @@ func Decode(svc *corev1.Service, enc string) *MicroSvcMeta {
 	if bytes, err := base64.StdEncoding.DecodeString(enc); err == nil {
 		if err = json.Unmarshal(bytes, meta); err == nil {
 			microSvcMetaCache.Add(key, meta)
-			fmt.Print(".")
 		}
 	}
 	return meta
