@@ -135,7 +135,7 @@ func (job *PipyConfGeneratorJob) Run() {
 	fmt.Println(proxy.Identity, "forward", end.Sub(start))
 
 	start = time.Now()
-	cloudConnector(cataloger, pipyConf, s.cfg)
+	cloudConnector(cataloger, pipyConf, s.cfg, proxy)
 	end = time.Now()
 	fmt.Println(proxy.Identity, "cloudConnector", end.Sub(start))
 
@@ -461,8 +461,14 @@ func probes(proxy *pipy.Proxy, pipyConf *PipyConf) {
 	}
 }
 
-func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg configurator.Configurator) {
+func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg configurator.Configurator, proxy *pipy.Proxy) {
 	if !cfg.IsLocalDNSProxyEnabled() || cfg.IsWildcardDNSProxyEnabled() {
+		return
+	}
+	if proxy.Metadata == nil {
+		return
+	}
+	if len(proxy.Metadata.Namespace) == 0 {
 		return
 	}
 	kubeController := cataloger.GetKubeController()
@@ -497,9 +503,8 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 					addr2 := addrItems[j].(string)
 					return addr1 < addr2
 				})
-				pipyConf.DNSResolveDB[svc.Name] = addrItems
-				pipyConf.DNSResolveDB[fmt.Sprintf("%s.%s", svc.Name, service.GetTrustDomain())] = addrItems
-				pipyConf.DNSResolveDB[fmt.Sprintf("%s.svc.%s", svc.Name, service.GetTrustDomain())] = addrItems
+				pipyConf.DNSResolveDB[fmt.Sprintf("%s.%s.svc.%s", svc.Name, proxy.Metadata.Namespace, service.GetTrustDomain())] = addrItems
+				delete(pipyConf.DNSResolveDB, svc.Name)
 			}
 		}
 	}
