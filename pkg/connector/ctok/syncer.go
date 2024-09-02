@@ -178,7 +178,7 @@ func (s *CtoKSyncer) Upsert(key string, raw interface{}) error {
 
 	// If the service is a Cloud-sourced service, then keep track of it
 	// separately for a quick lookup.
-	if service.Labels != nil && service.Labels[CloudSourcedServiceLabel] == True {
+	if service.Labels != nil && service.Labels[constants.CloudSourcedServiceLabel] == True {
 		s.controller.GetC2KContext().ServiceMapCache[service.Name] = service
 		s.trigger() // Always trigger sync
 	}
@@ -354,7 +354,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 			createSvc := &apiv1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   string(microSvcName),
-					Labels: map[string]string{CloudSourcedServiceLabel: True},
+					Labels: map[string]string{constants.CloudSourcedServiceLabel: True},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
 						connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
@@ -428,7 +428,7 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 
 	enc, hash := connector.Encode(svcMeta)
 	createSvc.ObjectMeta.Annotations[connector.AnnotationMeshEndpointAddr] = enc
-	createSvc.ObjectMeta.Annotations[connector.AnnotationMeshEndpointHash] = fmt.Sprintf("%d", hash)
+	createSvc.ObjectMeta.Annotations[constants.AnnotationMeshEndpointHash] = fmt.Sprintf("%d", hash)
 }
 
 func (s *CtoKSyncer) existPort(svc *apiv1.Service, port connector.MicroSvcPort, appProtocol connector.MicroSvcAppProtocol) bool {

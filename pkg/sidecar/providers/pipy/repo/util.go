@@ -420,7 +420,7 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 	ready := true
 	viaGateway := cfg.GetMeshConfig().Spec.Connector.ViaGateway
 	otp := pipyConf.newOutboundTrafficPolicy()
-	fmt.Println(proxy.Identity, "outbound generatePipyOutboundTrafficBalancePolicy dependClusters:", len(dependClusters))
+	//fmt.Println(proxy.Identity, "outbound generatePipyOutboundTrafficBalancePolicy dependClusters:", len(dependClusters))
 	clustersConfigsMap := make(map[string][]*trafficpolicy.MeshClusterConfig)
 	if len(outboundPolicy.ClustersConfigs) > 0 {
 		for _, clustersConfig := range outboundPolicy.ClustersConfigs {

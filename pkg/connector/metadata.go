@@ -7,13 +7,12 @@ import (
 	"hash/fnv"
 	"net"
 	"strings"
-	"time"
 
-	"github.com/hashicorp/golang-lru/v2/expirable"
 	corev1 "k8s.io/api/core/v1"
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/lru"
 )
 
 // MicroSvcName defines string as microservice name
@@ -114,10 +113,6 @@ func (m *MicroSvcMeta) Marshal() string {
 	return ""
 }
 
-var (
-	microSvcMetaCache = expirable.NewLRU[string, *MicroSvcMeta](1024*256, nil, time.Second*600)
-)
-
 func Encode(m *MicroSvcMeta) (string, uint64) {
 	if bytes, err := json.Marshal(m); err == nil {
 		h := fnv.New64()
@@ -128,16 +123,16 @@ func Encode(m *MicroSvcMeta) (string, uint64) {
 }
 
 func Decode(svc *corev1.Service, enc string) *MicroSvcMeta {
-	hash := svc.Annotations[AnnotationMeshEndpointHash]
+	hash := svc.Annotations[constants.AnnotationMeshEndpointHash]
 	key := fmt.Sprintf("%s.%s.%s", svc.Namespace, svc.Name, hash)
-	if meta, ok := microSvcMetaCache.Get(key); ok {
-		microSvcMetaCache.Add(key, meta)
-		return meta
+	if meta, ok := lru.Get(key); ok {
+		lru.Add(key, meta)
+		return meta.(*MicroSvcMeta)
 	}
 	meta := new(MicroSvcMeta)
 	if bytes, err := base64.StdEncoding.DecodeString(enc); err == nil {
 		if err = json.Unmarshal(bytes, meta); err == nil {
-			microSvcMetaCache.Add(key, meta)
+			lru.Add(key, meta)
 		}
 	}
 	return meta
