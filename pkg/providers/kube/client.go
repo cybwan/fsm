@@ -70,8 +70,8 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 					}
 				}
 			}
+			return endpoints
 		}
-		return endpoints
 	}
 
 	kubernetesEndpoints, err := c.kubeController.GetEndpoints(svc)
