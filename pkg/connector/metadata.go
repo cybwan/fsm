@@ -115,7 +115,7 @@ func (m *MicroSvcMeta) Marshal() string {
 }
 
 var (
-	microSvcMetaCache = expirable.NewLRU[string, *MicroSvcMeta](1024*256, nil, time.Second*120)
+	microSvcMetaCache = expirable.NewLRU[string, *MicroSvcMeta](1024*256, nil, time.Second*600)
 )
 
 func Encode(m *MicroSvcMeta) (string, uint64) {
