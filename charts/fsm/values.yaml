@@ -515,7 +515,7 @@ fsm:
   maxDataPlaneConnections: 0
 
   # -- Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync
-  configResyncInterval: "300s"
+  configResyncInterval: "0s"
 
   # -- Controller log verbosity
   controllerLogLevel: info
