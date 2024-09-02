@@ -4,6 +4,7 @@ package repo
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -83,6 +84,9 @@ func (s *Server) broadcastListener() {
 
 			if len(connectedProxies) > 0 {
 				for _, proxy := range connectedProxies {
+					if backlogs := atomic.LoadInt32(&proxy.Backlogs); backlogs > 0 {
+						continue
+					}
 					newJob := func() *PipyConfGeneratorJob {
 						return &PipyConfGeneratorJob{
 							proxy:      proxy,

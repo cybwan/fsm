@@ -3,10 +3,13 @@ package repo
 import (
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	mapset "github.com/deckarep/golang-set"
+	"github.com/mitchellh/hashstructure/v2"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/catalog"
@@ -44,11 +47,23 @@ func (job *PipyConfGeneratorJob) Run() {
 		return
 	}
 
+	if backlogs := atomic.LoadInt32(&job.proxy.Backlogs); backlogs > 0 {
+		return
+	}
+
 	s := job.repoServer
 	proxy := job.proxy
 
+	atomic.AddInt32(&proxy.Backlogs, 1)
 	proxy.Mutex.Lock()
 	defer proxy.Mutex.Unlock()
+
+	if backlogs := atomic.LoadInt32(&job.proxy.Backlogs); backlogs > 1 {
+		atomic.AddInt32(&proxy.Backlogs, -1)
+		return
+	}
+
+	atomic.AddInt32(&proxy.Backlogs, -1)
 
 	proxyServices, err := s.proxyRegistry.ListProxyServices(proxy)
 	if err != nil {
@@ -65,6 +80,9 @@ func (job *PipyConfGeneratorJob) Run() {
 		})
 	}
 
+	fmt.Println(proxy.Identity, "begin")
+	fmt.Println(proxy.Identity, "gomaxprocs", runtime.GOMAXPROCS(-1))
+
 	cataloger := s.catalog
 	pipyConf := new(PipyConf)
 
@@ -75,23 +93,82 @@ func (job *PipyConfGeneratorJob) Run() {
 		pipyConf.Metrics = metrics
 	}
 
+	start1 := time.Now()
+	start := time.Now()
 	probes(proxy, pipyConf)
+	end := time.Now()
+	fmt.Println(proxy.Identity, "probes", end.Sub(start))
+
+	start = time.Now()
 	features(s, proxy, pipyConf)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "features", end.Sub(start))
+
+	start = time.Now()
 	certs(s, proxy, pipyConf, proxyServices)
-	pluginSetV := plugin(cataloger, s, pipyConf, proxy)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "certs", end.Sub(start))
+
+	start = time.Now()
+	plugin(cataloger, s, pipyConf, proxy)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "plugin", end.Sub(start))
+
+	start = time.Now()
 	inbound(cataloger, proxy.Identity, s, pipyConf, proxyServices, proxy)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "inbound", end.Sub(start))
+
+	start = time.Now()
 	outbound(cataloger, proxy.Identity, s, pipyConf, proxy, s.cfg, desiredSuffix)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "outbound", end.Sub(start))
+
+	start = time.Now()
 	egress(cataloger, proxy.Identity, s, pipyConf, proxy, desiredSuffix)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "egress", end.Sub(start))
+
+	start = time.Now()
 	forward(cataloger, proxy.Identity, s, pipyConf, proxy)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "forward", end.Sub(start))
+
+	start = time.Now()
 	cloudConnector(cataloger, pipyConf, s.cfg)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "cloudConnector", end.Sub(start))
+
+	start = time.Now()
 	balance(pipyConf)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "balance", end.Sub(start))
+
+	start = time.Now()
 	reorder(pipyConf)
-	endpoints(pipyConf, s)
-	localDNSProxy(cataloger, pipyConf, s.cfg)
-	job.publishSidecarConf(s.repoClient, proxy, pipyConf, pluginSetV)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "reorder", end.Sub(start))
+
+	start = time.Now()
+	allowedEndpoints(pipyConf, s)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "endpoints", end.Sub(start))
+
+	start = time.Now()
+	dnsResolveDB(pipyConf, s.cfg)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "dnsResolveDB", end.Sub(start))
+
+	start = time.Now()
+	job.publishSidecarConf(s.repoClient, proxy, pipyConf)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "publishSidecarConf", end.Sub(start))
+	fmt.Println(proxy.Identity, "total", end.Sub(start1))
+	fmt.Println(proxy.Identity, "end", time.Now())
+	fmt.Println()
 }
 
-func endpoints(pipyConf *PipyConf, s *Server) {
+func allowedEndpoints(pipyConf *PipyConf, s *Server) {
 	ready := pipyConf.copyAllowedEndpoints(s.kubeController, s.proxyRegistry)
 	if !ready {
 		if s.retryProxiesJob != nil {
@@ -172,7 +249,10 @@ func forward(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceId
 }
 
 func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy, cfg configurator.Configurator, desiredSuffix string) bool {
+	start := time.Now()
 	outboundTrafficPolicy := cataloger.GetOutboundMeshTrafficPolicy(serviceIdentity)
+	end := time.Now()
+	fmt.Println(proxy.Identity, "outbound GetOutboundMeshTrafficPolicy", end.Sub(start))
 	if cfg.IsLocalDNSProxyEnabled() && !cfg.IsWildcardDNSProxyEnabled() {
 		if len(outboundTrafficPolicy.ServicesResolvableSet) > 0 {
 			if pipyConf.DNSResolveDB == nil {
@@ -183,9 +263,13 @@ func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceI
 			}
 		}
 	}
+	start = time.Now()
 	outboundDependClusters := generatePipyOutboundTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf,
-		outboundTrafficPolicy, desiredSuffix)
+		cfg, outboundTrafficPolicy, desiredSuffix)
+	end = time.Now()
+	fmt.Println(proxy.Identity, "outbound generatePipyOutboundTrafficRoutePolicy", end.Sub(start))
 	if len(outboundDependClusters) > 0 {
+		start = time.Now()
 		if ready := generatePipyOutboundTrafficBalancePolicy(cataloger, cfg, proxy, serviceIdentity, pipyConf,
 			outboundTrafficPolicy, outboundDependClusters); !ready {
 			if s.retryProxiesJob != nil {
@@ -193,6 +277,8 @@ func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceI
 			}
 			return false
 		}
+		end = time.Now()
+		fmt.Println(proxy.Identity, "outbound generatePipyOutboundTrafficBalancePolicy", end.Sub(start))
 	}
 	return true
 }
@@ -224,7 +310,7 @@ func inbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceId
 	}
 }
 
-func plugin(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy) (pluginSetVersion string) {
+func plugin(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy) {
 	pipyConf.Chains = nil
 
 	defer func() {
@@ -280,8 +366,7 @@ func plugin(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, prox
 	pipyConf.pluginPolicies = meshSvc2Plugin2MountPoint2Config
 	setSidecarChain(s.cfg, pipyConf, pluginPri, mountPoint2Plugins)
 
-	pluginSetVersion = s.pluginSetVersion
-	return
+	pipyConf.PluginSetV = s.pluginSetVersion
 }
 
 func certs(s *Server, proxy *pipy.Proxy, pipyConf *PipyConf, proxyServices []service.MeshService) {
@@ -393,8 +478,7 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 			}
 			resolvableIPSet := mapset.NewSet()
 			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
-				svcMeta := new(connector.MicroSvcMeta)
-				svcMeta.Decode(v)
+				svcMeta := connector.Decode(svc, v)
 				for addr := range svcMeta.Endpoints {
 					resolvableIPSet.Add(string(addr))
 				}
@@ -421,7 +505,7 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 	}
 }
 
-func localDNSProxy(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg configurator.Configurator) {
+func dnsResolveDB(pipyConf *PipyConf, cfg configurator.Configurator) {
 	if !cfg.IsLocalDNSProxyEnabled() {
 		return
 	}
@@ -450,7 +534,7 @@ func localDNSProxy(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg conf
 	}
 }
 
-func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoClient, proxy *pipy.Proxy, pipyConf *PipyConf, pluginSetV string) {
+func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoClient, proxy *pipy.Proxy, pipyConf *PipyConf) {
 	pipyConf.Ts = nil
 	pipyConf.Version = nil
 	pipyConf.Certificate = nil
@@ -463,12 +547,20 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 			IssuingCA:  string(proxy.SidecarCert.IssuingCA),
 		}
 	}
-	bytes, jsonErr := json.Marshal(pipyConf)
 
-	if jsonErr == nil {
+	if !prettyConfig() {
+		pipyConf.Pack()
+	}
+
+	codebaseCurV, err := hashstructure.Hash(pipyConf, hashstructure.FormatV2,
+		&hashstructure.HashOptions{
+			ZeroNil:         true,
+			IgnoreZeroValue: true,
+			SlicesAsSets:    true,
+		})
+
+	if err == nil {
 		codebasePreV := proxy.ETag
-		bytes = append(bytes, []byte(pluginSetV)...)
-		codebaseCurV := hash(bytes)
 		if codebaseCurV != codebasePreV {
 			codebase := fmt.Sprintf("%s/%s", fsmSidecarCodebase, proxy.GetCNPrefix())
 			success, err := repoClient.DeriveCodebase(codebase, fsmCodebaseRepo, codebaseCurV-2)
@@ -478,6 +570,7 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 				version := fmt.Sprintf("%d", codebaseCurV)
 				pipyConf.Version = &version
 
+				var bytes []byte
 				if prettyConfig() {
 					bytes, _ = json.MarshalIndent(pipyConf, "", " ")
 				} else {
@@ -502,15 +595,6 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 				_, _ = repoClient.Delete(codebase)
 			} else {
 				proxy.ETag = codebaseCurV
-				certificateExpiration := ""
-				if pipyConf.Certificate != nil {
-					certificateExpiration = pipyConf.Certificate.Expiration
-				}
-				log.Log().Str("ID", fmt.Sprintf("%05d", proxy.ID)).
-					Str("codebasePreV", fmt.Sprintf("%020d", codebasePreV)).
-					Str("codebaseCurV", fmt.Sprintf("%020d", codebaseCurV)).
-					Str("CertificateExpiration", certificateExpiration).
-					Msg(proxy.GetCNPrefix())
 			}
 		}
 	}

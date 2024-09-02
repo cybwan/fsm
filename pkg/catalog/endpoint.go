@@ -10,7 +10,10 @@ import (
 func (mc *MeshCatalog) listEndpointsForService(svc service.MeshService) []endpoint.Endpoint {
 	var endpoints []endpoint.Endpoint
 	for _, provider := range mc.endpointsProviders {
+		//start := time.Now()
 		ep := provider.ListEndpointsForService(svc)
+		//end := time.Now()
+		//fmt.Println(svc.Namespace, svc.Name, provider.GetID(), end.Sub(start))
 		if len(ep) == 0 {
 			log.Trace().Msgf("No endpoints found for service %s by endpoints provider %s", provider.GetID(), svc)
 			continue

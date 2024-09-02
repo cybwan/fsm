@@ -37,6 +37,8 @@ const (
 
 	// AnnotationMeshEndpointAddr defines mesh endpoint addr annotation
 	AnnotationMeshEndpointAddr = "flomesh.io/cloud-endpoint-addr"
+
+	AnnotationMeshEndpointHash = "flomesh.io/cloud-endpoint-hash"
 )
 
 const (
