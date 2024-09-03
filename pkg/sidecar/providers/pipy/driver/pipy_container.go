@@ -174,15 +174,13 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 
 		pod.Spec.DNSPolicy = "None"
 		trustDomain := injCtx.CertManager.GetTrustDomain()
-		ndots := "1"
+		dots := "4"
 		searches := make([]string, 0)
-
-		ndots = "4"
 		if len(pod.Namespace) > 0 {
-			ndots = "5"
+			dots = "5"
 			searches = append(searches, fmt.Sprintf("%s.svc.%s", pod.Namespace, trustDomain))
 		} else if len(injCtx.PodNamespace) > 0 {
-			ndots = "5"
+			dots = "5"
 			searches = append(searches, fmt.Sprintf("%s.svc.%s", injCtx.PodNamespace, trustDomain))
 		}
 
@@ -193,7 +191,7 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 			Nameservers: []string{"127.0.0.153"},
 			Searches:    searches,
 			Options: []corev1.PodDNSConfigOption{
-				{Name: "ndots", Value: &ndots},
+				{Name: "ndots", Value: &dots},
 			},
 		}
 	}
