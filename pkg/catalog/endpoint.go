@@ -34,12 +34,13 @@ func (mc *MeshCatalog) getDNSResolvableServiceEndpoints(svc service.MeshService)
 // is allowed access the upstream service
 func (mc *MeshCatalog) ListAllowedUpstreamEndpointsForService(downstreamIdentity identity.ServiceIdentity, upstreamSvc service.MeshService) []endpoint.Endpoint {
 	outboundEndpoints := mc.listEndpointsForService(upstreamSvc)
-	if len(outboundEndpoints) == 0 {
-		return nil
-	}
 
 	if mc.configurator.IsPermissiveTrafficPolicyMode() {
 		return outboundEndpoints
+	}
+
+	if len(outboundEndpoints) == 0 {
+		return nil
 	}
 
 	// In SMI mode, the endpoints for an upstream service must be filtered based on the service account
