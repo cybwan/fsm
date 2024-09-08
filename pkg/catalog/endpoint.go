@@ -17,23 +17,21 @@ func (mc *MeshCatalog) listEndpointsForService(svc service.MeshService) []endpoi
 			continue
 		}
 		if len(isolationCidrs) > 0 {
-			isolation := false
 			for _, ep := range eps {
+				isolation := false
 				for _, isolationCidr := range isolationCidrs {
 					if isolationCidr.Has(ep.IP) {
 						isolation = true
 						break
 					}
 				}
-				if isolation {
-					break
+				if !isolation {
+					endpoints = append(endpoints, ep)
 				}
 			}
-			if isolation {
-				continue
-			}
+		} else {
+			endpoints = append(endpoints, eps...)
 		}
-		endpoints = append(endpoints, eps...)
 	}
 	return endpoints
 }
@@ -48,23 +46,21 @@ func (mc *MeshCatalog) getDNSResolvableServiceEndpoints(svc service.MeshService)
 			continue
 		}
 		if len(isolationCidrs) > 0 {
-			isolation := false
 			for _, ep := range eps {
+				isolation := false
 				for _, isolationCidr := range isolationCidrs {
 					if isolationCidr.Has(ep.IP) {
 						isolation = true
 						break
 					}
 				}
-				if isolation {
-					break
+				if !isolation {
+					endpoints = append(endpoints, ep)
 				}
 			}
-			if isolation {
-				continue
-			}
+		} else {
+			endpoints = append(endpoints, eps...)
 		}
-		endpoints = append(endpoints, eps...)
 	}
 	return endpoints
 }
@@ -121,23 +117,21 @@ func (mc *MeshCatalog) listEndpointsForServiceIdentity(serviceIdentity identity.
 			continue
 		}
 		if len(isolationCidrs) > 0 {
-			isolation := false
 			for _, ep := range eps {
+				isolation := false
 				for _, isolationCidr := range isolationCidrs {
 					if isolationCidr.Has(ep.IP) {
 						isolation = true
 						break
 					}
 				}
-				if isolation {
-					break
+				if !isolation {
+					endpoints = append(endpoints, ep)
 				}
 			}
-			if isolation {
-				continue
-			}
+		} else {
+			endpoints = append(endpoints, eps...)
 		}
-		endpoints = append(endpoints, eps...)
 	}
 	return endpoints
 }
