@@ -28,9 +28,6 @@ type Isolation struct {
 
 // IsolationSpec is the type used to represent the IsolationSpec policy specification.
 type IsolationSpec struct {
-	// SubjectAltNames defines the Subject Alternative Names (domain names and IP addresses) secured by the certificate.
-	SubjectAltNames []string `json:"subjectAltNames"`
-
 	// cidr is a string representing the IP Isolation
 	// Valid examples are "192.168.1.0/24"
 	// +kubebuilder:validation:MinItems=1

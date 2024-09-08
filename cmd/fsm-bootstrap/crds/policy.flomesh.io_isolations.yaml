@@ -51,15 +51,8 @@ spec:
                   type: string
                 minItems: 1
                 type: array
-              subjectAltNames:
-                description: SubjectAltNames defines the Subject Alternative Names
-                  (domain names and IP addresses) secured by the certificate.
-                items:
-                  type: string
-                type: array
             required:
             - cidrs
-            - subjectAltNames
             type: object
           status:
             description: Status is the status of the Isolation configuration.
