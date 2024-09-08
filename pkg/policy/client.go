@@ -97,8 +97,8 @@ func NewPolicyController(informerCollection *informers.InformerCollection, kubeC
 	return client
 }
 
-// GetIsolationPolicies returns the Isolation policies
-func (c *Client) GetIsolationPolicies() []*policyV1alpha1.Isolation {
+// ListIsolationPolicies returns the Isolation policies
+func (c *Client) ListIsolationPolicies() []*policyV1alpha1.Isolation {
 	var isolations []*policyV1alpha1.Isolation
 	for _, isolationIface := range c.informers.List(informers.InformerKeyIsolation) {
 		isolation := isolationIface.(*policyV1alpha1.Isolation)

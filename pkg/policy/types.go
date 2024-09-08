@@ -28,8 +28,8 @@ type Client struct {
 
 // Controller is the interface for the functionality provided by the resources part of the policy.flomesh.io API group
 type Controller interface {
-	// GetIsolationPolicies returns the Isolation policies
-	GetIsolationPolicies() []*policyv1alpha1.Isolation
+	// ListIsolationPolicies returns the Isolation policies
+	ListIsolationPolicies() []*policyv1alpha1.Isolation
 
 	// ListEgressGateways lists Egress gateways
 	ListEgressGateways() []*policyv1alpha1.EgressGateway

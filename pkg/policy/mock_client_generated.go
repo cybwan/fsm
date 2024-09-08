@@ -80,20 +80,6 @@ func (mr *MockControllerMockRecorder) GetIngressBackendPolicy(arg0 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIngressBackendPolicy", reflect.TypeOf((*MockController)(nil).GetIngressBackendPolicy), arg0)
 }
 
-// GetIsolationPolicies mocks base method.
-func (m *MockController) GetIsolationPolicies() []*v1alpha1.Isolation {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIsolationPolicies")
-	ret0, _ := ret[0].([]*v1alpha1.Isolation)
-	return ret0
-}
-
-// GetIsolationPolicies indicates an expected call of GetIsolationPolicies.
-func (mr *MockControllerMockRecorder) GetIsolationPolicies() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIsolationPolicies", reflect.TypeOf((*MockController)(nil).GetIsolationPolicies))
-}
-
 // GetUpstreamTrafficSetting mocks base method.
 func (m *MockController) GetUpstreamTrafficSetting(arg0 UpstreamTrafficSettingGetOpt) *v1alpha1.UpstreamTrafficSetting {
 	m.ctrl.T.Helper()
@@ -134,6 +120,20 @@ func (m *MockController) ListEgressPoliciesForSourceIdentity(arg0 identity.K8sSe
 func (mr *MockControllerMockRecorder) ListEgressPoliciesForSourceIdentity(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEgressPoliciesForSourceIdentity", reflect.TypeOf((*MockController)(nil).ListEgressPoliciesForSourceIdentity), arg0)
+}
+
+// ListIsolationPolicies mocks base method.
+func (m *MockController) ListIsolationPolicies() []*v1alpha1.Isolation {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListIsolationPolicies")
+	ret0, _ := ret[0].([]*v1alpha1.Isolation)
+	return ret0
+}
+
+// ListIsolationPolicies indicates an expected call of ListIsolationPolicies.
+func (mr *MockControllerMockRecorder) ListIsolationPolicies() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListIsolationPolicies", reflect.TypeOf((*MockController)(nil).ListIsolationPolicies))
 }
 
 // ListRetryPolicies mocks base method.
