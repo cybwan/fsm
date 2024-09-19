@@ -1,13 +1,15 @@
 package dns
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
 	"sync"
 
 	"github.com/miekg/dns"
+
+	"github.com/flomesh-io/fsm/pkg/service"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 const (
@@ -52,7 +54,7 @@ type DNSOperationData struct {
 }
 
 // NewHandler returns a new DNSHandler
-func NewHandler(config *Config, blockCache *MemoryBlockCache) *DNSHandler {
+func NewHandler(config *Config) *DNSHandler {
 	var (
 		clientConfig *dns.ClientConfig
 		resolver     *Resolver
@@ -66,12 +68,14 @@ func NewHandler(config *Config, blockCache *MemoryBlockCache) *DNSHandler {
 		active:         true,
 	}
 
-	go handler.do(config, blockCache)
+	go handler.do(config)
 
 	return handler
 }
 
-func (h *DNSHandler) do(config *Config, blockCache *MemoryBlockCache) {
+func (h *DNSHandler) do(cfg *Config) {
+	trustDomain := service.GetTrustDomain()
+	suffixDomain := fmt.Sprintf(".svc.%s.", trustDomain)
 	for {
 		data, ok := <-h.requestChannel
 		if !ok {
@@ -79,15 +83,13 @@ func (h *DNSHandler) do(config *Config, blockCache *MemoryBlockCache) {
 		}
 		func(Net string, w dns.ResponseWriter, req *dns.Msg) {
 			defer func(w dns.ResponseWriter) {
-				err := w.Close()
-				if err != nil {
-				}
+				_ = w.Close()
 			}(w)
 
 			for index, q := range req.Question {
-				if strings.HasSuffix(q.Name, ".svc.cluster.local.") {
+				if strings.HasSuffix(q.Name, suffixDomain) {
 					if segs := strings.Split(q.Name, "."); len(segs) == 7 {
-						req.Question[index].Name = fmt.Sprintf("%s.%s.svc.cluster.local.", segs[0], segs[1])
+						req.Question[index].Name = fmt.Sprintf("%s.%s.svc.%s.", segs[0], segs[1], trustDomain)
 					}
 				}
 			}
@@ -114,53 +116,15 @@ func (h *DNSHandler) do(config *Config, blockCache *MemoryBlockCache) {
 				return
 			}
 
-			if blacklisted := blockCache.Exists(Q.Qname); blacklisted {
-				m := new(dns.Msg)
-				m.SetReply(req)
-
-				if config.NXDomain {
-					m.SetRcode(req, dns.RcodeNameError)
-				} else {
-					nullroute := net.ParseIP(config.Nullroute)
-					nullroutev6 := net.ParseIP(config.Nullroutev6)
-
-					switch ipQuery {
-					case _IP4Query:
-						rrHeader := dns.RR_Header{
-							Name:   q.Name,
-							Rrtype: dns.TypeA,
-							Class:  dns.ClassINET,
-							Ttl:    config.TTL,
-						}
-						a := &dns.A{Hdr: rrHeader, A: nullroute}
-						m.Answer = append(m.Answer, a)
-					case _IP6Query:
-						rrHeader := dns.RR_Header{
-							Name:   q.Name,
-							Rrtype: dns.TypeAAAA,
-							Class:  dns.ClassINET,
-							Ttl:    config.TTL,
-						}
-						a := &dns.AAAA{Hdr: rrHeader, AAAA: nullroutev6}
-						m.Answer = append(m.Answer, a)
-					}
-				}
-
-				h.WriteReplyMsg(w, m)
-				log.Info().Msgf("%s found in blocklist\n", Q.Qname)
-				return
-			}
-
-			res, err := h.resolver.Lookup(Net, req, config.Timeout, config.Interval, config.Nameservers)
-
+			resp, err := h.resolver.Lookup(Net, req, cfg.GetTimeout(), cfg.GetInterval(), cfg.GetNameservers())
 			if err != nil {
 				log.Error().Msgf("resolve query error %s\n", err)
 				h.HandleFailed(w, req)
 				return
 			}
 
-			if res.Truncated && Net == "udp" {
-				res, err = h.resolver.Lookup("tcp", req, config.Timeout, config.Interval, config.Nameservers)
+			if resp.Truncated && Net == "udp" {
+				resp, err = h.resolver.Lookup("tcp", req, cfg.GetTimeout(), cfg.GetInterval(), cfg.GetNameservers())
 				if err != nil {
 					log.Error().Msgf("resolve tcp query error %s\n", err)
 					h.HandleFailed(w, req)
@@ -168,11 +132,73 @@ func (h *DNSHandler) do(config *Config, blockCache *MemoryBlockCache) {
 				}
 			}
 
-			reqbytes, _ := json.MarshalIndent(req, "", "")
-			resbytes, _ := json.MarshalIndent(res, "", "")
-			fmt.Println(string(reqbytes), "=>", string(resbytes), "\n\n")
+			if resp.Rcode == dns.RcodeNameError && cfg.IsWildcard() {
+				m := new(dns.Msg)
+				m.SetReply(req)
 
-			h.WriteReplyMsg(w, res)
+				if cfg.GetNXDomain() {
+					m.SetRcode(req, dns.RcodeNameError)
+				} else {
+					dbs := cfg.GetWildcardResolveDB()
+					switch ipQuery {
+					case _IP4Query:
+						rrHeader := dns.RR_Header{
+							Name:   q.Name,
+							Rrtype: dns.TypeA,
+							Class:  dns.ClassINET,
+							Ttl:    0,
+						}
+						for _, db := range dbs {
+							if len(db.IPv4) == 0 {
+								continue
+							}
+							a := &dns.A{Hdr: rrHeader, A: net.ParseIP(db.IPv4)}
+							m.Answer = append(m.Answer, a)
+						}
+					case _IP6Query:
+						rrHeader := dns.RR_Header{
+							Name:   q.Name,
+							Rrtype: dns.TypeAAAA,
+							Class:  dns.ClassINET,
+							Ttl:    0,
+						}
+						for _, db := range dbs {
+							if len(db.IPv6) > 0 {
+								a := &dns.AAAA{Hdr: rrHeader, AAAA: net.ParseIP(db.IPv6)}
+								m.Answer = append(m.Answer, a)
+							} else if len(db.IPv4) > 0 && cfg.GenerateIPv6BasedOnIPv4() {
+								a := &dns.AAAA{Hdr: rrHeader, AAAA: net.ParseIP(utils.IPv4Tov6(db.IPv4))}
+								m.Answer = append(m.Answer, a)
+							}
+						}
+					}
+				}
+				h.WriteReplyMsg(w, m)
+				return
+			}
+
+			//answers := 0
+			//for _, rr := range resp.Answer {
+			//    h := rr.Header()
+			//    switch h.Rrtype {
+			//    case dns.TypeA:
+			//        answers++
+			//        ip := rr.(*dns.A).A
+			//        r.log().Debugf("[resolver] received A record %q for %q from %s:%s", ip, h.Name, proto, extDNS.IPStr)
+			//        r.backend.HandleQueryResp(h.Name, ip)
+			//    case dns.TypeAAAA:
+			//        answers++
+			//        ip := rr.(*dns.AAAA).AAAA
+			//        r.log().Debugf("[resolver] received AAAA record %q for %q from %s:%s", ip, h.Name, proto, extDNS.IPStr)
+			//        r.backend.HandleQueryResp(h.Name, ip)
+			//    }
+			//}
+
+			//reqbytes, _ := json.Marshal(req)
+			//resbytes, _ := json.Marshal(resp)
+			//fmt.Println(string(reqbytes), "=>", string(resbytes), "\n\n")
+
+			h.WriteReplyMsg(w, resp)
 		}(data.Net, data.w, data.req)
 	}
 }
@@ -196,9 +222,9 @@ func (h *DNSHandler) DoUDP(w dns.ResponseWriter, req *dns.Msg) {
 }
 
 // HandleFailed handles dns failures
-func (h *DNSHandler) HandleFailed(w dns.ResponseWriter, message *dns.Msg) {
+func (h *DNSHandler) HandleFailed(w dns.ResponseWriter, req *dns.Msg) {
 	m := new(dns.Msg)
-	m.SetRcode(message, dns.RcodeServerFailure)
+	m.SetRcode(req, dns.RcodeServerFailure)
 	h.WriteReplyMsg(w, m)
 }
 

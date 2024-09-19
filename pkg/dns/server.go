@@ -21,9 +21,9 @@ type Server struct {
 }
 
 // Run starts the server
-func (s *Server) Run(config *Config, blockCache *MemoryBlockCache) {
+func (s *Server) Run(config *Config) {
 
-	s.handler = NewHandler(config, blockCache)
+	s.handler = NewHandler(config)
 
 	tcpHandler := dns.NewServeMux()
 	tcpHandler.HandleFunc(".", s.handler.DoTCP)
@@ -85,24 +85,7 @@ func (s *Server) Stop() {
 }
 
 func Start(cfg configurator.Configurator) {
-
-	config := new(Config)
-
-	config.Interval = 200
-	config.Timeout = 5
-	config.Expire = 600
-	config.Maxcount = 0
-	config.QuestionCacheCap = 5000
-	config.NXDomain = false
-	config.Nullroute = "2.2.2.2"
-
-	if upstream := cfg.GetLocalDNSProxyPrimaryUpstream(); len(upstream) > 0 {
-		config.Nameservers = append(config.Nameservers, fmt.Sprintf("%s:53", upstream))
-	}
-
-	if upstream := cfg.GetLocalDNSProxySecondaryUpstream(); len(upstream) > 0 {
-		config.Nameservers = append(config.Nameservers, fmt.Sprintf("%s:53", upstream))
-	}
+	config := &Config{cfg: cfg}
 
 	server := &Server{
 		host:     fmt.Sprintf(":%d", constants.FSMDNSProxyPort),
@@ -110,10 +93,5 @@ func Start(cfg configurator.Configurator) {
 		wTimeout: 5 * time.Second,
 	}
 
-	// BlockCache contains all blocked domains
-	blockCache := &MemoryBlockCache{Backend: make(map[string]bool)}
-
-	// The server will start with an empty blockcache soe we can dowload the lists if grimd is the
-	// system's dns server.
-	server.Run(config, blockCache)
+	server.Run(config)
 }

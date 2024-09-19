@@ -29,7 +29,7 @@ type Resolver struct {
 // Lookup will ask each nameserver in top-to-bottom fashion, starting a new request
 // in every second, and return as early as possbile (have an answer).
 // It returns an error if no request has succeeded.
-func (r *Resolver) Lookup(net string, req *dns.Msg, timeout int, interval int, nameServers []string) (message *dns.Msg, err error) {
+func (r *Resolver) Lookup(net string, req *dns.Msg, timeout int, interval int, nameServers []string) (*dns.Msg, error) {
 	log.Debug().Msgf("Lookup %s, timeout: %d, interval: %d, nameservers: %v", net, timeout, interval, nameServers)
 
 	c := &dns.Client{
