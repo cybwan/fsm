@@ -102,6 +102,7 @@ type WildcardDN struct {
 	Enable bool `json:"enable"`
 
 	// LOs defines loopback addresses for resolve DN.
+	// +optional
 	LOs []ResolveAddr `json:"los"`
 
 	// IPs defines ip addresses for resolve DN.
