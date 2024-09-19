@@ -38,6 +38,10 @@ func (c *Config) GetWildcardResolveDB() []configv1alpha3.ResolveAddr {
 	return c.cfg.GetMeshConfig().Spec.Sidecar.LocalDNSProxy.Wildcard.IPs
 }
 
+func (c *Config) GetLoopbackResolveDB() []configv1alpha3.ResolveAddr {
+	return c.cfg.GetMeshConfig().Spec.Sidecar.LocalDNSProxy.Wildcard.LOs
+}
+
 func (c *Config) GenerateIPv6BasedOnIPv4() bool {
 	return c.cfg.GenerateIPv6BasedOnIPv4()
 }

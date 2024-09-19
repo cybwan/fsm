@@ -133,70 +133,34 @@ func (h *DNSHandler) do(cfg *Config) {
 			}
 
 			if resp.Rcode == dns.RcodeNameError && cfg.IsWildcard() {
-				m := new(dns.Msg)
-				m.SetReply(req)
+				h.HandleWildcard(req, cfg, ipQuery, &q, w)
+				return
+			}
 
-				if cfg.GetNXDomain() {
-					m.SetRcode(req, dns.RcodeNameError)
-				} else {
-					dbs := cfg.GetWildcardResolveDB()
-					switch ipQuery {
-					case _IP4Query:
-						rrHeader := dns.RR_Header{
-							Name:   q.Name,
-							Rrtype: dns.TypeA,
-							Class:  dns.ClassINET,
-							Ttl:    0,
-						}
-						for _, db := range dbs {
-							if len(db.IPv4) == 0 {
-								continue
-							}
-							a := &dns.A{Hdr: rrHeader, A: net.ParseIP(db.IPv4)}
-							m.Answer = append(m.Answer, a)
-						}
-					case _IP6Query:
-						rrHeader := dns.RR_Header{
-							Name:   q.Name,
-							Rrtype: dns.TypeAAAA,
-							Class:  dns.ClassINET,
-							Ttl:    0,
-						}
-						for _, db := range dbs {
-							if len(db.IPv6) > 0 {
-								a := &dns.AAAA{Hdr: rrHeader, AAAA: net.ParseIP(db.IPv6)}
-								m.Answer = append(m.Answer, a)
-							} else if len(db.IPv4) > 0 && cfg.GenerateIPv6BasedOnIPv4() {
-								a := &dns.AAAA{Hdr: rrHeader, AAAA: net.ParseIP(utils.IPv4Tov6(db.IPv4))}
-								m.Answer = append(m.Answer, a)
+			if cfg.IsWildcard() && len(cfg.GetLoopbackResolveDB()) > 0 {
+				los := cfg.GetLoopbackResolveDB()
+				dbs := cfg.GetWildcardResolveDB()
+				for idx, rr := range resp.Answer {
+					header := rr.Header()
+					switch header.Rrtype {
+					case dns.TypeA:
+						a := rr.(*dns.A)
+						ip := a.A
+						for _, lo := range los {
+							if strings.EqualFold(ip.String(), lo.IPv4) {
+								for _, db := range dbs {
+									if len(db.IPv4) > 0 {
+										a.A = net.ParseIP(db.IPv4)
+										resp.Answer[idx] = a
+										break
+									}
+								}
+								break
 							}
 						}
 					}
 				}
-				h.WriteReplyMsg(w, m)
-				return
 			}
-
-			//answers := 0
-			//for _, rr := range resp.Answer {
-			//    h := rr.Header()
-			//    switch h.Rrtype {
-			//    case dns.TypeA:
-			//        answers++
-			//        ip := rr.(*dns.A).A
-			//        r.log().Debugf("[resolver] received A record %q for %q from %s:%s", ip, h.Name, proto, extDNS.IPStr)
-			//        r.backend.HandleQueryResp(h.Name, ip)
-			//    case dns.TypeAAAA:
-			//        answers++
-			//        ip := rr.(*dns.AAAA).AAAA
-			//        r.log().Debugf("[resolver] received AAAA record %q for %q from %s:%s", ip, h.Name, proto, extDNS.IPStr)
-			//        r.backend.HandleQueryResp(h.Name, ip)
-			//    }
-			//}
-
-			//reqbytes, _ := json.Marshal(req)
-			//resbytes, _ := json.Marshal(resp)
-			//fmt.Println(string(reqbytes), "=>", string(resbytes), "\n\n")
 
 			h.WriteReplyMsg(w, resp)
 		}(data.Net, data.w, data.req)
@@ -225,6 +189,50 @@ func (h *DNSHandler) DoUDP(w dns.ResponseWriter, req *dns.Msg) {
 func (h *DNSHandler) HandleFailed(w dns.ResponseWriter, req *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetRcode(req, dns.RcodeServerFailure)
+	h.WriteReplyMsg(w, m)
+}
+
+func (h *DNSHandler) HandleWildcard(req *dns.Msg, cfg *Config, ipQuery int, q *dns.Question, w dns.ResponseWriter) {
+	m := new(dns.Msg)
+	m.SetReply(req)
+
+	if cfg.GetNXDomain() {
+		m.SetRcode(req, dns.RcodeNameError)
+	} else {
+		dbs := cfg.GetWildcardResolveDB()
+		switch ipQuery {
+		case _IP4Query:
+			rrHeader := dns.RR_Header{
+				Name:   q.Name,
+				Rrtype: dns.TypeA,
+				Class:  dns.ClassINET,
+				Ttl:    0,
+			}
+			for _, db := range dbs {
+				if len(db.IPv4) == 0 {
+					continue
+				}
+				a := &dns.A{Hdr: rrHeader, A: net.ParseIP(db.IPv4)}
+				m.Answer = append(m.Answer, a)
+			}
+		case _IP6Query:
+			rrHeader := dns.RR_Header{
+				Name:   q.Name,
+				Rrtype: dns.TypeAAAA,
+				Class:  dns.ClassINET,
+				Ttl:    0,
+			}
+			for _, db := range dbs {
+				if len(db.IPv6) > 0 {
+					a := &dns.AAAA{Hdr: rrHeader, AAAA: net.ParseIP(db.IPv6)}
+					m.Answer = append(m.Answer, a)
+				} else if len(db.IPv4) > 0 && cfg.GenerateIPv6BasedOnIPv4() {
+					a := &dns.AAAA{Hdr: rrHeader, AAAA: net.ParseIP(utils.IPv4Tov6(db.IPv4))}
+					m.Answer = append(m.Answer, a)
+				}
+			}
+		}
+	}
 	h.WriteReplyMsg(w, m)
 }
 

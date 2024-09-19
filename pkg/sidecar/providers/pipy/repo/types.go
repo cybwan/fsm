@@ -541,9 +541,9 @@ type PipyConf struct {
 	Forward          *ForwardTrafficPolicy  `json:"Forward,omitempty"`
 	AllowedEndpoints map[string]string      `json:"AllowedEndpoints"`
 	Chains           map[string][]string    `json:"Chains,omitempty"`
-	DNSResolveDB     map[string][]string    `json:"DNSResolveDB,omitempty"`
 
 	PluginSetV     string `json:"-"`
 	pluginPolicies map[string]map[string]*map[string]*runtime.RawExtension
 	hashNameSet    map[uint64]int
+	dnsResolveDB   map[string][]string
 }
