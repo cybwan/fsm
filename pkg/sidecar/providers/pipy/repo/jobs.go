@@ -374,7 +374,6 @@ func features(s *Server, proxy *pipy.Proxy, pipyConf *PipyConf) {
 		pipyConf.setHTTP1PerRequestLoadBalancing((*meshConf).GetMeshConfig().Spec.Traffic.HTTP1PerRequestLoadBalancing)
 		pipyConf.setHTTP2PerRequestLoadBalancing((*meshConf).GetMeshConfig().Spec.Traffic.HTTP2PerRequestLoadBalancing)
 		pipyConf.setEnablePermissiveTrafficPolicyMode((*meshConf).IsPermissiveTrafficPolicyMode())
-		pipyConf.setLocalDNSProxy((*meshConf).IsLocalDNSProxyEnabled(), meshConf)
 		pipyConf.setObservabilityTracing((*meshConf).IsTracingEnabled(), meshConf)
 		pipyConf.setObservabilityRemoteLogging((*meshConf).IsRemoteLoggingEnabled(), meshConf)
 		clusterProps := (*meshConf).GetMeshConfig().Spec.ClusterSet.Properties

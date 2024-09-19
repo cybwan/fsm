@@ -1,9 +1,13 @@
 package dns
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/miekg/dns"
+
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 // Server type
@@ -80,4 +84,40 @@ func (s *Server) Stop() {
 			log.Error().Err(err)
 		}
 	}
+}
+
+func Start(cfg configurator.Configurator) {
+
+	config := new(Config)
+
+	config.Interval = 200
+	config.Timeout = 5
+	config.Expire = 600
+	config.Maxcount = 0
+	config.QuestionCacheCap = 5000
+	config.NXDomain = false
+	config.Nullroute = "2.2.2.2"
+
+	if upstream := cfg.GetLocalDNSProxyPrimaryUpstream(); len(upstream) > 0 {
+		config.Nameservers = append(config.Nameservers, fmt.Sprintf("%s:53", upstream))
+	}
+
+	if upstream := cfg.GetLocalDNSProxySecondaryUpstream(); len(upstream) > 0 {
+		config.Nameservers = append(config.Nameservers, fmt.Sprintf("%s:53", upstream))
+	}
+
+	server := &Server{
+		host:     fmt.Sprintf(":%d", constants.FSMDNSProxyPort),
+		rTimeout: 5 * time.Second,
+		wTimeout: 5 * time.Second,
+	}
+
+	// BlockCache contains all blocked domains
+	blockCache := &MemoryBlockCache{Backend: make(map[string]bool)}
+	// QuestionCache contains all queries to the dns server
+	questionCache := makeQuestionCache(config.QuestionCacheCap)
+
+	// The server will start with an empty blockcache soe we can dowload the lists if grimd is the
+	// system's dns server.
+	server.Run(config, blockCache, questionCache)
 }
