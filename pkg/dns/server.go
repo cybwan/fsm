@@ -21,11 +21,9 @@ type Server struct {
 }
 
 // Run starts the server
-func (s *Server) Run(config *Config,
-	blockCache *MemoryBlockCache,
-	questionCache *MemoryQuestionCache) {
+func (s *Server) Run(config *Config, blockCache *MemoryBlockCache) {
 
-	s.handler = NewHandler(config, blockCache, questionCache)
+	s.handler = NewHandler(config, blockCache)
 
 	tcpHandler := dns.NewServeMux()
 	tcpHandler.HandleFunc(".", s.handler.DoTCP)
@@ -114,10 +112,8 @@ func Start(cfg configurator.Configurator) {
 
 	// BlockCache contains all blocked domains
 	blockCache := &MemoryBlockCache{Backend: make(map[string]bool)}
-	// QuestionCache contains all queries to the dns server
-	questionCache := makeQuestionCache(config.QuestionCacheCap)
 
 	// The server will start with an empty blockcache soe we can dowload the lists if grimd is the
 	// system's dns server.
-	server.Run(config, blockCache, questionCache)
+	server.Run(config, blockCache)
 }

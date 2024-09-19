@@ -1,8 +1,6 @@
 package dns
 
 import (
-	"crypto/md5"
-	"fmt"
 	"regexp"
 	"strings"
 	"sync"
@@ -71,13 +69,6 @@ type MemoryBlockCache struct {
 	Backend map[string]bool
 	Special map[string]*regexp.Regexp
 	mu      sync.RWMutex
-}
-
-// MemoryQuestionCache type
-type MemoryQuestionCache struct {
-	Backend  []QuestionCacheEntry `json:"entry"`
-	Maxcount int
-	mu       sync.RWMutex
 }
 
 // Get returns the entry for a key or an error
@@ -178,16 +169,6 @@ func (c *MemoryCache) Full() bool {
 	return c.Length() >= c.Maxcount
 }
 
-// KeyGen generates a key for the hash from a question
-func KeyGen(q Question) string {
-	h := md5.New()
-	h.Write([]byte(q.String()))
-	x := h.Sum(nil)
-	key := fmt.Sprintf("%x", x)
-	log.Debug().Msgf("KeyGen: %s %s", q.String(), key)
-	return key
-}
-
 // Get returns the entry for a key or an error
 func (c *MemoryBlockCache) Get(key string) (bool, error) {
 	var ok, val bool
@@ -277,40 +258,4 @@ func (c *MemoryBlockCache) Length() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return len(c.Backend)
-}
-
-// Add adds a question to the cache
-func (c *MemoryQuestionCache) Add(q QuestionCacheEntry) {
-	c.mu.Lock()
-	if c.Maxcount != 0 && len(c.Backend) >= c.Maxcount {
-		c.Backend = nil
-	}
-	c.Backend = append(c.Backend, q)
-	c.mu.Unlock()
-}
-
-// Clear clears the contents of the cache
-func (c *MemoryQuestionCache) Clear() {
-	c.mu.Lock()
-	c.Backend = make([]QuestionCacheEntry, 0, 0)
-	c.mu.Unlock()
-}
-
-// Length returns the caches length
-func (c *MemoryQuestionCache) Length() int {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return len(c.Backend)
-}
-
-// GetOlder eturns a slice of the entries older than `time`
-func (c *MemoryQuestionCache) GetOlder(time int64) []QuestionCacheEntry {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	for i, e := range c.Backend {
-		if e.Date > time {
-			return c.Backend[i:]
-		}
-	}
-	return []QuestionCacheEntry{}
 }

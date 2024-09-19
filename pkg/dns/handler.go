@@ -1,9 +1,11 @@
 package dns
 
 import (
+	"encoding/json"
+	"fmt"
 	"net"
+	"strings"
 	"sync"
-	"time"
 
 	"github.com/miekg/dns"
 )
@@ -38,8 +40,6 @@ func (q *Question) String() string {
 type DNSHandler struct {
 	requestChannel chan DNSOperationData
 	resolver       *Resolver
-	cache          Cache
-	negCache       Cache
 	active         bool
 	muActive       sync.RWMutex
 }
@@ -52,39 +52,26 @@ type DNSOperationData struct {
 }
 
 // NewHandler returns a new DNSHandler
-func NewHandler(config *Config, blockCache *MemoryBlockCache, questionCache *MemoryQuestionCache) *DNSHandler {
+func NewHandler(config *Config, blockCache *MemoryBlockCache) *DNSHandler {
 	var (
 		clientConfig *dns.ClientConfig
 		resolver     *Resolver
-		cache        Cache
-		negCache     Cache
 	)
 
 	resolver = &Resolver{clientConfig}
 
-	cache = &MemoryCache{
-		Backend:  make(map[string]*Mesg, config.Maxcount),
-		Maxcount: config.Maxcount,
-	}
-	negCache = &MemoryCache{
-		Backend:  make(map[string]*Mesg),
-		Maxcount: config.Maxcount,
-	}
-
 	handler := &DNSHandler{
 		requestChannel: make(chan DNSOperationData),
 		resolver:       resolver,
-		cache:          cache,
-		negCache:       negCache,
 		active:         true,
 	}
 
-	go handler.do(config, blockCache, questionCache)
+	go handler.do(config, blockCache)
 
 	return handler
 }
 
-func (h *DNSHandler) do(config *Config, blockCache *MemoryBlockCache, questionCache *MemoryQuestionCache) {
+func (h *DNSHandler) do(config *Config, blockCache *MemoryBlockCache) {
 	for {
 		data, ok := <-h.requestChannel
 		if !ok {
@@ -96,6 +83,15 @@ func (h *DNSHandler) do(config *Config, blockCache *MemoryBlockCache, questionCa
 				if err != nil {
 				}
 			}(w)
+
+			for index, q := range req.Question {
+				if strings.HasSuffix(q.Name, ".svc.cluster.local.") {
+					if segs := strings.Split(q.Name, "."); len(segs) == 7 {
+						req.Question[index].Name = fmt.Sprintf("%s.%s.svc.cluster.local.", segs[0], segs[1])
+					}
+				}
+			}
+
 			q := req.Question[0]
 			Q := Question{UnFqdn(q.Name), dns.TypeToString[q.Qtype], dns.ClassToString[q.Qclass]}
 
@@ -107,152 +103,76 @@ func (h *DNSHandler) do(config *Config, blockCache *MemoryBlockCache, questionCa
 			}
 
 			log.Info().Msgf("%s lookup　%s\n", remote, Q.String())
+			fmt.Printf("%s lookup　%s\n", remote, Q.String())
 
-			IPQuery := h.isIPQuery(q)
+			ipQuery := h.isIPQuery(q)
+			if ipQuery == 0 {
+				m := new(dns.Msg)
+				m.SetReply(req)
+				m.SetRcode(req, dns.RcodeNameError)
+				h.WriteReplyMsg(w, m)
+				return
+			}
 
-			// Only query cache when qtype == 'A'|'AAAA' , qclass == 'IN'
-			key := KeyGen(Q)
-			if IPQuery > 0 {
-				mesg, blocked, err := h.cache.Get(key)
-				if err != nil {
-					if mesg, blocked, err = h.negCache.Get(key); err != nil {
-						log.Debug().Msgf("%s didn't hit cache\n", Q.String())
-					} else {
-						log.Debug().Msgf("%s hit negative cache\n", Q.String())
-						h.HandleFailed(w, req)
-						return
-					}
+			if blacklisted := blockCache.Exists(Q.Qname); blacklisted {
+				m := new(dns.Msg)
+				m.SetReply(req)
+
+				if config.NXDomain {
+					m.SetRcode(req, dns.RcodeNameError)
 				} else {
-					if blocked {
-						log.Debug().Msgf("%s hit cache and was blocked: forwarding request\n", Q.String())
-					} else {
-						log.Debug().Msgf("%s hit cache\n", Q.String())
+					nullroute := net.ParseIP(config.Nullroute)
+					nullroutev6 := net.ParseIP(config.Nullroutev6)
 
-						// we need this copy against concurrent modification of ID
-						msg := *mesg
-						msg.Id = req.Id
-						h.WriteReplyMsg(w, &msg)
-						return
-					}
-				}
-			}
-			// Check blocklist
-			var blacklisted = false
-			var drblblacklisted bool
-
-			if IPQuery > 0 {
-				blacklisted = blockCache.Exists(Q.Qname)
-				log.Debug().Msgf("DrblBlistCheck is disabled for =>", Q.Qname, "The result is =>", drblblacklisted)
-
-				if blacklisted || drblblacklisted {
-					m := new(dns.Msg)
-					m.SetReply(req)
-
-					if config.NXDomain {
-						m.SetRcode(req, dns.RcodeNameError)
-					} else {
-						nullroute := net.ParseIP(config.Nullroute)
-						nullroutev6 := net.ParseIP(config.Nullroutev6)
-
-						switch IPQuery {
-						case _IP4Query:
-							rrHeader := dns.RR_Header{
-								Name:   q.Name,
-								Rrtype: dns.TypeA,
-								Class:  dns.ClassINET,
-								Ttl:    config.TTL,
-							}
-							a := &dns.A{Hdr: rrHeader, A: nullroute}
-							m.Answer = append(m.Answer, a)
-						case _IP6Query:
-							rrHeader := dns.RR_Header{
-								Name:   q.Name,
-								Rrtype: dns.TypeAAAA,
-								Class:  dns.ClassINET,
-								Ttl:    config.TTL,
-							}
-							a := &dns.AAAA{Hdr: rrHeader, AAAA: nullroutev6}
-							m.Answer = append(m.Answer, a)
+					switch ipQuery {
+					case _IP4Query:
+						rrHeader := dns.RR_Header{
+							Name:   q.Name,
+							Rrtype: dns.TypeA,
+							Class:  dns.ClassINET,
+							Ttl:    config.TTL,
 						}
+						a := &dns.A{Hdr: rrHeader, A: nullroute}
+						m.Answer = append(m.Answer, a)
+					case _IP6Query:
+						rrHeader := dns.RR_Header{
+							Name:   q.Name,
+							Rrtype: dns.TypeAAAA,
+							Class:  dns.ClassINET,
+							Ttl:    config.TTL,
+						}
+						a := &dns.AAAA{Hdr: rrHeader, AAAA: nullroutev6}
+						m.Answer = append(m.Answer, a)
 					}
-
-					h.WriteReplyMsg(w, m)
-
-					log.Info().Msgf("%s found in blocklist\n", Q.Qname)
-
-					// log query
-					NewEntry := QuestionCacheEntry{Date: time.Now().Unix(), Remote: remote.String(), Query: Q, Blocked: true}
-					go questionCache.Add(NewEntry)
-
-					// cache the block; we don't know the true TTL for blocked entries: we just enforce our config
-					err := h.cache.Set(key, m, true)
-					if err != nil {
-						log.Error().Msgf("Set %s block cache failed: %s\n", Q.String(), err.Error())
-					}
-
-					return
 				}
-				log.Debug().Msgf("%s not found in blocklist\n", Q.Qname)
+
+				h.WriteReplyMsg(w, m)
+				log.Info().Msgf("%s found in blocklist\n", Q.Qname)
+				return
 			}
 
-			// log query
-			NewEntry := QuestionCacheEntry{Date: time.Now().Unix(), Remote: remote.String(), Query: Q, Blocked: false}
-			go questionCache.Add(NewEntry)
-
-			mesg, err := h.resolver.Lookup(Net, req, config.Timeout, config.Interval, config.Nameservers)
+			res, err := h.resolver.Lookup(Net, req, config.Timeout, config.Interval, config.Nameservers)
 
 			if err != nil {
 				log.Error().Msgf("resolve query error %s\n", err)
 				h.HandleFailed(w, req)
-
-				// cache the failure, too!
-				if err = h.negCache.Set(key, nil, false); err != nil {
-					log.Error().Msgf("set %s negative cache failed: %v\n", Q.String(), err)
-				}
 				return
 			}
 
-			if mesg.Truncated && Net == "udp" {
-				mesg, err = h.resolver.Lookup("tcp", req, config.Timeout, config.Interval, config.Nameservers)
+			if res.Truncated && Net == "udp" {
+				res, err = h.resolver.Lookup("tcp", req, config.Timeout, config.Interval, config.Nameservers)
 				if err != nil {
 					log.Error().Msgf("resolve tcp query error %s\n", err)
 					h.HandleFailed(w, req)
-
-					// cache the failure, too!
-					if err = h.negCache.Set(key, nil, false); err != nil {
-						log.Error().Msgf("set %s negative cache failed: %v\n", Q.String(), err)
-					}
 					return
 				}
 			}
 
-			//find the smallest ttl
-			ttl := config.Expire
-			var candidateTTL uint32
+			reqbytes, _ := json.MarshalIndent(req, "", "")
+			resbytes, _ := json.MarshalIndent(res, "", "")
+			fmt.Println(string(reqbytes), "=>", string(resbytes), "\n\n")
 
-			for index, answer := range mesg.Answer {
-				log.Debug().Msgf("Answer %d - %s\n", index, answer.String())
-
-				candidateTTL = answer.Header().Ttl
-
-				if candidateTTL > 0 && candidateTTL < ttl {
-					ttl = candidateTTL
-				}
-			}
-
-			h.WriteReplyMsg(w, mesg)
-
-			if IPQuery > 0 && len(mesg.Answer) > 0 {
-				if blacklisted {
-					log.Debug().Msgf("%s is blacklisted and grimd not active: not caching\n", Q.String())
-				} else {
-					err = h.cache.Set(key, mesg, false)
-					if err != nil {
-						log.Error().Msgf("set %s cache failed: %s\n", Q.String(), err.Error())
-					}
-					log.Debug().Msgf("insert %s into cache with ttl %d\n", Q.String(), ttl)
-				}
-			}
+			h.WriteReplyMsg(w, res)
 		}(data.Net, data.w, data.req)
 	}
 }
