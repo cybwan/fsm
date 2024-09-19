@@ -22,7 +22,6 @@ type Server struct {
 
 // Run starts the server
 func (s *Server) Run(config *Config) {
-
 	s.handler = NewHandler(config)
 
 	tcpHandler := dns.NewServeMux()
