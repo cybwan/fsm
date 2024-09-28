@@ -357,8 +357,11 @@ const (
 	// VersionPath is the path at which FSM controller serves version info
 	VersionPath = "/version"
 
+	// HealthCheckPath is the path at which serves health checks
+	HealthCheckPath = "/healthz"
+
 	// WebhookHealthPath is the path at which the webooks serve health probes
-	WebhookHealthPath = "/healthz"
+	WebhookHealthPath = HealthCheckPath
 )
 
 // FSM HTTP Server Responses
@@ -394,7 +397,7 @@ const (
 // GatewayAPI Group and Kinds
 const (
 	// GatewayAPIGroup is the group name used in Gateway API
-	GatewayAPIGroup = "gateway.networking.k8s.io"
+	GatewayAPIGroup = gwv1.GroupName
 
 	// FlomeshMCSAPIGroup is the group name used in Flomesh Multi Cluster Service API
 	FlomeshMCSAPIGroup = "multicluster.flomesh.io"
@@ -461,6 +464,9 @@ const (
 
 	// LoadBalancerPolicyKind is the kind name of LoadBalancerPolicy used in Flomesh API
 	LoadBalancerPolicyKind = "LoadBalancerPolicy"
+
+	// BackendLBPolicyKind is the kind name of BackendLBPolicy used in Flomesh API
+	BackendLBPolicyKind = "BackendLBPolicy"
 
 	// CircuitBreakerKind is the kind name of CircuitBreaker used in Flomesh API
 	CircuitBreakerKind = "CircuitBreaker"
@@ -550,10 +556,6 @@ const (
 	ServicePolicyAttachmentIndex                 = "servicePolicyAttachmentIndex"
 	SecretBackendTLSPolicyIndex                  = "secretBackendTLSPolicyIndex"
 	ConfigmapBackendTLSPolicyIndex               = "cmBackendTLSPolicyIndex"
-	PortPolicyAttachmentIndex                    = "portPolicyAttachmentIndex"
-	HostnamePolicyAttachmentIndex                = "hostnamePolicyAttachmentIndex"
-	HTTPRoutePolicyAttachmentIndex               = "httpRoutePolicyAttachmentIndex"
-	GRPCRoutePolicyAttachmentIndex               = "grpcRoutePolicyAttachmentIndex"
 	ExtensionFilterHTTPRouteIndex                = "filterHTTPRouteIndex"
 	ExtensionFilterGRPCRouteIndex                = "filterGRPCRouteIndex"
 	GatewayListenerFilterIndex                   = "gatewayListenerFilterIndex"

@@ -7,6 +7,8 @@ import (
 
 	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
 
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -31,7 +33,6 @@ type backendTLSPolicyReconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
 	webhook  whtypes.Register
-	//statusProcessor *policystatus.ServicePolicyStatusProcessor
 }
 
 func (r *backendTLSPolicyReconciler) NeedLeaderElection() bool {
@@ -45,13 +46,6 @@ func NewBackendTLSPolicyReconciler(ctx *fctx.ControllerContext, webhook whtypes.
 		fctx:     ctx,
 		webhook:  webhook,
 	}
-
-	//r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
-	//	Client:              r.fctx.Client,
-	//	Informer:            r.fctx.InformerCollection,
-	//	GetAttachedPolicies: r.getAttachedRetryPolicies,
-	//	FindConflict:        r.findConflict,
-	//}
 
 	return r
 }
@@ -74,14 +68,6 @@ func (r *backendTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, nil
 	}
 
-	//r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
-	//	policy,
-	//	&policy.ObjectMeta,
-	//	&policy.TypeMeta,
-	//	policy.Spec.TargetRef,
-	//	policy.Status.Conditions,
-	//))
-
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
@@ -89,7 +75,7 @@ func (r *backendTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *backendTLSPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := ctrl.NewWebhookManagedBy(mgr).
+	if err := whblder.WebhookManagedBy(mgr).
 		For(&gwv1alpha3.BackendTLSPolicy{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
