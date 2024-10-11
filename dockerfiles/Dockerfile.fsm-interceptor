@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o ./dist/fsm-cni -ldflags "$LDFLAGS" ./cmd/fsm-interceptor/fsm-cni/fsm-cni.go
 
-FROM flomesh/ebpf:base20.04
+FROM flomesh/ebpf:base22.04
 
 WORKDIR /app
 
