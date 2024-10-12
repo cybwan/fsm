@@ -26,8 +26,9 @@
 
 char __LICENSE[] SEC("license") = "GPL";
 
-SEC("tc/ingress")
-int tc_inbound_ingress(struct __sk_buff *ctx) {
+//SEC("tc/ingress")
+SEC("classifier/ingress")
+int tc_ingress(struct __sk_buff *ctx) {
   int z = 0;
   struct xfrm *xf;
 
@@ -50,8 +51,9 @@ int tc_inbound_ingress(struct __sk_buff *ctx) {
   return DP_PASS;
 }
 
-SEC("tc/egress")
-int tc_inbound_egress(struct __sk_buff *ctx) {
+//SEC("tc/egress")
+SEC("classifier/egress")
+int tc_egress(struct __sk_buff *ctx) {
   int z = 0;
   struct xfrm *xf;
 
@@ -74,47 +76,7 @@ int tc_inbound_egress(struct __sk_buff *ctx) {
   return DP_PASS;
 }
 
-SEC("tc/ingress")
-int tc_outbound_ingress(struct __sk_buff *ctx) {
-  int z = 0;
-  struct xfrm *xf;
-
-  xf = bpf_map_lookup_elem(&f4gw_xfrms, &z);
-  if (!xf) {
-    return DP_DROP;
-  }
-  memset(xf, 0, sizeof *xf);
-
-  xf->pm.igr = 1;
-  xf->pm.ifi = ctx->ingress_ifindex;
-
-  dp_parse_d0(ctx, xf, 1);
-
-  // return dp_egr_main(ctx, xf);
-  return DP_PASS;
-}
-
-SEC("tc/egress")
-int tc_outbound_egress(struct __sk_buff *ctx) {
-  int z = 0;
-  struct xfrm *xf;
-
-  xf = bpf_map_lookup_elem(&f4gw_xfrms, &z);
-  if (!xf) {
-    return DP_DROP;
-  }
-  memset(xf, 0, sizeof *xf);
-
-  xf->pm.egr = 1;
-  xf->pm.ifi = ctx->ingress_ifindex;
-
-  dp_parse_d0(ctx, xf, 1);
-
-  // return dp_egr_main(ctx, xf);
-  return DP_PASS;
-}
-
-SEC("tc")
+SEC("classifier/sh")
 int tc_hand_shake_func(struct __sk_buff *ctx) {
   int z = 0;
   struct xfrm *xf;
@@ -136,7 +98,7 @@ int tc_hand_shake_func(struct __sk_buff *ctx) {
   return dp_ing_sh_main(ctx, xf);
 }
 
-SEC("tc")
+SEC("classifier/ct")
 int tc_conn_track_func(struct __sk_buff *ctx) {
   int z = 0;
   struct xfrm *xf;
@@ -149,12 +111,12 @@ int tc_conn_track_func(struct __sk_buff *ctx) {
   return dp_ing_ct_main(ctx, xf);
 }
 
-SEC("tc")
+SEC("classifier/pass")
 int tc_pass(struct __sk_buff *ctx) {
   return DP_PASS;
 }
 
-SEC("tc")
+SEC("classifier/drop")
 int tc_drop(struct __sk_buff *ctx) {
   return DP_DROP;
 }

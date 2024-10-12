@@ -8,7 +8,7 @@ CLANG = clang
 BASE_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 INC_DIR = $(abspath ${BASE_DIR})/bpf/include
 SRC_DIR = $(abspath ${BASE_DIR})/bpf/src
-BIN_DIR = $(abspath ${BASE_DIR})/bin
+BIN_DIR = $(abspath ${BASE_DIR})/bpf
 BPF_DIR = $(abspath ${BASE_DIR})/bpf
 
 MESH_KERN_OUT = mesh.kern.o
@@ -24,7 +24,9 @@ BPF_CFLAGS = \
 CGO_CFLAGS_DYN = "-I. -I./bpf/include -I/usr/include/"
 CGO_LDFLAGS_DYN = "-lelf -lz -lbpf"
 
-.default: build
+BPF_FS  = /sys/fs/bpf
+bpf-fs:
+	mountpoint -q ${BPF_FS} || mount -t bpf bpf ${BPF_FS}
 
 .PHONY: build
 build: bpf
@@ -45,3 +47,13 @@ bpf-clean:
 
 .PHONY: bpf
 bpf: bpf-clean bpf-build
+
+.PHONY: load
+load: bpf-fs bpf-build
+	mount -t debugfs debugfs /sys/kernel/debug
+	bpftool prog loadall bpf/mesh.kern.o /sys/fs/bpf/mesh pinmaps /sys/fs/bpf/mesh
+
+.PHONY: clean
+clean:
+	rm -rf /sys/fs/bpf/mesh
+
