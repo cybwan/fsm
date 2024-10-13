@@ -179,7 +179,8 @@ func CmdDelete(args *skel.CmdArgs) error {
 	}
 	bs, _ := json.Marshal(args)
 	body := bytes.NewReader(bs)
-	_, err := httpc.Post("http://fsm-cni"+config.CNIDeletePodURL, "application/json", body)
-	log.Error().Msgf("fsm-cni cmdDelete failed to parse config %v %v", string(args.StdinData), err)
+	if _, err := httpc.Post("http://fsm-cni"+config.CNIDeletePodURL, "application/json", body); err != nil {
+		log.Error().Msgf("fsm-cni cmdDelete failed to parse config %v %v", string(args.StdinData), err)
+	}
 	return nil
 }

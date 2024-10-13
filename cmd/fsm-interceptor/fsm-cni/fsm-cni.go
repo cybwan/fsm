@@ -12,7 +12,8 @@ import (
 )
 
 func init() {
-	_ = logger.SetLogLevel("warn")
+	_ = logger.SetLogLevel("debug")
+	plugin.SetLogFile("/tmp/fsm-cni.log")
 }
 
 func main() {

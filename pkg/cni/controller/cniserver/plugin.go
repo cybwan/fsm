@@ -13,7 +13,6 @@ import (
 	"runtime/debug"
 	"strconv"
 	"syscall"
-	"unsafe"
 
 	"github.com/cilium/ebpf"
 	"github.com/containernetworking/cni/pkg/skel"
@@ -52,7 +51,7 @@ func (s *server) CmdAdd(args *skel.CmdArgs) (err error) {
 		}
 	}()
 	k8sArgs := plugin.K8sArgs{}
-	if err := types.LoadArgs(args.Args, &k8sArgs); err != nil {
+	if err = types.LoadArgs(args.Args, &k8sArgs); err != nil {
 		return err
 	}
 	netns, err := ns.GetNS("/host" + args.Netns)
@@ -136,10 +135,13 @@ func (s *server) buildListener(netns string) error {
 		log.Warn().Msgf("get ip address for %s: res: %v, only support single ip address", netns, addrs)
 	}
 
+	fmt.Println("buildListener addrs:", addrs)
+
 	lc := s.listenConfig(addrs[0], netns)
 	var l net.Listener
 	l, err = lc.Listen(context.Background(), "tcp", "0.0.0.0:15050")
 	if err != nil {
+		fmt.Println("buildListener Listen err:", err.Error())
 		return err
 	}
 
@@ -153,34 +155,35 @@ func (s *server) buildListener(netns string) error {
 func (s *server) listenConfig(addr net.Addr, netns string) net.ListenConfig {
 	return net.ListenConfig{
 		Control: func(network, address string, conn syscall.RawConn) error {
-			var operr error
-			if err := conn.Control(func(fd uintptr) {
-				m, err := ebpf.LoadPinnedMap(path.Join(s.bpfMountPath, "fsm_mark_fib"), &ebpf.LoadPinOptions{})
-				if err != nil {
-					operr = err
-					return
-				}
-				var ip unsafe.Pointer
-				switch v := addr.(type) { // todo instead of hash
-				case *net.IPNet: // nolint: typecheck
-					ip, err = util.IP2Pointer(v.IP.String())
-				case *net.IPAddr: // nolint: typecheck
-					ip, err = util.IP2Pointer(v.String())
-				}
-				if err != nil {
-					operr = err
-					return
-				}
-				key := getMarkKeyOfNetns(netns)
-				operr = m.Update(key, ip, ebpf.UpdateAny)
-				if operr != nil {
-					return
-				}
-				operr = syscall.SetsockoptInt(int(fd), unix.SOL_SOCKET, ns.SoMark, int(key))
-			}); err != nil {
-				return err
-			}
-			return operr
+			//var operr error
+			//if err := conn.Control(func(fd uintptr) {
+			//    m, err := ebpf.LoadPinnedMap(path.Join(s.bpfMountPath, "fsm_mark_fib"), &ebpf.LoadPinOptions{})
+			//    if err != nil {
+			//        operr = err
+			//        return
+			//    }
+			//    var ip unsafe.Pointer
+			//    switch v := addr.(type) { // todo instead of hash
+			//    case *net.IPNet: // nolint: typecheck
+			//        ip, err = util.IP2Pointer(v.IP.String())
+			//    case *net.IPAddr: // nolint: typecheck
+			//        ip, err = util.IP2Pointer(v.String())
+			//    }
+			//    if err != nil {
+			//        operr = err
+			//        return
+			//    }
+			//    key := getMarkKeyOfNetns(netns)
+			//    operr = m.Update(key, ip, ebpf.UpdateAny)
+			//    if operr != nil {
+			//        return
+			//    }
+			//    operr = syscall.SetsockoptInt(int(fd), unix.SOL_SOCKET, ns.SoMark, int(key))
+			//}); err != nil {
+			//    return err
+			//}
+			//return operr
+			return nil
 		},
 	}
 }
@@ -336,7 +339,7 @@ func (s *server) attachTC(netns, dev string) error {
 			Kind: "bpf",
 			BPF: &tc.Bpf{
 				FD:    uint32Ptr(uint32(ing.FD())),
-				Name:  stringPtr("fsm_cni_tc_dnat"),
+				Name:  stringPtr("tc_ingress"),
 				Flags: uint32Ptr(0x1),
 			},
 		},
@@ -364,7 +367,7 @@ func (s *server) attachTC(netns, dev string) error {
 			Kind: "bpf",
 			BPF: &tc.Bpf{
 				FD:    uint32Ptr(uint32(egress.FD())),
-				Name:  stringPtr("fsm_cni_tc_snat"),
+				Name:  stringPtr("tc_egress"),
 				Flags: uint32Ptr(0x1),
 			},
 		},

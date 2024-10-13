@@ -2,6 +2,7 @@ package cniserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -16,7 +17,8 @@ func (s *server) PodCreated(w http.ResponseWriter, req *http.Request) {
 	}
 	args := skel.CmdArgs{}
 	err = json.Unmarshal(bs, &args)
-	log.Info().Msgf("cni called create with args: %+v", args)
+	//log.Info().Msgf("cni called create with args: %+v", args)
+	fmt.Println("cni called create with args:", string(bs))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))
@@ -38,7 +40,8 @@ func (s *server) PodDeleted(w http.ResponseWriter, req *http.Request) {
 	}
 	args := skel.CmdArgs{}
 	err = json.Unmarshal(bs, &args)
-	log.Info().Msgf("cni called delete with args: %+v", args)
+	//log.Info().Msgf("cni called delete with args: %+v", args)
+	fmt.Println("cni called delete with args:", string(bs))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(err.Error()))

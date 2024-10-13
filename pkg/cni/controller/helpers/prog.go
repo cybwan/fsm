@@ -30,22 +30,6 @@ func LoadProgs(useCniMode, kernelTracing bool) error {
 	return nil
 }
 
-// AttachProgs attach ebpf progs
-func AttachProgs() error {
-	if os.Getuid() != 0 {
-		return fmt.Errorf("root user in required for this process or container")
-	}
-	cmd := exec.Command("make", "attach")
-	cmd.Env = os.Environ()
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if code := cmd.ProcessState.ExitCode(); code != 0 || err != nil {
-		return fmt.Errorf("unexpected exit code: %d, err: %v", code, err)
-	}
-	return nil
-}
-
 // UnLoadProgs unload ebpf progs
 func UnLoadProgs() error {
 	cmd := exec.Command("make", "-k", "clean")
@@ -66,9 +50,10 @@ var (
 // GetTrafficControlIngressProg returns tc ingress ebpf prog
 func GetTrafficControlIngressProg() *ebpf.Program {
 	if ingress == nil {
-		err := initTrafficControlProgs()
+		var err error
+		ingress, err = ebpf.LoadPinnedProgram("/sys/fs/bpf/mesh/classifier_ingress", nil)
 		if err != nil {
-			log.Error().Msgf("init tc prog filed: %v", err)
+			log.Error().Msgf("init ingress tc prog filed: %v", err)
 		}
 	}
 	return ingress
@@ -77,34 +62,11 @@ func GetTrafficControlIngressProg() *ebpf.Program {
 // GetTrafficControlEgressProg returns tc egress ebpf prog
 func GetTrafficControlEgressProg() *ebpf.Program {
 	if egress == nil {
-		err := initTrafficControlProgs()
+		var err error
+		egress, err = ebpf.LoadPinnedProgram("/sys/fs/bpf/mesh/classifier_egress", nil)
 		if err != nil {
-			log.Error().Msgf("init tc prog filed: %v", err)
+			log.Error().Msgf("init egress tc prog filed: %v", err)
 		}
 	}
 	return egress
-}
-
-func initTrafficControlProgs() error {
-	coll, err := ebpf.LoadCollectionSpec("bpf/fsm_cni_tc_nat.o")
-	if err != nil {
-		return err
-	}
-	type progs struct {
-		Ingress *ebpf.Program `ebpf:"fsm_cni_tc_dnat"`
-		Egress  *ebpf.Program `ebpf:"fsm_cni_tc_snat"`
-	}
-	ps := progs{}
-	err = coll.LoadAndAssign(&ps, &ebpf.CollectionOptions{
-		MapReplacements: map[string]*ebpf.Map{
-			"fsm_pod_fib": GetPodFibMap(),
-			"fsm_nat_fib": GetNatFibMap(),
-		},
-	})
-	if err != nil {
-		return err
-	}
-	ingress = ps.Ingress
-	egress = ps.Egress
-	return nil
 }
