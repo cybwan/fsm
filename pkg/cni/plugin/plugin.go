@@ -39,6 +39,11 @@ type podInfo struct {
 }
 
 func ignore(conf *Config, k8sArgs *K8sArgs) bool {
+	k8sArgsBytes, _ := json.MarshalIndent(k8sArgs, "", " ")
+	log.Info().Msg(string(k8sArgsBytes))
+	confBytes, _ := json.MarshalIndent(conf, "", " ")
+	log.Info().Msg(string(confBytes))
+
 	ns := string(k8sArgs.K8S_POD_NAMESPACE)
 	name := string(k8sArgs.K8S_POD_NAME)
 	if ns != "" && name != "" {

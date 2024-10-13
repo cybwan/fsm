@@ -157,7 +157,7 @@ func createCNIConfigFile(ctx context.Context) (string, error) {
 	{
 		"type": "fsm-cni",
 		"kubernetes": {
-			"kubeconfig": "/etc/cni/net.d/%s"
+			"kubeconfig": "/var/lib/rancher/k3s/agent/etc/cni/net.d/%s"
 		}
 	}`, kubeConfigFileName)
 
