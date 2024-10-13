@@ -39,11 +39,9 @@ type podInfo struct {
 }
 
 func ignore(conf *Config, k8sArgs *K8sArgs) bool {
-	k8sArgsBytes, _ := json.MarshalIndent(k8sArgs, "", " ")
-	log.Info().Msg(string(k8sArgsBytes))
-	confBytes, _ := json.MarshalIndent(conf, "", " ")
-	log.Info().Msg(string(confBytes))
-
+	if true {
+		return false
+	}
 	ns := string(k8sArgs.K8S_POD_NAMESPACE)
 	name := string(k8sArgs.K8S_POD_NAME)
 	if ns != "" && name != "" {
@@ -79,31 +77,16 @@ func ignore(conf *Config, k8sArgs *K8sArgs) bool {
 }
 
 func ignoreMeshlessPod(namespace, name string, pod *podInfo) bool {
-	if len(pod.Containers) > 1 {
-		// Check if the pod is annotated for injection
-		if podInjectAnnotationExists, injectEnabled, err := isAnnotatedForInjection(pod.Annotations); err != nil {
-			log.Warn().Msgf("Pod %s/%s error determining sidecar-injection annotation", namespace, name)
-			return true
-		} else if podInjectAnnotationExists && !injectEnabled {
-			log.Info().Msgf("Pod %s/%s excluded due to sidecar-injection annotation", namespace, name)
-			return true
-		}
-
-		sidecarExists := false
-		for _, container := range pod.Containers {
-			if container == `sidecar` {
-				sidecarExists = true
-				break
-			}
-		}
-		if !sidecarExists {
-			log.Info().Msgf("Pod %s/%s excluded due to not existing sidecar", namespace, name)
-			return true
-		}
-		return false
+	// Check if the pod is annotated for injection
+	if podInjectAnnotationExists, injectEnabled, err := isAnnotatedForInjection(pod.Annotations); err != nil {
+		log.Warn().Msgf("Pod %s/%s error determining sidecar-injection annotation", namespace, name)
+		return true
+	} else if podInjectAnnotationExists && !injectEnabled {
+		log.Info().Msgf("Pod %s/%s excluded due to sidecar-injection annotation", namespace, name)
+		return true
 	}
-	log.Info().Msgf("Pod %s/%s excluded because it only has %d containers", namespace, name, len(pod.Containers))
-	return true
+	log.Info().Msgf("%v", pod)
+	return false
 }
 
 func isAnnotatedForInjection(annotations map[string]string) (exists bool, enabled bool, err error) {
@@ -144,10 +127,13 @@ func CmdAdd(args *skel.CmdArgs) error {
 					}
 					bs, _ := json.Marshal(args)
 					body := bytes.NewReader(bs)
+					log.Info().Msgf("CNICreatePod %s/%s", k8sArgs.K8S_POD_NAMESPACE, k8sArgs.K8S_POD_NAME)
 					if _, err = httpc.Post("http://ecnet-cni"+config.CNICreatePodURL, "application/json", body); err != nil {
 						log.Error().Msgf("ecnet-cni cmdAdd failed to post args %v %v", string(args.StdinData), err)
 					}
 				}
+			} else {
+				log.Info().Msgf("CNICreatePod %s/%s Ignore", k8sArgs.K8S_POD_NAMESPACE, k8sArgs.K8S_POD_NAME)
 			}
 		}
 	}
