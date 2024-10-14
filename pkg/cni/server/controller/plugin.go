@@ -1,4 +1,4 @@
-package cniserver
+package controller
 
 import (
 	"bufio"
@@ -21,10 +21,11 @@ import (
 	"github.com/florianl/go-tc/core"
 	"golang.org/x/sys/unix"
 
+	"github.com/flomesh-io/fsm/pkg/cni/server/helpers"
+
+	"github.com/flomesh-io/fsm/pkg/cni/cli"
 	"github.com/flomesh-io/fsm/pkg/cni/config"
-	"github.com/flomesh-io/fsm/pkg/cni/controller/helpers"
 	"github.com/flomesh-io/fsm/pkg/cni/ns"
-	"github.com/flomesh-io/fsm/pkg/cni/plugin"
 	"github.com/flomesh-io/fsm/pkg/cni/util"
 )
 
@@ -50,7 +51,7 @@ func (s *server) CmdAdd(args *skel.CmdArgs) (err error) {
 			log.Error().Msgf("fsm-cni cmdAdd error: %v", err)
 		}
 	}()
-	k8sArgs := plugin.K8sArgs{}
+	k8sArgs := cli.K8sArgs{}
 	if err = types.LoadArgs(args.Args, &k8sArgs); err != nil {
 		return err
 	}
@@ -86,7 +87,7 @@ func (s *server) CmdAdd(args *skel.CmdArgs) (err error) {
 }
 
 func (s *server) CmdDelete(args *skel.CmdArgs) (err error) {
-	k8sArgs := plugin.K8sArgs{}
+	k8sArgs := cli.K8sArgs{}
 	if err := types.LoadArgs(args.Args, &k8sArgs); err != nil {
 		return err
 	}

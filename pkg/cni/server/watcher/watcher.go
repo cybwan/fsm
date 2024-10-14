@@ -1,4 +1,4 @@
-package podwatcher
+package watcher
 
 import (
 	"time"
@@ -12,7 +12,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/cni/config"
 )
 
-type watcher struct {
+type Watcher struct {
 	Client          kubernetes.Interface
 	CurrentNodeName string
 	OnAddFunc       func(obj interface{})
@@ -21,7 +21,7 @@ type watcher struct {
 	Stop            chan struct{}
 }
 
-func (w *watcher) start() error {
+func (w *Watcher) start() error {
 	selectByNode := ""
 	if !config.IsKind {
 		selectByNode = fields.OneTermEqualSelector("spec.nodeName", w.CurrentNodeName).String()
@@ -42,12 +42,12 @@ func (w *watcher) start() error {
 	return nil
 }
 
-func (w *watcher) shutdown() {
+func (w *Watcher) shutdown() {
 	close(w.Stop)
 }
 
-func newWatcher(watch watcher) *watcher {
-	return &watcher{
+func newWatcher(watch Watcher) *Watcher {
+	return &Watcher{
 		Client:          watch.Client,
 		CurrentNodeName: watch.CurrentNodeName,
 		OnAddFunc:       watch.OnAddFunc,

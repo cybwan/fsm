@@ -1,4 +1,4 @@
-package cniserver
+package controller
 
 import (
 	"context"

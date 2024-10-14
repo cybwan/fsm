@@ -1,4 +1,4 @@
-package podwatcher
+package watcher
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/flomesh-io/fsm/pkg/cni/config"
-	"github.com/flomesh-io/fsm/pkg/cni/controller/helpers"
+	"github.com/flomesh-io/fsm/pkg/cni/server/helpers"
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
@@ -28,10 +28,10 @@ func runLocalPodController(client kubernetes.Interface, stop chan struct{}) erro
 	w := newWatcher(createLocalPodController(client))
 
 	if err = w.start(); err != nil {
-		return fmt.Errorf("start watcher failed: %v", err)
+		return fmt.Errorf("start Watcher failed: %v", err)
 	}
 
-	log.Info().Msg("Pod watcher Ready")
+	log.Info().Msg("Pod Watcher Ready")
 	if config.EnableCNI {
 		<-stop
 	} else {
@@ -44,16 +44,16 @@ func runLocalPodController(client kubernetes.Interface, stop chan struct{}) erro
 	if err = helpers.UnLoadProgs(); err != nil {
 		return fmt.Errorf("unload failed: %v", err)
 	}
-	log.Info().Msg("Pod watcher Down")
+	log.Info().Msg("Pod Watcher Down")
 	return nil
 }
 
-func createLocalPodController(client kubernetes.Interface) watcher {
+func createLocalPodController(client kubernetes.Interface) Watcher {
 	localName, err := os.Hostname()
 	if err != nil {
 		panic(err)
 	}
-	return watcher{
+	return Watcher{
 		Client:          client,
 		CurrentNodeName: localName,
 		OnAddFunc:       addFunc,

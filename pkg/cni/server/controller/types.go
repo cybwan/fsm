@@ -1,5 +1,5 @@
 // Package cniserver implements FSM CNI Control Server.
-package cniserver
+package controller
 
 import "github.com/flomesh-io/fsm/pkg/logger"
 

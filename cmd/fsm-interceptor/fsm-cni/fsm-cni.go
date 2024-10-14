@@ -7,16 +7,16 @@ import (
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/version"
 
-	"github.com/flomesh-io/fsm/pkg/cni/plugin"
+	"github.com/flomesh-io/fsm/pkg/cni/cli"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
 func init() {
 	_ = logger.SetLogLevel("debug")
-	plugin.SetLogFile("/tmp/fsm-cni.log")
+	cli.SetLogFile("/tmp/fsm-cni.log")
 }
 
 func main() {
-	skel.PluginMain(plugin.CmdAdd, plugin.CmdCheck, plugin.CmdDelete, version.All,
+	skel.PluginMain(cli.CmdAdd, cli.CmdCheck, cli.CmdDelete, version.All,
 		fmt.Sprintf("CNI plugin fsm-cni %v", "0.1.0"))
 }

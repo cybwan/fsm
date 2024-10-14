@@ -1,5 +1,5 @@
 // Package podwatcher implements FSM CNI Pod Watcher.
-package podwatcher
+package watcher
 
 import "github.com/flomesh-io/fsm/pkg/logger"
 

@@ -1,5 +1,5 @@
 // Package plugin implements fsm cni plugin.
-package plugin
+package cli
 
 import (
 	"bytes"

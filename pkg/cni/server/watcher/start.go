@@ -1,4 +1,4 @@
-package podwatcher
+package watcher
 
 import (
 	"fmt"
