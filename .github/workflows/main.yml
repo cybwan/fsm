@@ -19,6 +19,8 @@ on:
     paths-ignore:
       - "docs/**"
       - "**.md"
+      - "**.h"
+      - "**.c"
       - "scripts/cleanup/**"
       - "CODEOWNERS"
       - "OWNERS"
