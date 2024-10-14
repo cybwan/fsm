@@ -124,10 +124,12 @@ spec:
           path: /proc
         name: host-proc
       - hostPath:
-          path: /opt/cni/bin
+          #path: /opt/cni/bin
+          path: /bin
         name: cni-bin-dir
       - hostPath:
-          path: /etc/cni/net.d
+          #path: /etc/cni/net.d
+          path: /var/lib/rancher/k3s/agent/etc/cni/net.d
         name: cni-config-dir
       - hostPath:
           path: /var/run

@@ -10,22 +10,20 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/cilium/ebpf"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/flomesh-io/fsm/pkg/cni/config"
 	"github.com/flomesh-io/fsm/pkg/cni/controller/helpers"
-	"github.com/flomesh-io/fsm/pkg/cni/util"
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 func runLocalPodController(client kubernetes.Interface, stop chan struct{}) error {
 	var err error
 
-	if err = helpers.InitLoadPinnedMap(); err != nil {
-		return fmt.Errorf("failed to load ebpf maps: %v", err)
-	}
+	//if err = helpers.InitLoadPinnedMap(); err != nil {
+	//    return fmt.Errorf("failed to load ebpf maps: %v", err)
+	//}
 
 	w := newWatcher(createLocalPodController(client))
 
@@ -34,9 +32,6 @@ func runLocalPodController(client kubernetes.Interface, stop chan struct{}) erro
 	}
 
 	log.Info().Msg("Pod watcher Ready")
-	if err = helpers.AttachProgs(); err != nil {
-		return fmt.Errorf("failed to attach ebpf programs: %v", err)
-	}
 	if config.EnableCNI {
 		<-stop
 	} else {
@@ -103,14 +98,14 @@ func addFunc(obj interface{}) {
 	}
 	log.Debug().Msgf("got pod updated %s/%s", pod.Namespace, pod.Name)
 
-	_ip, _ := util.IP2Pointer(pod.Status.PodIP)
+	//_ip, _ := util.IP2Pointer(pod.Status.PodIP)
 	log.Info().Msgf("update fsm_pod_fib with ip: %s", pod.Status.PodIP)
 	p := podConfig{}
 	parsePodConfigFromAnnotations(pod.Annotations, &p)
-	err := helpers.GetPodFibMap().Update(_ip, &p, ebpf.UpdateAny)
-	if err != nil {
-		log.Error().Msgf("update fsm_pod_fib %s error: %v", pod.Status.PodIP, err)
-	}
+	//err := helpers.GetPodFibMap().Update(_ip, &p, ebpf.UpdateAny)
+	//if err != nil {
+	//	log.Error().Msgf("update fsm_pod_fib %s error: %v", pod.Status.PodIP, err)
+	//}
 }
 
 func getPortsFromString(v string) []uint16 {
@@ -256,7 +251,7 @@ func updateFunc(old, cur interface{}) {
 func deleteFunc(obj interface{}) {
 	if pod, ok := obj.(*v1.Pod); ok {
 		log.Debug().Msgf("got pod delete %s/%s", pod.Namespace, pod.Name)
-		_ip, _ := util.IP2Pointer(pod.Status.PodIP)
-		_ = helpers.GetPodFibMap().Delete(_ip)
+		//_ip, _ := util.IP2Pointer(pod.Status.PodIP)
+		//_ = helpers.GetPodFibMap().Delete(_ip)
 	}
 }

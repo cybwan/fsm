@@ -1,8 +1,59 @@
-load:
-	[ -f bpf/fsm_cni_grp_connect.c ] && make -C bpf load || make -C bpf load-from-obj
-attach:
-	make -C bpf attach
+#!make
+
+SHELL = bash
+
+CC = gcc
+CLANG = clang
+
+BASE_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+INC_DIR = $(abspath ${BASE_DIR})/bpf/include
+SRC_DIR = $(abspath ${BASE_DIR})/bpf/src
+BIN_DIR = $(abspath ${BASE_DIR})/bpf
+BPF_DIR = $(abspath ${BASE_DIR})/bpf
+
+MESH_KERN_OUT = mesh.kern.o
+MESH_KERN_SRC = $(patsubst %.o,%.c,${MESH_KERN_OUT})
+
+BPF_CFLAGS = \
+	-O2 \
+	-D__KERNEL__ \
+	-Wno-unused-value     \
+	-Wno-pointer-sign     \
+	-Wno-compare-distinct-pointer-types
+
+CGO_CFLAGS_DYN = "-I. -I./bpf/include -I/usr/include/"
+CGO_LDFLAGS_DYN = "-lelf -lz -lbpf"
+
+BPF_FS  = /sys/fs/bpf
+bpf-fs:
+	mountpoint -q ${BPF_FS} || mount -t bpf bpf ${BPF_FS}
+
+.PHONY: build
+build: bpf
+
+.PHONY: bpf-fmt
+bpf-fmt:
+	find . -regex '.*\.\(c\|h\)' -exec clang-format -style=file -i {} \;
+
+.PHONY: bpf-build
+bpf-build: ${BIN_DIR}/${MESH_KERN_OUT}
+
+${BIN_DIR}/${MESH_KERN_OUT}: ${SRC_DIR}/${MESH_KERN_SRC}
+	clang -I${INC_DIR} ${BPF_CFLAGS} -emit-llvm -c -g $< -o - | llc -march=bpf -filetype=obj -o $@
+
+.PHONY: bpf-clean
+bpf-clean:
+	rm -f ${BIN_DIR}/${MESH_KERN_OUT}
+
+.PHONY: bpf
+bpf: bpf-clean bpf-build
+
+.PHONY: load
+load: bpf-fs bpf-build
+	mount -t debugfs debugfs /sys/kernel/debug
+	bpftool prog loadall bpf/mesh.kern.o /sys/fs/bpf/mesh pinmaps /sys/fs/bpf/mesh
+
+.PHONY: clean
 clean:
-	make -C bpf clean
-compile:
-	make -C bpf compile
+	rm -rf /sys/fs/bpf/mesh
+
