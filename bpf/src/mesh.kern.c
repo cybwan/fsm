@@ -74,7 +74,7 @@ int tc_egress(struct __sk_buff *ctx) {
   return DP_PASS;
 }
 
-SEC("classifier/sh")
+SEC("classifier/hand_shake")
 int tc_hand_shake_func(struct __sk_buff *ctx) {
   int z = 0;
   struct xfrm *xf;
@@ -96,7 +96,7 @@ int tc_hand_shake_func(struct __sk_buff *ctx) {
   return dp_ing_sh_main(ctx, xf);
 }
 
-SEC("classifier/ct")
+SEC("classifier/conn_track")
 int tc_conn_track_func(struct __sk_buff *ctx) {
   int z = 0;
   struct xfrm *xf;
