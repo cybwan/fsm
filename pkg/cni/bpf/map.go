@@ -1,7 +1,6 @@
 package bpf
 
 import (
-	"fmt"
 	"path"
 	"unsafe"
 
@@ -10,8 +9,10 @@ import (
 
 func InitFsmProgsMap() {
 	pinnedFile := path.Join(BPF_FS, MESH_PROG_NAME, FSM_PROGS_MAP_NAME)
-	progsMap, _ := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{})
-	fmt.Println(progsMap.String(), progsMap.FD())
+	progsMap, mapErr := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{})
+	if mapErr != nil {
+		log.Fatal().Err(mapErr).Msgf("failed to load ebpf map: %s", pinnedFile)
+	}
 
 	type ebpfProg struct {
 		progKey  uint32
@@ -39,8 +40,13 @@ func InitFsmProgsMap() {
 
 	for _, prog := range progs {
 		pinnedFile = path.Join(BPF_FS, MESH_PROG_NAME, prog.progName)
-		pinnedProg, _ := ebpf.LoadPinnedProgram(pinnedFile, &ebpf.LoadPinOptions{})
+		pinnedProg, progErr := ebpf.LoadPinnedProgram(pinnedFile, &ebpf.LoadPinOptions{})
+		if progErr != nil {
+			log.Fatal().Err(progErr).Msgf("failed to load ebpf prog: %s", pinnedFile)
+		}
 		progFD := pinnedProg.FD()
-		progsMap.Update(unsafe.Pointer(&prog.progKey), unsafe.Pointer(&progFD), ebpf.UpdateAny)
+		if err := progsMap.Update(unsafe.Pointer(&prog.progKey), unsafe.Pointer(&progFD), ebpf.UpdateAny); err != nil {
+			log.Fatal().Err(err).Msgf("failed to update ebpf map: %s", FSM_PROGS_MAP_NAME)
+		}
 	}
 }
