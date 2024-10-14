@@ -148,7 +148,7 @@ dp_ing_sh_main(void *ctx,  struct xfrm *xf)
   }
 
 out:
-  bpf_tail_call(ctx, &f4gw_progs, F4_DP_CT_PGM_ID);
+  bpf_tail_call(ctx, &fsm_progs, F4_DP_CT_PGM_ID);
   return DP_PASS;
 }
 

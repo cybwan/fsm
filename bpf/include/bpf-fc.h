@@ -117,7 +117,7 @@ dp_ing_fc_main(void *ctx, struct xfrm *xf)
   }
 
   bpf_map_update_elem(&f4gw_xfrms, &z, xf, BPF_ANY);
-  bpf_tail_call(ctx, &f4gw_progs, F4_DP_SH_PGM_ID);
+  bpf_tail_call(ctx, &fsm_progs, F4_DP_SH_PGM_ID);
   return DP_DROP;
 }
 

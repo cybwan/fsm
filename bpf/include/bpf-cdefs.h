@@ -304,7 +304,7 @@ dp_tail_call(void *ctx,  struct xfrm *xf, void *fa, __u32 idx)
   /* xfi state can be reused */ 
   bpf_map_update_elem(&f4gw_xfrms, &z, xf, BPF_ANY);
 
-  bpf_tail_call(ctx, &f4gw_progs, idx);
+  bpf_tail_call(ctx, &fsm_progs, idx);
 
   return DP_PASS;
 }

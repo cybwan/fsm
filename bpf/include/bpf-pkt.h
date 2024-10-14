@@ -276,13 +276,13 @@ dp_parse_ipv4(struct parser *p,
     __u8 *hit;
     hit = bpf_map_lookup_elem(&f4gw_igr_ipv4, &iph->daddr);
     if(hit != NULL) {
-      bpf_tail_call(md, &f4gw_progs, F4_DP_PASS_PGM_ID);
+      bpf_tail_call(md, &fsm_progs, F4_DP_PASS_PGM_ID);
     }
   } else if(xf->pm.egr) {
     __u8 *hit;
     hit = bpf_map_lookup_elem(&f4gw_egr_ipv4, &iph->daddr);
     if(hit != NULL) {
-      bpf_tail_call(md, &f4gw_progs, F4_DP_PASS_PGM_ID);
+      bpf_tail_call(md, &fsm_progs, F4_DP_PASS_PGM_ID);
     }
   }
 

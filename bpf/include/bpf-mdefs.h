@@ -5,7 +5,7 @@
 #include <bpf/bpf_helpers.h>
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_progs = {
+struct bpf_map_def SEC("maps") fsm_progs = {
   .type = BPF_MAP_TYPE_PROG_ARRAY,
   .key_size = sizeof(__u32),
   .value_size = sizeof(__u32),
@@ -19,7 +19,7 @@ struct {
   __type(value,       __u32);
   __uint(max_entries, F4_PGM_MAP_ENTRIES);
   //__uint(pinning,     1);
-} f4gw_progs SEC(".maps");
+} fsm_progs SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS
