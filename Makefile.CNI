@@ -25,8 +25,14 @@ CGO_CFLAGS_DYN = "-I. -I./bpf/include -I/usr/include/"
 CGO_LDFLAGS_DYN = "-lelf -lz -lbpf"
 
 BPF_FS  = /sys/fs/bpf
+
+.PHONY: bpf-fs
 bpf-fs:
 	mountpoint -q ${BPF_FS} || mount -t bpf bpf ${BPF_FS}
+
+.PHONY: debug-fs
+debug-fs:
+	mountpoint -q /sys/kernel/debug || mount -t debugfs debugfs /sys/kernel/debug
 
 .PHONY: build
 build: bpf
@@ -49,8 +55,7 @@ bpf-clean:
 bpf: bpf-clean bpf-build
 
 .PHONY: load
-load: bpf-fs bpf-build
-	mount -t debugfs debugfs /sys/kernel/debug
+load: debug-fs bpf-fs bpf-build
 	bpftool prog loadall bpf/mesh.kern.o /sys/fs/bpf/mesh pinmaps /sys/fs/bpf/mesh
 
 .PHONY: clean
