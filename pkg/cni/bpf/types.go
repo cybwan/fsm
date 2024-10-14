@@ -14,8 +14,15 @@ const (
 )
 
 const (
-	MESH_DP_HAND_SHAKE_PROG_ID = uint32(1)
-	MESH_DP_CONN_TRACK_PROG_ID = uint32(2)
-	MESH_DP_PASS_PROG_ID       = uint32(3)
-	MESH_DP_DROP_PROG_ID       = uint32(4)
+	MESH_DP_HANDSHAKE_PROG_ID = uint32(1)
+	MESH_DP_CONNTRACK_PROG_ID = uint32(2)
+	MESH_DP_PASS_PROG_ID      = uint32(3)
+	MESH_DP_DROP_PROG_ID      = uint32(4)
+)
+
+const (
+	MESH_DP_HANDSHAKE_PROG_NAME = `classifier_handshake`
+	MESH_DP_CONNTRACK_PROG_NAME = `classifier_conntrack`
+	MESH_DP_PASS_PROG_NAME      = `classifier_pass`
+	MESH_DP_DROP_PROG_NAME      = `classifier_drop`
 )
