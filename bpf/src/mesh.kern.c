@@ -49,7 +49,7 @@ int tc_ingress(struct __sk_buff *ctx)
     FSM_DBG("[DBG] tc_ingress pkt->l34m daddr4  %pI4 dest    %d\n",
             &pkt->l34.daddr4, ntohs(pkt->l34.dest));
 
-    // return dp_ing_fc_main(ctx, xf);
+    // return dp_ing_fc_main(ctx, pkt);
     return TC_ACT_OK;
 }
 
@@ -76,7 +76,7 @@ int tc_egress(struct __sk_buff *ctx)
     FSM_DBG("[DBG] tc_egress pkt->l34m daddr4  %pI4 dest    %d\n",
             &pkt->l34.daddr4, ntohs(pkt->l34.dest));
 
-    // return dp_ing_fc_main(ctx, xf);
+    // return dp_ing_fc_main(ctx, pkt);
     return TC_ACT_OK;
 }
 
