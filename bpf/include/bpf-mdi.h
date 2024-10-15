@@ -202,7 +202,7 @@ typedef enum {
 struct decoder {
     __u8 in_pkt : 1;
     __u8 skip_l2 : 1;
-    __u8 skip_v6 : 1;
+    __u8 skip_ipv6 : 1;
     __u8 result : 5;
     void *start;
     void *data_begin;

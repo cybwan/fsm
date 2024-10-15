@@ -308,14 +308,14 @@ static int __always_inline xpkt_decode_ipv6(struct decoder *coder, void *md,
 }
 
 static int __always_inline xpkt_decode(void *md, struct xpkt *pkt,
-                                          int skip_v6)
+                                          int skip_ipv6)
 {
     int ret = 0;
     struct decoder coder;
 
     coder.in_pkt = 0;
     coder.skip_l2 = 0;
-    coder.skip_v6 = skip_v6;
+    coder.skip_ipv6 = skip_ipv6;
     coder.start = XPKT_PTR(XPKT_DATA(md));
     coder.data_begin = XPKT_PTR(coder.start);
     coder.data_end = XPKT_PTR(XPKT_DATA_END(md));
@@ -337,7 +337,7 @@ static int __always_inline xpkt_decode(void *md, struct xpkt *pkt,
     } else if (pkt->l2.dl_type == htons(ETH_P_IP)) {
         ret = xpkt_decode_ipv4(&coder, md, pkt);
     } else if (pkt->l2.dl_type == htons(ETH_P_IPV6)) {
-        if (coder.skip_v6 == 1) {
+        if (coder.skip_ipv6 == 1) {
             return 0;
         }
         ret = xpkt_decode_ipv6(&coder, md, pkt);
