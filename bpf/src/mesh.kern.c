@@ -41,7 +41,7 @@ int tc_ingress(struct __sk_buff *ctx)
     pkt->pm.igr = 1;
     pkt->pm.ifi = ctx->ingress_ifindex;
 
-    fsm_xpkt_parse(ctx, pkt, 1);
+    fsm_xpkt_decode(ctx, pkt, 1);
 
     FSM_DBG("[DBG] tc_ingress ========\n");
     FSM_DBG("[DBG] tc_ingress pkt->l34m saddr4  %pI4 source  %d\n",
@@ -68,7 +68,7 @@ int tc_egress(struct __sk_buff *ctx)
     pkt->pm.egr = 1;
     pkt->pm.ifi = ctx->ingress_ifindex;
 
-    fsm_xpkt_parse(ctx, pkt, 1);
+    fsm_xpkt_decode(ctx, pkt, 1);
 
     FSM_DBG("[DBG] tc_egress ========\n");
     FSM_DBG("[DBG] tc_egress pkt->l34m saddr4  %pI4 source  %d\n",

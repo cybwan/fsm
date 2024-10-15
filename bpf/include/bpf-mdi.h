@@ -199,15 +199,14 @@ typedef enum {
     DP_PRET_PASS = 2
 } dpret_t;
 
-/* Parser to help ebpf packet parsing */
-struct parser {
+struct decoder {
     __u8 in_pkt : 1;
     __u8 skip_l2 : 1;
     __u8 skip_v6 : 1;
-    __u8 res : 5;
+    __u8 result : 5;
     void *start;
-    void *dbegin;
-    void *dend;
+    void *data_begin;
+    void *data_end;
 };
 
 #define VLAN_VID_MASK 0x0fff
