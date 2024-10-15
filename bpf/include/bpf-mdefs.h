@@ -75,7 +75,6 @@ struct bpf_map_def SEC("maps") f4gw_fc_v4 = {
     .value_size = sizeof(struct dp_fc_tacts),
     .max_entries = F4_FCV4_MAP_ENTRIES,
     .map_flags = BPF_F_NO_PREALLOC,
-    //.pinning = 1,
 };
 #else /* New BTF definitions */
 struct {
@@ -84,7 +83,6 @@ struct {
     __type(value, struct dp_fc_tacts);
     __uint(max_entries, F4_FCV4_MAP_ENTRIES);
     __uint(map_flags, BPF_F_NO_PREALLOC);
-    // __uint(pinning,     1);
 } f4gw_fc_v4 SEC(".maps");
 #endif
 
@@ -94,7 +92,6 @@ struct bpf_map_def SEC("maps") f4gw_nat = {
     .key_size = sizeof(struct dp_nat_key),
     .value_size = sizeof(struct dp_nat_tacts),
     .max_entries = F4_NATV4_MAP_ENTRIES,
-    //.pinning = 1,
 };
 #else /* New BTF definitions */
 struct {
@@ -102,7 +99,6 @@ struct {
     __type(key, struct dp_nat_key);
     __type(value, struct dp_nat_tacts);
     __uint(max_entries, F4_NATV4_MAP_ENTRIES);
-    //__uint(pinning,     1);
 } f4gw_nat SEC(".maps");
 #endif
 
@@ -176,7 +172,6 @@ struct bpf_map_def SEC("maps") f4gw_igr_ipv4 = {
     .key_size = sizeof(__u32),
     .value_size = sizeof(__u8),
     .max_entries = F4_MAX_IFI_ADDRS,
-    //.pinning = 1,
 };
 #else /* New BTF definitions */
 struct {
@@ -184,7 +179,6 @@ struct {
     __type(key, __u32);
     __type(value, __u8);
     __uint(max_entries, F4_MAX_IFI_ADDRS);
-    //__uint(pinning,     1);
 } f4gw_igr_ipv4 SEC(".maps");
 #endif
 
@@ -194,7 +188,6 @@ struct bpf_map_def SEC("maps") f4gw_egr_ipv4 = {
     .key_size = sizeof(__u32),
     .value_size = sizeof(__u8),
     .max_entries = F4_MAX_IFI_ADDRS,
-    //.pinning = 1,
 };
 #else /* New BTF definitions */
 struct {
@@ -202,7 +195,6 @@ struct {
     __type(key, __u32);
     __type(value, __u8);
     __uint(max_entries, F4_MAX_IFI_ADDRS);
-    //__uint(pinning,     1);
 } f4gw_egr_ipv4 SEC(".maps");
 #endif
 
@@ -213,7 +205,6 @@ struct bpf_map_def SEC("maps") f4gw_dnat_opts = {
     .value_size = sizeof(struct dp_dnat_opt_tact),
     .max_entries = F4_FCV4_MAP_ENTRIES,
     .map_flags = BPF_F_NO_PREALLOC,
-    //.pinning = 1,
 };
 #else /* New BTF definitions */
 struct {
@@ -222,7 +213,6 @@ struct {
     __type(value, struct dp_dnat_opt_tact);
     __uint(max_entries, F4_FCV4_MAP_ENTRIES);
     __uint(map_flags, BPF_F_NO_PREALLOC);
-    //__uint(pinning,     1);
 } f4gw_dnat_opts SEC(".maps");
 #endif
 
@@ -233,7 +223,6 @@ struct bpf_map_def SEC("maps") f4gw_snat_opts = {
     .value_size = sizeof(struct dp_snat_opt_tact),
     .max_entries = F4_FCV4_MAP_ENTRIES,
     .map_flags = BPF_F_NO_PREALLOC,
-    //.pinning = 1,
 };
 #else /* New BTF definitions */
 struct {
@@ -242,7 +231,6 @@ struct {
     __type(value, struct dp_snat_opt_tact);
     __uint(max_entries, F4_FCV4_MAP_ENTRIES);
     __uint(map_flags, BPF_F_NO_PREALLOC);
-    //__uint(pinning,     1);
 } f4gw_snat_opts SEC(".maps");
 #endif
 #endif
