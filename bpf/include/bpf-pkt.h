@@ -20,43 +20,14 @@ static __always_inline int ip_is_fragment(const struct iphdr *iph)
     return (iph->frag_off & htons(IP_MF | IP_OFFSET)) != 0;
 }
 
-static __always_inline int ip_is_last_fragment(const struct iphdr *iph)
-{
-    return (iph->frag_off & htons(IP_MF)) == 0;
-}
-
 static __always_inline int ip_is_first_fragment(const struct iphdr *iph)
 {
     return (iph->frag_off & htons(IP_OFFSET)) == 0;
 }
 
-static __always_inline int proto_is_vlan(__be16 h_proto)
-{
-    return !!(h_proto == htons(ETH_P_8021Q) || h_proto == htons(ETH_P_8021AD));
-}
-
-/* from include/net/ip.h */
-static __always_inline int ip_decrease_ttl(struct iphdr *iph)
-{
-    __be32 check = iph->check;
-    check += htons(0x0100);
-    iph->check = (__be16)(check + (check >= 0xFFFF));
-    return --iph->ttl;
-}
-
 static inline int ipv6_addr_is_multicast(const struct in6_addr *addr)
 {
     return (addr->s6_addr32[0] & htonl(0xFF000000)) == htonl(0xFF000000);
-}
-
-static int __always_inline dp_pkt_is_l2mcbc(struct xpkt *pkt, void *md)
-{
-    struct __sk_buff *b = md;
-
-    if (b->pkt_type == PACKET_MULTICAST || b->pkt_type == PACKET_BROADCAST) {
-        return 1;
-    }
-    return 0;
 }
 
 static int __always_inline xpkt_decode_eth(struct decoder *coder, void *md,
