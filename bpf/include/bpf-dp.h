@@ -365,9 +365,9 @@ struct dp_t2_port {
 #define offsetof(TYPE, MEMBER) ((unsigned long)&((TYPE *)0)->MEMBER)
 #endif
 
-#define TC_PTR(x) ((void *)((long)x))
-#define TC_PTR_ADD(x, len) ((void *)(((__u8 *)((long)x)) + (len)))
-#define TC_PTR_SUB(x, y) (((__u8 *)TC_PTR(x)) - ((__u8 *)TC_PTR(y)))
+#define XPKT_PTR(x) ((void *)((long)x))
+#define XPKT_PTR_ADD(x, len) ((void *)(((__u8 *)((long)x)) + (len)))
+#define XPKT_PTR_SUB(x, y) (((__u8 *)XPKT_PTR(x)) - ((__u8 *)XPKT_PTR(y)))
 
 #define XADDR_IS_ZERO(a)                                                       \
     ((a)[0] == 0 && (a)[1] == 0 && (a)[2] == 0 && (a)[3] == 0)
