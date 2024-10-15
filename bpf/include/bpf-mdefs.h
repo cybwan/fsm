@@ -23,7 +23,7 @@ struct {
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_xfrms = {
+struct bpf_map_def SEC("maps") fsm_xpkts = {
   .type = BPF_MAP_TYPE_PERCPU_ARRAY,
   .key_size = sizeof(__u32),
   .value_size = sizeof(struct xfrm),
@@ -33,9 +33,9 @@ struct bpf_map_def SEC("maps") f4gw_xfrms = {
 struct {
   __uint(type,        BPF_MAP_TYPE_PERCPU_ARRAY);
   __type(key,         __u32);
-  __type(value,       struct xfrm);
+  __type(value,       struct xpkt);
   __uint(max_entries, 1);
-} f4gw_xfrms SEC(".maps");
+} fsm_xpkts SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS

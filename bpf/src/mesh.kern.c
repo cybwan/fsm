@@ -29,22 +29,22 @@ char __LICENSE[] SEC("license") = "GPL";
 SEC("classifier/ingress")
 int tc_ingress(struct __sk_buff *ctx) {
   int z = 0;
-  struct xfrm *xf;
+  struct xpkt *pkt;
 
-  xf = bpf_map_lookup_elem(&f4gw_xfrms, &z);
-  if (!xf) {
+  pkt = bpf_map_lookup_elem(&fsm_xpkts, &z);
+  if (!pkt) {
     return TC_ACT_SHOT;
   }
-  memset(xf, 0, sizeof *xf);
+  memset(pkt, 0, sizeof *pkt);
 
-  xf->pm.igr = 1;
-  xf->pm.ifi = ctx->ingress_ifindex;
+  pkt->pm.igr = 1;
+  pkt->pm.ifi = ctx->ingress_ifindex;
 
-  dp_parse_d0(ctx, xf, 1);
+  dp_parse_d0(ctx, pkt, 1);
 
   FSM_DBG("[DBG] tc_ingress ========\n");
-  FSM_DBG("[DBG] tc_ingress xf->l34m saddr4  %pI4 source  %d\n", &xf->l34m.saddr4, ntohs(xf->l34m.source));
-  FSM_DBG("[DBG] tc_ingress xf->l34m daddr4  %pI4 dest    %d\n", &xf->l34m.daddr4, ntohs(xf->l34m.dest));
+  FSM_DBG("[DBG] tc_ingress pkt->l34m saddr4  %pI4 source  %d\n", &pkt->l34m.saddr4, ntohs(pkt->l34m.source));
+  FSM_DBG("[DBG] tc_ingress pkt->l34m daddr4  %pI4 dest    %d\n", &pkt->l34m.daddr4, ntohs(pkt->l34m.dest));
 
   // return dp_ing_fc_main(ctx, xf);
   return TC_ACT_OK;
@@ -53,22 +53,22 @@ int tc_ingress(struct __sk_buff *ctx) {
 SEC("classifier/egress")
 int tc_egress(struct __sk_buff *ctx) {
   int z = 0;
-  struct xfrm *xf;
+  struct xpkt *pkt;
 
-  xf = bpf_map_lookup_elem(&f4gw_xfrms, &z);
-  if (!xf) {
+  pkt = bpf_map_lookup_elem(&fsm_xpkts, &z);
+  if (!pkt) {
     return TC_ACT_SHOT;
   }
-  memset(xf, 0, sizeof *xf);
+  memset(pkt, 0, sizeof *pkt);
 
-  xf->pm.egr = 1;
-  xf->pm.ifi = ctx->ingress_ifindex;
+  pkt->pm.egr = 1;
+  pkt->pm.ifi = ctx->ingress_ifindex;
 
-  dp_parse_d0(ctx, xf, 1);
+  dp_parse_d0(ctx, pkt, 1);
 
   FSM_DBG("[DBG] tc_egress ========\n");
-  FSM_DBG("[DBG] tc_egress xf->l34m saddr4  %pI4 source  %d\n", &xf->l34m.saddr4, ntohs(xf->l34m.source));
-  FSM_DBG("[DBG] tc_egress xf->l34m daddr4  %pI4 dest    %d\n", &xf->l34m.daddr4, ntohs(xf->l34m.dest));
+  FSM_DBG("[DBG] tc_egress pkt->l34m saddr4  %pI4 source  %d\n", &pkt->l34m.saddr4, ntohs(pkt->l34m.source));
+  FSM_DBG("[DBG] tc_egress pkt->l34m daddr4  %pI4 dest    %d\n", &pkt->l34m.daddr4, ntohs(pkt->l34m.dest));
 
   // return dp_ing_fc_main(ctx, xf);
   return TC_ACT_OK;
@@ -77,36 +77,36 @@ int tc_egress(struct __sk_buff *ctx) {
 SEC("classifier/handshake")
 int tc_hand_shake_func(struct __sk_buff *ctx) {
   int z = 0;
-  struct xfrm *xf;
+  struct xpkt *pkt;
 
-  xf = bpf_map_lookup_elem(&f4gw_xfrms, &z);
-  if (!xf) {
+  pkt = bpf_map_lookup_elem(&fsm_xpkts, &z);
+  if (!pkt) {
     return TC_ACT_SHOT;
   }
 
-  xf->pm.phit |= F4_DP_FC_HIT;
-  xf->pm.tc = 1;
+  pkt->pm.phit |= F4_DP_FC_HIT;
+  pkt->pm.tc = 1;
 
-  if (xf->pm.pipe_act & F4_PIPE_PASS ||
-      xf->pm.pipe_act & F4_PIPE_TRAP) {
-    xf->pm.rcode |= F4_PIPE_RC_MPT_PASS;
+  if (pkt->pm.pipe_act & F4_PIPE_PASS ||
+      pkt->pm.pipe_act & F4_PIPE_TRAP) {
+    pkt->pm.rcode |= F4_PIPE_RC_MPT_PASS;
     return TC_ACT_OK;
   }
 
-  return dp_ing_sh_main(ctx, xf);
+  return dp_ing_sh_main(ctx, pkt);
 }
 
 SEC("classifier/conntrack")
 int tc_conn_track_func(struct __sk_buff *ctx) {
   int z = 0;
-  struct xfrm *xf;
+  struct xpkt *pkt;
 
-  xf = bpf_map_lookup_elem(&f4gw_xfrms, &z);
-  if (!xf) {
+  pkt = bpf_map_lookup_elem(&fsm_xpkts, &z);
+  if (!pkt) {
     return TC_ACT_SHOT;
   }
 
-  return dp_ing_ct_main(ctx, xf);
+  return dp_ing_ct_main(ctx, pkt);
 }
 
 SEC("classifier/pass")

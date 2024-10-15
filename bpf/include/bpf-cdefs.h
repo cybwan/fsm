@@ -73,193 +73,193 @@ dp_buf_delete_room(void *md, int delta, __u64 flags)
 }
 
 static int __always_inline
-dp_redirect_port(void *tbl, struct xfrm *xf)
+dp_redirect_port(void *tbl, struct xpkt *pkt)
 {
-  return bpf_redirect_map(tbl, xf->pm.oport, 0);
+  return bpf_redirect_map(tbl, pkt->pm.oport, 0);
 }
 
 static int __always_inline
-dp_set_tcp_src_ip(void *md, struct xfrm *xf, __be32 xip)
+dp_set_tcp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-  int ip_csum_off  = xf->pm.l3_off + offsetof(struct iphdr, check);
-  int tcp_csum_off = xf->pm.l4_off + offsetof(struct tcphdr, check);
-  int ip_src_off = xf->pm.l3_off + offsetof(struct iphdr, saddr);
-  __be32 old_sip = xf->l34m.saddr4;
+  int ip_csum_off  = pkt->pm.l3_off + offsetof(struct iphdr, check);
+  int tcp_csum_off = pkt->pm.l4_off + offsetof(struct tcphdr, check);
+  int ip_src_off = pkt->pm.l3_off + offsetof(struct iphdr, saddr);
+  __be32 old_sip = pkt->l34m.saddr4;
 
   bpf_l4_csum_replace(md, tcp_csum_off, old_sip, xip, BPF_F_PSEUDO_HDR |sizeof(xip));
   bpf_l3_csum_replace(md, ip_csum_off, old_sip, xip, sizeof(xip));
   bpf_skb_store_bytes(md, ip_src_off, &xip, sizeof(xip), 0);
 
-  xf->l34m.saddr4 = xip;
+  pkt->l34m.saddr4 = xip;
 
   return 0;
 }
 
 static int __always_inline
-dp_set_tcp_dst_ip(void *md, struct xfrm *xf, __be32 xip)
+dp_set_tcp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-  int ip_csum_off  = xf->pm.l3_off + offsetof(struct iphdr, check);
-  int tcp_csum_off = xf->pm.l4_off + offsetof(struct tcphdr, check);
-  int ip_dst_off = xf->pm.l3_off + offsetof(struct iphdr, daddr);
-  __be32 old_dip = xf->l34m.daddr4;
+  int ip_csum_off  = pkt->pm.l3_off + offsetof(struct iphdr, check);
+  int tcp_csum_off = pkt->pm.l4_off + offsetof(struct tcphdr, check);
+  int ip_dst_off = pkt->pm.l3_off + offsetof(struct iphdr, daddr);
+  __be32 old_dip = pkt->l34m.daddr4;
 
   bpf_l4_csum_replace(md, tcp_csum_off, old_dip, xip, BPF_F_PSEUDO_HDR | sizeof(xip));
   bpf_l3_csum_replace(md, ip_csum_off, old_dip, xip, sizeof(xip));
   bpf_skb_store_bytes(md, ip_dst_off, &xip, sizeof(xip), 0);
-  xf->l34m.daddr4 = xip;
+  pkt->l34m.daddr4 = xip;
 
   return 0;
 }
 
 static int __always_inline
-dp_set_tcp_sport(void *md, struct xfrm *xf, __be16 xport)
+dp_set_tcp_sport(void *md, struct xpkt *pkt, __be16 xport)
 {
-  int tcp_csum_off = xf->pm.l4_off + offsetof(struct tcphdr, check);
-  int tcp_sport_off = xf->pm.l4_off + offsetof(struct tcphdr, source);
-  __be32 old_sport = xf->l34m.source;
+  int tcp_csum_off = pkt->pm.l4_off + offsetof(struct tcphdr, check);
+  int tcp_sport_off = pkt->pm.l4_off + offsetof(struct tcphdr, source);
+  __be32 old_sport = pkt->l34m.source;
 
-  if (xf->l34m.frg || !xport) return 0;
+  if (pkt->l34m.frg || !xport) return 0;
 
   bpf_l4_csum_replace(md, tcp_csum_off, old_sport, xport, sizeof(xport));
   bpf_skb_store_bytes(md, tcp_sport_off, &xport, sizeof(xport), 0);
-  xf->l34m.source = xport;
+  pkt->l34m.source = xport;
 
   return 0;
 }
 
 static int __always_inline
-dp_set_tcp_dport(void *md, struct xfrm *xf, __be16 xport)
+dp_set_tcp_dport(void *md, struct xpkt *pkt, __be16 xport)
 {
-  int tcp_csum_off = xf->pm.l4_off + offsetof(struct tcphdr, check);
-  int tcp_dport_off = xf->pm.l4_off + offsetof(struct tcphdr, dest);
-  __be32 old_dport = xf->l34m.dest;
+  int tcp_csum_off = pkt->pm.l4_off + offsetof(struct tcphdr, check);
+  int tcp_dport_off = pkt->pm.l4_off + offsetof(struct tcphdr, dest);
+  __be32 old_dport = pkt->l34m.dest;
 
-  if (xf->l34m.frg) return 0;
+  if (pkt->l34m.frg) return 0;
 
   bpf_l4_csum_replace(md, tcp_csum_off, old_dport, xport, sizeof(xport));
   bpf_skb_store_bytes(md, tcp_dport_off, &xport, sizeof(xport), 0);
-  xf->l34m.dest = xport;
+  pkt->l34m.dest = xport;
 
   return 0;
 }
 
 static int __always_inline
-dp_set_udp_src_ip(void *md, struct xfrm *xf, __be32 xip)
+dp_set_udp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-  int ip_csum_off  = xf->pm.l3_off + offsetof(struct iphdr, check);
-  int udp_csum_off = xf->pm.l4_off + offsetof(struct udphdr, check);
-  int ip_src_off = xf->pm.l3_off + offsetof(struct iphdr, saddr);
-  __be32 old_sip = xf->l34m.saddr4;
+  int ip_csum_off  = pkt->pm.l3_off + offsetof(struct iphdr, check);
+  int udp_csum_off = pkt->pm.l4_off + offsetof(struct udphdr, check);
+  int ip_src_off = pkt->pm.l3_off + offsetof(struct iphdr, saddr);
+  __be32 old_sip = pkt->l34m.saddr4;
   
   bpf_l4_csum_replace(md, udp_csum_off, old_sip, xip, BPF_F_PSEUDO_HDR |sizeof(xip));
   bpf_l3_csum_replace(md, ip_csum_off, old_sip, xip, sizeof(xip));
   bpf_skb_store_bytes(md, ip_src_off, &xip, sizeof(xip), 0);
-  xf->l34m.saddr4 = xip;
+  pkt->l34m.saddr4 = xip;
 
   return 0;
 }
 
 static int __always_inline
-dp_set_udp_dst_ip(void *md, struct xfrm *xf, __be32 xip)
+dp_set_udp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-  int ip_csum_off  = xf->pm.l3_off + offsetof(struct iphdr, check);
-  int udp_csum_off = xf->pm.l4_off + offsetof(struct udphdr, check);
-  int ip_dst_off = xf->pm.l3_off + offsetof(struct iphdr, daddr);
-  __be32 old_dip = xf->l34m.daddr4;
+  int ip_csum_off  = pkt->pm.l3_off + offsetof(struct iphdr, check);
+  int udp_csum_off = pkt->pm.l4_off + offsetof(struct udphdr, check);
+  int ip_dst_off = pkt->pm.l3_off + offsetof(struct iphdr, daddr);
+  __be32 old_dip = pkt->l34m.daddr4;
 
   bpf_l4_csum_replace(md, udp_csum_off, old_dip, xip, BPF_F_PSEUDO_HDR | sizeof(xip));
   bpf_l3_csum_replace(md, ip_csum_off, old_dip, xip, sizeof(xip));
   bpf_skb_store_bytes(md, ip_dst_off, &xip, sizeof(xip), 0);
-  xf->l34m.daddr4 = xip;
+  pkt->l34m.daddr4 = xip;
 
   return 0;
 }
 
 static int __always_inline
-dp_set_udp_sport(void *md, struct xfrm *xf, __be16 xport)
+dp_set_udp_sport(void *md, struct xpkt *pkt, __be16 xport)
 {
-  int udp_csum_off = xf->pm.l4_off + offsetof(struct udphdr, check);
-  int udp_sport_off = xf->pm.l4_off + offsetof(struct udphdr, source);
-  __be32 old_sport = xf->l34m.source;
+  int udp_csum_off = pkt->pm.l4_off + offsetof(struct udphdr, check);
+  int udp_sport_off = pkt->pm.l4_off + offsetof(struct udphdr, source);
+  __be32 old_sport = pkt->l34m.source;
 
-  if (xf->l34m.frg || !xport) return 0;
+  if (pkt->l34m.frg || !xport) return 0;
 
   bpf_l4_csum_replace(md, udp_csum_off, old_sport, xport, sizeof(xport));
   bpf_skb_store_bytes(md, udp_sport_off, &xport, sizeof(xport), 0);
-  xf->l34m.source = xport;
+  pkt->l34m.source = xport;
 
   return 0;
 }
 
 static int __always_inline
-dp_set_udp_dport(void *md, struct xfrm *xf, __be16 xport)
+dp_set_udp_dport(void *md, struct xpkt *pkt, __be16 xport)
 {
-  int udp_csum_off = xf->pm.l4_off + offsetof(struct udphdr, check);
-  int udp_dport_off = xf->pm.l4_off + offsetof(struct udphdr, dest);
-  __be32 old_dport = xf->l34m.dest;
+  int udp_csum_off = pkt->pm.l4_off + offsetof(struct udphdr, check);
+  int udp_dport_off = pkt->pm.l4_off + offsetof(struct udphdr, dest);
+  __be32 old_dport = pkt->l34m.dest;
 
-  if (xf->l34m.frg) return 0;
+  if (pkt->l34m.frg) return 0;
 
   bpf_l4_csum_replace(md, udp_csum_off, old_dport, xport, sizeof(xport));
   bpf_skb_store_bytes(md, udp_dport_off, &xport, sizeof(xport), 0);
-  xf->l34m.dest = xport;
+  pkt->l34m.dest = xport;
 
   return 0;
 }
 
 static int __always_inline
-dp_set_icmp_src_ip(void *md, struct xfrm *xf, __be32 xip)
+dp_set_icmp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-  int ip_csum_off  = xf->pm.l3_off + offsetof(struct iphdr, check);
-  int ip_src_off = xf->pm.l3_off + offsetof(struct iphdr, saddr);
-  __be32 old_sip = xf->l34m.saddr4;
+  int ip_csum_off  = pkt->pm.l3_off + offsetof(struct iphdr, check);
+  int ip_src_off = pkt->pm.l3_off + offsetof(struct iphdr, saddr);
+  __be32 old_sip = pkt->l34m.saddr4;
  
   bpf_l3_csum_replace(md, ip_csum_off, old_sip, xip, sizeof(xip));
   bpf_skb_store_bytes(md, ip_src_off, &xip, sizeof(xip), 0);
-  xf->l34m.saddr4 = xip;
+  pkt->l34m.saddr4 = xip;
 
   return 0;
 }
 
 static int __always_inline
-dp_set_icmp_dst_ip(void *md, struct xfrm *xf, __be32 xip)
+dp_set_icmp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-  int ip_csum_off  = xf->pm.l3_off + offsetof(struct iphdr, check);
-  int ip_dst_off = xf->pm.l3_off + offsetof(struct iphdr, daddr);
-  __be32 old_dip = xf->l34m.daddr4;
+  int ip_csum_off  = pkt->pm.l3_off + offsetof(struct iphdr, check);
+  int ip_dst_off = pkt->pm.l3_off + offsetof(struct iphdr, daddr);
+  __be32 old_dip = pkt->l34m.daddr4;
   
   bpf_l3_csum_replace(md, ip_csum_off, old_dip, xip, sizeof(xip));
   bpf_skb_store_bytes(md, ip_dst_off, &xip, sizeof(xip), 0);
-  xf->l34m.daddr4 = xip;
+  pkt->l34m.daddr4 = xip;
 
   return 0;
 }
 
 static int __always_inline
-dp_do_out(void *ctx, struct xfrm *xf)
+dp_do_out(void *ctx, struct xpkt *pkt)
 {
   void *start = DP_TC_PTR(FSM_PKT_DATA(ctx));
   void *dend = DP_TC_PTR(FSM_PKT_DATA_END(ctx));
   struct ethhdr *eth;
   int vlan;
 
-  vlan = xf->pm.bd;
+  vlan = pkt->pm.bd;
 
   if (vlan == 0) {
     /* Strip existing vlan. Nothing to do if there was no vlan tag */
-    if (xf->l2m.vlan[0] != 0) {
+    if (pkt->l2m.vlan[0] != 0) {
       // if (dp_remove_vlan_tag(ctx, xf) != 0) {
       //   F4_PPLN_DROPC(xf, F4_PIPE_RC_PLERR);
       //   return -1;
       // }
     } else {
       if (start + sizeof(*eth) > dend) {
-        F4_PPLN_DROPC(xf, F4_PIPE_RC_PLERR);
+        F4_PPLN_DROPC(pkt, F4_PIPE_RC_PLERR);
         return -1;
       }
       eth = DP_TC_PTR(FSM_PKT_DATA(ctx));
-      memcpy(eth->h_dest, xf->l2m.dl_dst, 6);
-      memcpy(eth->h_source, xf->l2m.dl_src, 6);
+      memcpy(eth->h_dest, pkt->l2m.dl_dst, 6);
+      memcpy(eth->h_source, pkt->l2m.dl_src, 6);
     }
     return 0;
   } else {
@@ -267,14 +267,14 @@ dp_do_out(void *ctx, struct xfrm *xf)
      * push a new vlan tag and set the vlan-id
      */
     eth = DP_TC_PTR(FSM_PKT_DATA(ctx));
-    if (xf->l2m.vlan[0] != 0) {
-      // if (dp_swap_vlan_tag(ctx, xf, vlan) != 0) {
-      //   F4_PPLN_DROPC(xf, F4_PIPE_RC_PLERR);
+    if (pkt->l2m.vlan[0] != 0) {
+      // if (dp_swap_vlan_tag(ctx, pkt, vlan) != 0) {
+      //   F4_PPLN_DROPC(pkt, F4_PIPE_RC_PLERR);
       //   return -1;
       // }
     } else {
-      // if (dp_insert_vlan_tag(ctx, xf, vlan) != 0) {
-      //   F4_PPLN_DROPC(xf, F4_PIPE_RC_PLERR);
+      // if (dp_insert_vlan_tag(ctx, pkt, vlan) != 0) {
+      //   F4_PPLN_DROPC(pkt, F4_PIPE_RC_PLERR);
       //   return -1;
       // }
     }
@@ -284,11 +284,11 @@ dp_do_out(void *ctx, struct xfrm *xf)
 }
 
 static int __always_inline
-dp_tail_call(void *ctx,  struct xfrm *xf, void *fa, __u32 idx)
+dp_tail_call(void *ctx,  struct xpkt *pkt, void *fa, __u32 idx)
 {
   int z = 0;
 
-  if (xf->nm.ct_sts != 0) {
+  if (pkt->nm.ct_sts != 0) {
     return TC_ACT_OK;
   }
 
@@ -297,8 +297,7 @@ dp_tail_call(void *ctx,  struct xfrm *xf, void *fa, __u32 idx)
   bpf_map_update_elem(&fcas, &z, fa, BPF_ANY);
 #endif
 
-  /* xfi state can be reused */ 
-  bpf_map_update_elem(&f4gw_xfrms, &z, xf, BPF_ANY);
+  bpf_map_update_elem(&fsm_xpkts, &z, pkt, BPF_ANY);
 
   bpf_tail_call(ctx, &fsm_progs, idx);
 

@@ -7,18 +7,18 @@
 #include "bpf-lb.h"
 
 static int __always_inline
-dp_redir_packet(void *ctx,  struct xfrm *xf)
+dp_redir_packet(void *ctx,  struct xpkt *pkt)
 {
   return TC_ACT_REDIRECT;
 }
 
 static int __always_inline
-dp_insert_fcv4(void *ctx, struct xfrm *xf, struct dp_fc_tacts *acts)
+dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct dp_fc_tacts *acts)
 {
   struct dp_fcv4_key *key;
   int z = 0;
 
-  int oif = xf->nm.nxifi;
+  int oif = pkt->nm.nxifi;
   if (oif) {
     acts->ca.oaux = oif;
   } 
@@ -32,40 +32,40 @@ dp_insert_fcv4(void *ctx, struct xfrm *xf, struct dp_fc_tacts *acts)
     return 1;
   }
   
-  acts->pten = xf->pm.pten;
+  acts->pten = pkt->pm.pten;
   bpf_map_update_elem(&f4gw_fc_v4, key, acts, BPF_ANY);
   return 0;
 }
 
 static int __always_inline
-dp_pipe_check_res(void *ctx, struct xfrm *xf, void *fa)
+dp_pipe_check_res(void *ctx, struct xpkt *pkt, void *fa)
 {
-  if (xf->pm.pipe_act) {
+  if (pkt->pm.pipe_act) {
 
-    if (xf->pm.pipe_act & F4_PIPE_DROP) {
+    if (pkt->pm.pipe_act & F4_PIPE_DROP) {
       return TC_ACT_SHOT;
     }
 
-    if (xf->pm.pipe_act & F4_PIPE_RDR) {
-      // DP_XMAC_CP(xf->l2m.dl_src, xf->nm.nxmac);
-      // DP_XMAC_CP(xf->l2m.dl_dst, xf->nm.nrmac);
-      xf->pm.oport = xf->nm.nxifi;
+    if (pkt->pm.pipe_act & F4_PIPE_RDR) {
+      // DP_XMAC_CP(pkt->l2m.dl_src, pkt->nm.nxmac);
+      // DP_XMAC_CP(pkt->l2m.dl_dst, pkt->nm.nrmac);
+      pkt->pm.oport = pkt->nm.nxifi;
     }
 
-    if (dp_unparse_packet_always(ctx, xf) != 0) {
+    if (dp_unparse_packet_always(ctx, pkt) != 0) {
         return TC_ACT_SHOT;
     }
 
-    if (xf->pm.pipe_act & F4_PIPE_RDR_MASK) {
-      // if (dp_unparse_packet(ctx, xf) != 0) {
+    if (pkt->pm.pipe_act & F4_PIPE_RDR_MASK) {
+      // if (dp_unparse_packet(ctx, pkt) != 0) {
       //   return TC_ACT_SHOT;
       // }
-      // if (xf->pm.f4) {
-      //   if (dp_f4_packet(ctx, xf) != 0) {
+      // if (pkt->pm.f4) {
+      //   if (dp_f4_packet(ctx, pkt) != 0) {
       //     return TC_ACT_SHOT;
       //   }
       // }
-      // return bpf_redirect(xf->pm.oport, BPF_F_INGRESS);
+      // return bpf_redirect(pkt->pm.oport, BPF_F_INGRESS);
     }
 
   }
@@ -73,7 +73,7 @@ dp_pipe_check_res(void *ctx, struct xfrm *xf, void *fa)
 }
 
 static int __always_inline 
-dp_ing_ct_main(void *ctx,  struct xfrm *xf)
+dp_ing_ct_main(void *ctx,  struct xpkt *pkt)
 {
   int val = 0;
   struct dp_fc_tacts *fa = NULL;
@@ -81,27 +81,27 @@ dp_ing_ct_main(void *ctx,  struct xfrm *xf)
   fa = bpf_map_lookup_elem(&f4gw_fcas, &val);
   if (!fa) return TC_ACT_SHOT;
 
-  if (xf->pm.igr && (xf->pm.phit & F4_DP_CTM_HIT) == 0) {
-    dp_do_nat(ctx, xf);
+  if (pkt->pm.igr && (pkt->pm.phit & F4_DP_CTM_HIT) == 0) {
+    dp_do_nat(ctx, pkt);
   }
 
-  val = dp_ct_in(ctx, xf);
+  val = dp_ct_in(ctx, pkt);
   if (val < 0) {
     return TC_ACT_OK;
   }
 
-  dp_l3_fwd(ctx, xf, fa);
-  dp_eg_l2(ctx, xf, fa);
+  dp_l3_fwd(ctx, pkt, fa);
+  dp_eg_l2(ctx, pkt, fa);
 
 res_end:
   if (1) {
-    int ret = dp_pipe_check_res(ctx, xf, fa);
+    int ret = dp_pipe_check_res(ctx, pkt, fa);
     return ret;
   }
 }
 
 static int __always_inline
-dp_ing_sh_main(void *ctx,  struct xfrm *xf)
+dp_ing_sh_main(void *ctx,  struct xpkt *pkt)
 {
   struct dp_fc_tacts *fa = NULL;
   int z = 0;
@@ -125,26 +125,26 @@ dp_ing_sh_main(void *ctx,  struct xfrm *xf)
   //  * it here and immediately get it out of way without
   //  * doing any further processing
   //  */
-  // if (xf->pm.mirr != 0) {
-  //   dp_do_mirr_lkup(ctx, xf);
+  // if (pkt->pm.mirr != 0) {
+  //   dp_do_mirr_lkup(ctx, pkt);
   //   goto out;
   // }
 
-  // dp_ing(ctx, xf);
+  // dp_ing(ctx, pkt);
 
   /* If there are pipeline errors at this stage,
    * we again skip any further processing
    */
-  if (xf->pm.pipe_act || xf->pm.tc == 0) {
+  if (pkt->pm.pipe_act || pkt->pm.tc == 0) {
     goto out;
   }
 
-  dp_ing_l2(ctx, xf, fa);
+  dp_ing_l2(ctx, pkt, fa);
 
   /* fast-cache is used only when certain conditions are met */
-  if (F4_PIPE_FC_CAP(xf)) {
-    fa->zone = xf->pm.zone;
-    dp_insert_fcv4(ctx, xf, fa);
+  if (F4_PIPE_FC_CAP(pkt)) {
+    fa->zone = pkt->pm.zone;
+    dp_insert_fcv4(ctx, pkt, fa);
   }
 
 out:

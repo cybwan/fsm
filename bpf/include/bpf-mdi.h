@@ -184,7 +184,7 @@ struct dp_nat_mdi {
     __u64           ito;
 };
 
-struct xfrm {
+struct xpkt {
     struct dp_fr_mdi  fm;
     struct dp_l2_mdi  l2m;
     struct dp_l34_mdi l34m;
