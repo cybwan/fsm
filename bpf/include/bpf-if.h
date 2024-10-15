@@ -18,7 +18,7 @@ dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct dp_fc_tacts *acts)
   struct dp_fcv4_key *key;
   int z = 0;
 
-  int oif = pkt->nm.nxifi;
+  int oif = pkt->nat.nxifi;
   if (oif) {
     acts->ca.oaux = oif;
   } 
@@ -49,7 +49,7 @@ dp_pipe_check_res(void *ctx, struct xpkt *pkt, void *fa)
     if (pkt->pm.pipe_act & F4_PIPE_RDR) {
       // DP_XMAC_CP(pkt->l2m.dl_src, pkt->nm.nxmac);
       // DP_XMAC_CP(pkt->l2m.dl_dst, pkt->nm.nrmac);
-      pkt->pm.oport = pkt->nm.nxifi;
+      pkt->pm.oport = pkt->nat.nxifi;
     }
 
     if (dp_unparse_packet_always(ctx, pkt) != 0) {

@@ -74,7 +74,7 @@ dp_do_ctops(void *ctx, struct xpkt *pkt, void *fa_,
     F4_PPLN_DROPC(pkt, F4_PIPE_RC_ACT_DROP);
   }
 
-  if (pkt->l34m.nw_proto == IPPROTO_TCP) {
+  if (pkt->l34.nw_proto == IPPROTO_TCP) {
     dp_run_ctact_helper(pkt, act);
   }
 
@@ -101,16 +101,16 @@ dp_do_ing_ct(void *ctx, struct xpkt *pkt, void *fa_)
 static int __always_inline
 dp_l3_fwd(void *ctx,  struct xpkt *pkt, void *fa)
 {
-  if (pkt->l2m.dl_type == htons(ETH_P_IP)) {
-    if (pkt->pm.nf && pkt->nm.nv6 != 0) {
-      pkt->nm.xlate_proto = 1;
+  if (pkt->l2.dl_type == htons(ETH_P_IP)) {
+    if (pkt->pm.nf && pkt->nat.nv6 != 0) {
+      pkt->nat.xlate_proto = 1;
       // dp_do_ipv6_fwd(ctx, pkt, fa);
     } else {
       // dp_do_ipv4_fwd(ctx, pkt, fa);
     }
-  } else if (pkt->l2m.dl_type == htons(ETH_P_IPV6)) {
-    if (pkt->pm.nf && pkt->nm.nv6 == 0) {
-      pkt->nm.xlate_proto = 1;
+  } else if (pkt->l2.dl_type == htons(ETH_P_IPV6)) {
+    if (pkt->pm.nf && pkt->nat.nv6 == 0) {
+      pkt->nat.xlate_proto = 1;
       // dp_do_ipv4_fwd(ctx, pkt, fa);
     } else {
       // dp_do_ipv6_fwd(ctx, pkt, fa);

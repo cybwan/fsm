@@ -7,19 +7,19 @@
 
 #define CT_KEY_GEN(k, xf)                    \
 do {                                         \
-  (k)->daddr[0] = pkt->l34m.daddr[0];         \
-  (k)->daddr[1] = pkt->l34m.daddr[1];         \
-  (k)->daddr[2] = pkt->l34m.daddr[2];         \
-  (k)->daddr[3] = pkt->l34m.daddr[3];         \
-  (k)->saddr[0] = pkt->l34m.saddr[0];         \
-  (k)->saddr[1] = pkt->l34m.saddr[1];         \
-  (k)->saddr[2] = pkt->l34m.saddr[2];         \
-  (k)->saddr[3] = pkt->l34m.saddr[3];         \
-  (k)->sport = pkt->l34m.source;              \
-  (k)->dport = pkt->l34m.dest;                \
-  (k)->l4proto = pkt->l34m.nw_proto;          \
+  (k)->daddr[0] = pkt->l34.daddr[0];         \
+  (k)->daddr[1] = pkt->l34.daddr[1];         \
+  (k)->daddr[2] = pkt->l34.daddr[2];         \
+  (k)->daddr[3] = pkt->l34.daddr[3];         \
+  (k)->saddr[0] = pkt->l34.saddr[0];         \
+  (k)->saddr[1] = pkt->l34.saddr[1];         \
+  (k)->saddr[2] = pkt->l34.saddr[2];         \
+  (k)->saddr[3] = pkt->l34.saddr[3];         \
+  (k)->sport = pkt->l34.source;              \
+  (k)->dport = pkt->l34.dest;                \
+  (k)->l4proto = pkt->l34.nw_proto;          \
   (k)->zone = pkt->pm.zone;                   \
-  (k)->v6 = pkt->l2m.dl_type == ntohs(ETH_P_IPV6) ? 1: 0; \
+  (k)->v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1: 0; \
 }while(0)
 
 #define dp_run_ctact_helper(x, a) \
@@ -28,8 +28,8 @@ do {                              \
   case DP_SET_NOP:                \
   case DP_SET_SNAT:               \
   case DP_SET_DNAT:               \
-    (a)->ctd.pi.t.tcp_cts[CT_DIR_IN].pseq = (x)->l34m.seq;   \
-    (a)->ctd.pi.t.tcp_cts[CT_DIR_IN].pack = (x)->l34m.ack;   \
+    (a)->ctd.pi.t.tcp_cts[CT_DIR_IN].pseq = (x)->l34.seq;   \
+    (a)->ctd.pi.t.tcp_cts[CT_DIR_IN].pack = (x)->l34.ack;   \
     break;                        \
   default:                        \
     break;                        \
@@ -111,8 +111,8 @@ dp_ct_proto_xfk_init(struct xpkt *pkt,
     xkey->v6 = xi->nv6;
     // DP_XADDR_CP(xkey->saddr, xi->nat_rip);
     DP_XADDR_CP(xkey->daddr, xi->nat_xip);
-    DP_XADDR_CP(xxi->nat_rip, pkt->l34m.saddr);
-    DP_XADDR_CP(xxi->nat_xip, pkt->l34m.daddr);
+    DP_XADDR_CP(xxi->nat_rip, pkt->l34.saddr);
+    DP_XADDR_CP(xxi->nat_xip, pkt->l34.daddr);
     
     if (key->l4proto != IPPROTO_ICMP) {
       xkey->dport = xi->nat_xport;
@@ -220,7 +220,7 @@ dp_ct_tcp_sm(void *ctx, struct xpkt *pkt,
   switch (ts->state) {
   case CT_TCP_CLOSED:
 
-    if (pkt->nm.dsr) {
+    if (pkt->nat.dsr) {
       nstate = CT_TCP_EST;
       goto end;
     }
@@ -416,7 +416,7 @@ dp_ct_udp_sm(void *ctx, struct xpkt *pkt,
   switch (us->state) {
   case CT_UDP_CNI:
 
-    if (pkt->nm.dsr || pkt->l2m.ssnid) {
+    if (pkt->nat.dsr || pkt->l2.ssnid) {
       nstate = CT_UDP_EST;
       break;
     }
@@ -523,7 +523,7 @@ dp_ct_icmp_sm(void *ctx, struct xpkt *pkt,
 
   switch (is->state) { 
   case CT_ICMP_CLOSED: 
-    if (pkt->nm.dsr) {
+    if (pkt->nat.dsr) {
       nstate = CT_ICMP_REPS;
       goto end;
     }
@@ -621,7 +621,7 @@ dp_ct_icmp6_sm(void *ctx, struct xpkt *pkt,
 
   switch (is->state) {
   case CT_ICMP_CLOSED:
-    if (pkt->nm.dsr) {
+    if (pkt->nat.dsr) {
       nstate = CT_ICMP_REPS;
       goto end;
     }
@@ -671,7 +671,7 @@ dp_ct_sm(void *ctx, struct xpkt *pkt,
 {
   int sm_ret = 0;
 
-  switch (pkt->l34m.nw_proto) {
+  switch (pkt->l34.nw_proto) {
   case IPPROTO_TCP:
     sm_ret = dp_ct_tcp_sm(ctx, pkt, atdat, axtdat, dir);
     break;
@@ -723,21 +723,21 @@ dp_ct_est(struct xpkt *pkt,
   CP_CT_NAT_TACTS(adat, atdat);
   CP_CT_NAT_TACTS(axdat, axtdat);
 
-  switch (pkt->l34m.nw_proto) {
+  switch (pkt->l34.nw_proto) {
   case IPPROTO_UDP:
-    if (pkt->l2m.ssnid) {
+    if (pkt->l2.ssnid) {
       if (pkt->pm.dir == CT_DIR_IN) {
         adat->ctd.xi.osp = key->sport;
         adat->ctd.xi.odp = key->dport;
-        key->sport = pkt->l2m.ssnid;
-        key->dport = pkt->l2m.ssnid;
+        key->sport = pkt->l2.ssnid;
+        key->dport = pkt->l2.ssnid;
         adat->ctd.pi.frag = 1;
         bpf_map_update_elem(&f4gw_ct, key, adat, BPF_ANY);
       } else {
         axdat->ctd.xi.osp = xkey->sport;
         axdat->ctd.xi.odp = xkey->dport;
-        xkey->sport = pkt->l2m.ssnid;
-        xkey->dport = pkt->l2m.ssnid;
+        xkey->sport = pkt->l2.ssnid;
+        xkey->dport = pkt->l2.ssnid;
         axdat->ctd.pi.frag = 1;
         bpf_map_update_elem(&f4gw_ct, xkey, axdat, BPF_ANY);
       }
@@ -787,13 +787,13 @@ dp_ct_in(void *ctx, struct xpkt *pkt)
   xxi = &axdat->ctd.xi;
  
   /* CT Key */
-  DP_XADDR_CP(key.daddr, pkt->l34m.daddr);
-  DP_XADDR_CP(key.saddr, pkt->l34m.saddr);
-  key.sport = pkt->l34m.source;
-  key.dport = pkt->l34m.dest;
-  key.l4proto = pkt->l34m.nw_proto;
+  DP_XADDR_CP(key.daddr, pkt->l34.daddr);
+  DP_XADDR_CP(key.saddr, pkt->l34.saddr);
+  key.sport = pkt->l34.source;
+  key.dport = pkt->l34.dest;
+  key.l4proto = pkt->l34.nw_proto;
   key.zone = pkt->pm.zone;
-  key.v6 = pkt->l2m.dl_type == ntohs(ETH_P_IPV6) ? 1: 0;
+  key.v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1: 0;
 
   if (key.l4proto != IPPROTO_TCP &&
       key.l4proto != IPPROTO_UDP &&
@@ -803,15 +803,15 @@ dp_ct_in(void *ctx, struct xpkt *pkt)
   }
 
   xi->nat_flags = pkt->pm.nf;
-  DP_XADDR_CP(xi->nat_xip, pkt->nm.nxip);
-  DP_XADDR_CP(xi->nat_rip, pkt->nm.nrip);
+  DP_XADDR_CP(xi->nat_xip, pkt->nat.nxip);
+  DP_XADDR_CP(xi->nat_rip, pkt->nat.nrip);
   // DP_XMAC_CP(xi->nat_xmac, pkt->nm.nxmac);
   // DP_XMAC_CP(xi->nat_rmac, pkt->nm.nrmac);
   // xi->nat_xifi = pkt->nm.nxifi;
-  xi->nat_xport = pkt->nm.nxport;
-  xi->nat_rport = pkt->nm.nrport;
-  xi->nv6 = pkt->nm.nv6;
-  xi->dsr = pkt->nm.dsr;
+  xi->nat_xport = pkt->nat.nxport;
+  xi->nat_rport = pkt->nat.nrport;
+  xi->nv6 = pkt->nat.nv6;
+  xi->dsr = pkt->nat.dsr;
 
   xxi->nat_flags = 0;
   xxi->nat_xport = 0;
@@ -851,11 +851,11 @@ dp_ct_in(void *ctx, struct xpkt *pkt)
       adat->nat_act.xport = xi->nat_xport;
       adat->nat_act.rport = xi->nat_rport;
       adat->nat_act.doct = 0;
-      adat->nat_act.aid = pkt->nm.sel_aid;
-      adat->nat_act.nv6 = pkt->nm.nv6 ? 1:0;
-      adat->nat_act.dsr = pkt->nm.dsr;
-      adat->nat_act.cdis = pkt->nm.cdis;
-      adat->ito = pkt->nm.ito;
+      adat->nat_act.aid = pkt->nat.sel_aid;
+      adat->nat_act.nv6 = pkt->nat.nv6 ? 1:0;
+      adat->nat_act.dsr = pkt->nat.dsr;
+      adat->nat_act.cdis = pkt->nat.cdis;
+      adat->ito = pkt->nat.ito;
     } else {
       adat->ito = 0;
       adat->ca.act_type = DP_SET_DO_CT;
@@ -864,7 +864,7 @@ dp_ct_in(void *ctx, struct xpkt *pkt)
 
     /* FIXME This is duplicated data */
     adat->ctd.rid = pkt->pm.rule_id;
-    adat->ctd.aid = pkt->nm.sel_aid;
+    adat->ctd.aid = pkt->nat.sel_aid;
     adat->ctd.smr = CT_SMR_INIT;
     adat->ctd.pb.bytes = 0;
     adat->ctd.pb.packets = 0;
@@ -886,11 +886,11 @@ dp_ct_in(void *ctx, struct xpkt *pkt)
       axdat->nat_act.rport = xxi->nat_rport;
       axdat->nat_act.doct = 0;
       axdat->nat_act.rid = pkt->pm.rule_id;
-      axdat->nat_act.aid = pkt->nm.sel_aid;
+      axdat->nat_act.aid = pkt->nat.sel_aid;
       axdat->nat_act.nv6 = key.v6 ? 1:0;
-      axdat->nat_act.dsr = pkt->nm.dsr;
-      axdat->nat_act.cdis = pkt->nm.cdis;
-      axdat->ito = pkt->nm.ito;
+      axdat->nat_act.dsr = pkt->nat.dsr;
+      axdat->nat_act.cdis = pkt->nat.cdis;
+      axdat->ito = pkt->nat.ito;
     } else {
       axdat->ito = 0;
       axdat->ca.act_type = DP_SET_DO_CT;

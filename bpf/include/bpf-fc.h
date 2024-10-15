@@ -6,11 +6,11 @@
 static int  __always_inline
 dp_mk_fcv4_key(struct xpkt *pkt, struct dp_fcv4_key *key)
 {
-  key->daddr      = pkt->l34m.daddr4;
-  key->saddr      = pkt->l34m.saddr4;
-  key->sport      = pkt->l34m.source;
-  key->dport      = pkt->l34m.dest;
-  key->l4proto    = pkt->l34m.nw_proto;
+  key->daddr      = pkt->l34.daddr4;
+  key->saddr      = pkt->l34.saddr4;
+  key->sport      = pkt->l34.source;
+  key->dport      = pkt->l34.dest;
+  key->l4proto    = pkt->l34.nw_proto;
   key->pad        = 0;
   key->in_port    = 0;
   return 0;
@@ -83,9 +83,9 @@ dp_do_fcv4_lkup(void *ctx, struct xpkt *pkt)
 
   // DP_RUN_CT_HELPER(pkt);
 
-  DP_XMAC_CP(pkt->l2m.dl_src, pkt->nm.nxmac);
-  DP_XMAC_CP(pkt->l2m.dl_dst, pkt->nm.nrmac);
-  pkt->pm.oport = pkt->nm.nxifi;
+  DP_XMAC_CP(pkt->l2.dl_src, pkt->nat.nxmac);
+  DP_XMAC_CP(pkt->l2.dl_dst, pkt->nat.nrmac);
+  pkt->pm.oport = pkt->nat.nxifi;
   
   dp_unparse_packet_always(ctx, pkt);
   // dp_unparse_packet(ctx, pkt);
@@ -106,7 +106,7 @@ dp_ing_fc_main(void *ctx, struct xpkt *pkt)
   int z = 0;
   int oif;
   if (pkt->pm.pipe_act == 0 &&
-      pkt->l2m.dl_type == ntohs(ETH_P_IP)) {
+      pkt->l2.dl_type == ntohs(ETH_P_IP)) {
     if (dp_do_fcv4_lkup(ctx, pkt) == 1) {
       if (pkt->pm.pipe_act == F4_PIPE_RDR) {
         // oif = pkt->pm.oport;
@@ -124,34 +124,34 @@ dp_ing_fc_main(void *ctx, struct xpkt *pkt)
 static int __always_inline
 dp_egr_main(void *ctx, struct xpkt *pkt)
 {
-  if (pkt->l2m.dl_type == ntohs(ETH_P_IP) && (pkt->l34m.nw_proto == IPPROTO_TCP || pkt->l34m.nw_proto == IPPROTO_UDP)) {
+  if (pkt->l2.dl_type == ntohs(ETH_P_IP) && (pkt->l34.nw_proto == IPPROTO_TCP || pkt->l34.nw_proto == IPPROTO_UDP)) {
     struct dp_snat_opt_key key;
     struct dp_snat_opt_tact *adat = NULL;
 
     memset(&key, 0, sizeof(key));
     key.v6 = 0;
-    key.l4proto = pkt->l34m.nw_proto;
-    key.saddr = pkt->l34m.saddr4;
-    key.daddr = pkt->l34m.daddr4;
-    key.sport = ntohs(pkt->l34m.source);
-    key.dport = ntohs(pkt->l34m.dest);
+    key.l4proto = pkt->l34.nw_proto;
+    key.saddr = pkt->l34.saddr4;
+    key.daddr = pkt->l34.daddr4;
+    key.sport = ntohs(pkt->l34.source);
+    key.dport = ntohs(pkt->l34.dest);
 
     adat = bpf_map_lookup_elem(&f4gw_snat_opts, &key);
 
     if (adat != NULL) {
       if (pkt->pm.igr) {
-        if (pkt->l34m.nw_proto == IPPROTO_TCP) {
+        if (pkt->l34.nw_proto == IPPROTO_TCP) {
           dp_set_tcp_dst_ip(ctx, pkt, adat->xaddr);
           dp_set_tcp_dport(ctx, pkt, htons(adat->xport));
-        } else if (pkt->l34m.nw_proto == IPPROTO_UDP) {
+        } else if (pkt->l34.nw_proto == IPPROTO_UDP) {
           dp_set_udp_dst_ip(ctx, pkt, adat->xaddr);
           dp_set_udp_dport(ctx, pkt, htons(adat->xport));
         }
       } else if (pkt->pm.egr) {
-        if (pkt->l34m.nw_proto == IPPROTO_TCP) {
+        if (pkt->l34.nw_proto == IPPROTO_TCP) {
           dp_set_tcp_src_ip(ctx, pkt, adat->xaddr);
           dp_set_tcp_sport(ctx, pkt, htons(adat->xport));
-        } else if (pkt->l34m.nw_proto == IPPROTO_UDP) {
+        } else if (pkt->l34.nw_proto == IPPROTO_UDP) {
           dp_set_udp_src_ip(ctx, pkt, adat->xaddr);
           dp_set_udp_sport(ctx, pkt, htons(adat->xport));
         }
