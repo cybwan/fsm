@@ -117,7 +117,6 @@ struct dp_pi_mdi {
 struct xpkt_skb_meta {
     __u32 data;
     __u32 data_end;
-    __u64 ts;
 };
 
 /* Allow users of header file to redefine VLAN max depth */
