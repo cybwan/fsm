@@ -71,8 +71,8 @@ dp_ct_proto_xfk_init(struct xpkt *pkt,
                      struct dp_ct_key *xkey,
                      nxfrm_inf_t *xxi)
 {
-  DP_XADDR_CP(xkey->daddr, key->saddr);
-  DP_XADDR_CP(xkey->saddr, key->daddr);
+  XADDR_COPY(xkey->daddr, key->saddr);
+  XADDR_COPY(xkey->saddr, key->daddr);
   xkey->sport = key->dport; 
   xkey->dport = key->sport;
   xkey->l4proto = key->l4proto;
@@ -82,7 +82,7 @@ dp_ct_proto_xfk_init(struct xpkt *pkt,
   if (xi->dsr) {
     if (xi->nat_flags & F4_NAT_DST) {
       xxi->nat_flags = F4_NAT_SRC;
-      DP_XADDR_CP(xxi->nat_xip, key->daddr);
+      XADDR_COPY(xxi->nat_xip, key->daddr);
       xxi->nat_xport = key->dport;
       xxi->nv6 = xi->nv6;
     }
@@ -93,10 +93,10 @@ dp_ct_proto_xfk_init(struct xpkt *pkt,
   /* Apply NAT xfrm if needed */
   if (xi->nat_flags & F4_NAT_DST) {
     xkey->v6 = (__u8)(xi->nv6);
-    DP_XADDR_CP(xkey->saddr, xi->nat_rip);
-    // DP_XADDR_CP(xkey->daddr, xi->nat_xip);
-    DP_XADDR_CP(xxi->nat_xip, key->daddr);
-    DP_XADDR_CP(xxi->nat_rip, key->saddr);
+    XADDR_COPY(xkey->saddr, xi->nat_rip);
+    // XADDR_COPY(xkey->daddr, xi->nat_xip);
+    XADDR_COPY(xxi->nat_xip, key->daddr);
+    XADDR_COPY(xxi->nat_rip, key->saddr);
     if (key->l4proto != IPPROTO_ICMP) {
       xkey->dport = xi->nat_xport;
       xkey->sport = xi->nat_rport;
@@ -109,10 +109,10 @@ dp_ct_proto_xfk_init(struct xpkt *pkt,
   }
   if (xi->nat_flags & F4_NAT_SRC) {
     xkey->v6 = xi->nv6;
-    // DP_XADDR_CP(xkey->saddr, xi->nat_rip);
-    DP_XADDR_CP(xkey->daddr, xi->nat_xip);
-    DP_XADDR_CP(xxi->nat_rip, pkt->l34.saddr);
-    DP_XADDR_CP(xxi->nat_xip, pkt->l34.daddr);
+    // XADDR_COPY(xkey->saddr, xi->nat_rip);
+    XADDR_COPY(xkey->daddr, xi->nat_xip);
+    XADDR_COPY(xxi->nat_rip, pkt->l34.saddr);
+    XADDR_COPY(xxi->nat_xip, pkt->l34.daddr);
     
     if (key->l4proto != IPPROTO_ICMP) {
       xkey->dport = xi->nat_xport;
@@ -129,8 +129,8 @@ dp_ct_proto_xfk_init(struct xpkt *pkt,
     // DP_XMAC_CP(xxi->nat_rmac, pkt->l2m.dl_src);
   }
   if (xi->nat_flags & F4_NAT_HDST) {
-    DP_XADDR_CP(xkey->saddr, key->saddr);
-    DP_XADDR_CP(xkey->daddr, key->daddr);
+    XADDR_COPY(xkey->saddr, key->saddr);
+    XADDR_COPY(xkey->daddr, key->daddr);
 
     if (key->l4proto != IPPROTO_ICMP) {
       if (xi->nat_xport)
@@ -141,14 +141,14 @@ dp_ct_proto_xfk_init(struct xpkt *pkt,
 
     xxi->nat_flags = F4_NAT_HSRC;
     xxi->nv6 = key->v6;
-    DP_XADDR_SETZR(xxi->nat_xip);
-    DP_XADDR_SETZR(xi->nat_xip);
+    XADDR_SET_ZERO(xxi->nat_xip);
+    XADDR_SET_ZERO(xi->nat_xip);
     if (key->l4proto != IPPROTO_ICMP)
       xxi->nat_xport = key->dport;
   }
   if (xi->nat_flags & F4_NAT_HSRC) {
-    DP_XADDR_CP(xkey->saddr, key->saddr);
-    DP_XADDR_CP(xkey->daddr, key->daddr);
+    XADDR_COPY(xkey->saddr, key->saddr);
+    XADDR_COPY(xkey->daddr, key->daddr);
 
     if (key->l4proto != IPPROTO_ICMP) {
       if (xi->nat_xport)
@@ -159,8 +159,8 @@ dp_ct_proto_xfk_init(struct xpkt *pkt,
 
     xxi->nat_flags = F4_NAT_HDST;
     xxi->nv6 = key->v6;
-    DP_XADDR_SETZR(xxi->nat_xip);
-    DP_XADDR_SETZR(xi->nat_xip);
+    XADDR_SET_ZERO(xxi->nat_xip);
+    XADDR_SET_ZERO(xi->nat_xip);
 
     if (key->l4proto != IPPROTO_ICMP)
       xxi->nat_xport = key->sport;
@@ -179,8 +179,8 @@ dp_ct_tcp_sm(void *ctx, struct xpkt *pkt,
   struct dp_ct_dat *xtdat = &axtdat->ctd;
   ct_tcp_pinf_t *ts = &tdat->pi.t;
   ct_tcp_pinf_t *rts = &xtdat->pi.t;
-  void *dend = DP_TC_PTR(FSM_PKT_DATA_END(ctx));
-  struct tcphdr *t = DP_ADD_PTR(FSM_PKT_DATA(ctx), pkt->pm.l4_off);
+  void *dend = TC_PTR(FSM_PKT_DATA_END(ctx));
+  struct tcphdr *t = TC_PTR_ADD(FSM_PKT_DATA(ctx), pkt->pm.l4_off);
   __u8 tcp_flags = pkt->pm.tcp_flags;
   ct_tcp_pinfd_t *td = &ts->tcp_cts[dir];
   ct_tcp_pinfd_t *rtd;
@@ -474,8 +474,8 @@ dp_ct_icmp_sm(void *ctx, struct xpkt *pkt,
   struct dp_ct_dat *xtdat = &axtdat->ctd;
   ct_icmp_pinf_t *is = &tdat->pi.i;
   ct_icmp_pinf_t *xis = &xtdat->pi.i;
-  void *dend = DP_TC_PTR(FSM_PKT_DATA_END(ctx));
-  struct icmphdr *i = DP_ADD_PTR(FSM_PKT_DATA(ctx), pkt->pm.l4_off);
+  void *dend = TC_PTR(FSM_PKT_DATA_END(ctx));
+  struct icmphdr *i = TC_PTR_ADD(FSM_PKT_DATA(ctx), pkt->pm.l4_off);
   __u32 nstate;
   __u16 seq;
 
@@ -575,8 +575,8 @@ dp_ct_icmp6_sm(void *ctx, struct xpkt *pkt,
   struct dp_ct_dat *xtdat = &axtdat->ctd;
   ct_icmp_pinf_t *is = &tdat->pi.i;
   ct_icmp_pinf_t *xis = &xtdat->pi.i;
-  void *dend = DP_TC_PTR(FSM_PKT_DATA_END(ctx));
-  struct icmp6hdr *i = DP_ADD_PTR(FSM_PKT_DATA(ctx), pkt->pm.l4_off);
+  void *dend = TC_PTR(FSM_PKT_DATA_END(ctx));
+  struct icmp6hdr *i = TC_PTR_ADD(FSM_PKT_DATA(ctx), pkt->pm.l4_off);
   __u32 nstate;
   __u16 seq;
 
@@ -787,8 +787,8 @@ dp_ct_in(void *ctx, struct xpkt *pkt)
   xxi = &axdat->ctd.xi;
  
   /* CT Key */
-  DP_XADDR_CP(key.daddr, pkt->l34.daddr);
-  DP_XADDR_CP(key.saddr, pkt->l34.saddr);
+  XADDR_COPY(key.daddr, pkt->l34.daddr);
+  XADDR_COPY(key.saddr, pkt->l34.saddr);
   key.sport = pkt->l34.source;
   key.dport = pkt->l34.dest;
   key.l4proto = pkt->l34.nw_proto;
@@ -803,8 +803,8 @@ dp_ct_in(void *ctx, struct xpkt *pkt)
   }
 
   xi->nat_flags = pkt->pm.nf;
-  DP_XADDR_CP(xi->nat_xip, pkt->nat.nxip);
-  DP_XADDR_CP(xi->nat_rip, pkt->nat.nrip);
+  XADDR_COPY(xi->nat_xip, pkt->nat.nxip);
+  XADDR_COPY(xi->nat_rip, pkt->nat.nrip);
   // DP_XMAC_CP(xi->nat_xmac, pkt->nm.nxmac);
   // DP_XMAC_CP(xi->nat_rmac, pkt->nm.nrmac);
   // xi->nat_xifi = pkt->nm.nxifi;
@@ -816,13 +816,13 @@ dp_ct_in(void *ctx, struct xpkt *pkt)
   xxi->nat_flags = 0;
   xxi->nat_xport = 0;
   xxi->nat_rport = 0;
-  DP_XADDR_SETZR(xxi->nat_xip);
-  DP_XADDR_SETZR(xxi->nat_rip);
+  XADDR_SET_ZERO(xxi->nat_xip);
+  XADDR_SET_ZERO(xxi->nat_rip);
   // DP_XMAC_SETZR(xxi->nat_xmac);
   // DP_XMAC_SETZR(xxi->nat_rmac);
 
   if (pkt->pm.nf & (F4_NAT_DST|F4_NAT_SRC)) {
-    if (DP_XADDR_ISZR(xi->nat_xip)) {
+    if (XADDR_IS_ZERO(xi->nat_xip)) {
       if (pkt->pm.nf == F4_NAT_DST) {
         xi->nat_flags = F4_NAT_HDST;
       } else if (pkt->pm.nf == F4_NAT_SRC){
@@ -843,8 +843,8 @@ dp_ct_in(void *ctx, struct xpkt *pkt)
     if (xi->nat_flags) {
       adat->ca.act_type = xi->nat_flags & (F4_NAT_DST|F4_NAT_HDST) ?
                              DP_SET_DNAT: DP_SET_SNAT;
-      DP_XADDR_CP(adat->nat_act.xip,  xi->nat_xip);
-      DP_XADDR_CP(adat->nat_act.rip, xi->nat_rip);
+      XADDR_COPY(adat->nat_act.xip,  xi->nat_xip);
+      XADDR_COPY(adat->nat_act.rip, xi->nat_rip);
       // DP_XMAC_CP(adat->nat_act.xmac,  xi->nat_xmac);
       // DP_XMAC_CP(adat->nat_act.rmac, xi->nat_rmac);
       // adat->nat_act.xifi = xi->nat_xifi;
@@ -877,8 +877,8 @@ dp_ct_in(void *ctx, struct xpkt *pkt)
     if (xxi->nat_flags) { 
       axdat->ca.act_type = xxi->nat_flags & (F4_NAT_DST|F4_NAT_HDST) ?
                              DP_SET_DNAT: DP_SET_SNAT;
-      DP_XADDR_CP(axdat->nat_act.xip, xxi->nat_xip);
-      DP_XADDR_CP(axdat->nat_act.rip, xxi->nat_rip);
+      XADDR_COPY(axdat->nat_act.xip, xxi->nat_xip);
+      XADDR_COPY(axdat->nat_act.rip, xxi->nat_rip);
       // DP_XMAC_CP(axdat->nat_act.xmac, xxi->nat_xmac);
       // DP_XMAC_CP(axdat->nat_act.rmac, xxi->nat_rmac);
       // axdat->nat_act.xifi = xxi->nat_xifi;

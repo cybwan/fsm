@@ -370,16 +370,16 @@ struct dp_t2_port {
 #define offsetof(TYPE, MEMBER)	((unsigned long)&((TYPE *)0)->MEMBER)
 #endif
 
-#define DP_ADD_PTR(x, len) ((void *)(((__u8 *)((long)x)) + (len)))
-#define DP_TC_PTR(x) ((void *)((long)x))
-#define DP_DIFF_PTR(x, y) (((__u8 *)DP_TC_PTR(x)) - ((__u8 *)DP_TC_PTR(y)))
+#define TC_PTR(x) ((void *)((long)x))
+#define TC_PTR_ADD(x, len) ((void *)(((__u8 *)((long)x)) + (len)))
+#define TC_PTR_SUB(x, y) (((__u8 *)TC_PTR(x)) - ((__u8 *)TC_PTR(y)))
 
-#define DP_XADDR_ISZR(a) ((a)[0] == 0 && \
+#define XADDR_IS_ZERO(a) ((a)[0] == 0 && \
                           (a)[1] == 0 && \
                           (a)[2] == 0 && \
                           (a)[3] == 0)
 
-#define DP_XADDR_CP(a, b)         \
+#define XADDR_COPY(a, b)         \
 do {                              \
   (a)[0] = (b)[0];                \
   (a)[1] = (b)[1];                \
@@ -387,7 +387,7 @@ do {                              \
   (a)[3] = (b)[3];                \
 } while (0)
 
-#define DP_XADDR_SETZR(a)         \
+#define XADDR_SET_ZERO(a)         \
 do {                              \
   (a)[0] = 0;                     \
   (a)[1] = 0;                     \

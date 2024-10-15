@@ -238,8 +238,8 @@ dp_set_icmp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 static int __always_inline
 dp_do_out(void *ctx, struct xpkt *pkt)
 {
-  void *start = DP_TC_PTR(FSM_PKT_DATA(ctx));
-  void *dend = DP_TC_PTR(FSM_PKT_DATA_END(ctx));
+  void *start = TC_PTR(FSM_PKT_DATA(ctx));
+  void *dend = TC_PTR(FSM_PKT_DATA_END(ctx));
   struct ethhdr *eth;
   int vlan;
 
@@ -257,7 +257,7 @@ dp_do_out(void *ctx, struct xpkt *pkt)
         F4_PPLN_DROPC(pkt, F4_PIPE_RC_PLERR);
         return -1;
       }
-      eth = DP_TC_PTR(FSM_PKT_DATA(ctx));
+      eth = TC_PTR(FSM_PKT_DATA(ctx));
       memcpy(eth->h_dest, pkt->l2.dl_dst, 6);
       memcpy(eth->h_source, pkt->l2.dl_src, 6);
     }
@@ -266,7 +266,7 @@ dp_do_out(void *ctx, struct xpkt *pkt)
     /* If existing vlan tag was present just replace vlan-id, else 
      * push a new vlan tag and set the vlan-id
      */
-    eth = DP_TC_PTR(FSM_PKT_DATA(ctx));
+    eth = TC_PTR(FSM_PKT_DATA(ctx));
     if (pkt->l2.vlan[0] != 0) {
       // if (dp_swap_vlan_tag(ctx, pkt, vlan) != 0) {
       //   F4_PPLN_DROPC(pkt, F4_PIPE_RC_PLERR);

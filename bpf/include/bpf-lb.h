@@ -8,8 +8,8 @@ dp_pipe_set_nat(void *ctx, struct xpkt *pkt,
                 struct dp_nat_act *na, int do_snat)
 {
   pkt->pm.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
-  DP_XADDR_CP(pkt->nat.nxip, na->xip);
-  DP_XADDR_CP(pkt->nat.nrip, na->rip);
+  XADDR_COPY(pkt->nat.nxip, na->xip);
+  XADDR_COPY(pkt->nat.nrip, na->rip);
   DP_XMAC_CP(pkt->nat.nxmac, na->xmac);
   DP_XMAC_CP(pkt->nat.nrmac, na->rmac);
   pkt->nat.nxifi = na->xifi;
@@ -120,7 +120,7 @@ dp_do_nat(void *ctx, struct xpkt *pkt)
   int sel;
 
   memset(&key, 0, sizeof(key));
-  DP_XADDR_CP(key.daddr, pkt->l34.daddr);
+  XADDR_COPY(key.daddr, pkt->l34.daddr);
   if (pkt->l34.nw_proto != IPPROTO_ICMP) {
     key.dport = pkt->l34.dest;
   } else {
@@ -158,8 +158,8 @@ dp_do_nat(void *ctx, struct xpkt *pkt)
     if (sel >= 0 && sel < F4_MAX_NXFRMS) {
       nxfrm_act = &act->nxfrms[sel];
 
-      DP_XADDR_CP(pkt->nat.nxip, nxfrm_act->nat_xip);
-      DP_XADDR_CP(pkt->nat.nrip, nxfrm_act->nat_rip);
+      XADDR_COPY(pkt->nat.nxip, nxfrm_act->nat_xip);
+      XADDR_COPY(pkt->nat.nrip, nxfrm_act->nat_rip);
       DP_XMAC_CP(pkt->nat.nxmac, nxfrm_act->nat_xmac);
       DP_XMAC_CP(pkt->nat.nrmac, nxfrm_act->nat_rmac);
       pkt->nat.nxifi = nxfrm_act->nat_xifi;
