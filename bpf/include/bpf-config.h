@@ -4,8 +4,8 @@
 #define F4_DP_PKT_PGM_ID      (0)
 #define F4_DP_SH_PGM_ID       (1)
 #define F4_DP_CT_PGM_ID       (2)
-#define F4_DP_PASS_PGM_ID     (3)
-#define F4_DP_DROP_PGM_ID     (4)
+#define F4_TC_ACT_OK_PGM_ID     (3)
+#define F4_TC_ACT_SHOT_PGM_ID     (4)
 #define F4_PGM_MAP_ENTRIES    (5)
 
 #define F4_MAX_LB_NODES      (2)

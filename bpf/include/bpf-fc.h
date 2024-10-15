@@ -111,14 +111,14 @@ dp_ing_fc_main(void *ctx, struct xfrm *xf)
       if (xf->pm.pipe_act == F4_PIPE_RDR) {
         // oif = xf->pm.oport;
         // return bpf_redirect(oif, 0);
-        return DP_PASS;
+        return TC_ACT_OK;
       }
     }
   }
 
   bpf_map_update_elem(&f4gw_xfrms, &z, xf, BPF_ANY);
   bpf_tail_call(ctx, &fsm_progs, F4_DP_SH_PGM_ID);
-  return DP_DROP;
+  return TC_ACT_SHOT;
 }
 
 static int __always_inline
@@ -159,7 +159,7 @@ dp_egr_main(void *ctx, struct xfrm *xf)
     }
   }
 
-  return DP_PASS;
+  return TC_ACT_OK;
 }
 
 #endif

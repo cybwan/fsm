@@ -9,7 +9,7 @@
 static int __always_inline
 dp_redir_packet(void *ctx,  struct xfrm *xf)
 {
-  return DP_REDIRECT;
+  return TC_ACT_REDIRECT;
 }
 
 static int __always_inline
@@ -43,7 +43,7 @@ dp_pipe_check_res(void *ctx, struct xfrm *xf, void *fa)
   if (xf->pm.pipe_act) {
 
     if (xf->pm.pipe_act & F4_PIPE_DROP) {
-      return DP_DROP;
+      return TC_ACT_SHOT;
     }
 
     if (xf->pm.pipe_act & F4_PIPE_RDR) {
@@ -53,23 +53,23 @@ dp_pipe_check_res(void *ctx, struct xfrm *xf, void *fa)
     }
 
     if (dp_unparse_packet_always(ctx, xf) != 0) {
-        return DP_DROP;
+        return TC_ACT_SHOT;
     }
 
     if (xf->pm.pipe_act & F4_PIPE_RDR_MASK) {
       // if (dp_unparse_packet(ctx, xf) != 0) {
-      //   return DP_DROP;
+      //   return TC_ACT_SHOT;
       // }
       // if (xf->pm.f4) {
       //   if (dp_f4_packet(ctx, xf) != 0) {
-      //     return DP_DROP;
+      //     return TC_ACT_SHOT;
       //   }
       // }
       // return bpf_redirect(xf->pm.oport, BPF_F_INGRESS);
     }
 
   }
-  return DP_PASS; /* FIXME */
+  return TC_ACT_OK; /* FIXME */
 }
 
 static int __always_inline 
@@ -79,7 +79,7 @@ dp_ing_ct_main(void *ctx,  struct xfrm *xf)
   struct dp_fc_tacts *fa = NULL;
 
   fa = bpf_map_lookup_elem(&f4gw_fcas, &val);
-  if (!fa) return DP_DROP;
+  if (!fa) return TC_ACT_SHOT;
 
   if (xf->pm.igr && (xf->pm.phit & F4_DP_CTM_HIT) == 0) {
     dp_do_nat(ctx, xf);
@@ -87,7 +87,7 @@ dp_ing_ct_main(void *ctx,  struct xfrm *xf)
 
   val = dp_ct_in(ctx, xf);
   if (val < 0) {
-    return DP_PASS;
+    return TC_ACT_OK;
   }
 
   dp_l3_fwd(ctx, xf, fa);
@@ -149,7 +149,7 @@ dp_ing_sh_main(void *ctx,  struct xfrm *xf)
 
 out:
   bpf_tail_call(ctx, &fsm_progs, F4_DP_CT_PGM_ID);
-  return DP_PASS;
+  return TC_ACT_OK;
 }
 
 #endif

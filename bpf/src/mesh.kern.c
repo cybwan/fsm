@@ -33,7 +33,7 @@ int tc_ingress(struct __sk_buff *ctx) {
 
   xf = bpf_map_lookup_elem(&f4gw_xfrms, &z);
   if (!xf) {
-    return DP_DROP;
+    return TC_ACT_SHOT;
   }
   memset(xf, 0, sizeof *xf);
 
@@ -47,7 +47,7 @@ int tc_ingress(struct __sk_buff *ctx) {
   FSM_DBG("[DBG] tc_ingress xf->l34m daddr4  %pI4 dest    %d\n", &xf->l34m.daddr4, ntohs(xf->l34m.dest));
 
   // return dp_ing_fc_main(ctx, xf);
-  return DP_PASS;
+  return TC_ACT_OK;
 }
 
 SEC("classifier/egress")
@@ -57,7 +57,7 @@ int tc_egress(struct __sk_buff *ctx) {
 
   xf = bpf_map_lookup_elem(&f4gw_xfrms, &z);
   if (!xf) {
-    return DP_DROP;
+    return TC_ACT_SHOT;
   }
   memset(xf, 0, sizeof *xf);
 
@@ -71,7 +71,7 @@ int tc_egress(struct __sk_buff *ctx) {
   FSM_DBG("[DBG] tc_egress xf->l34m daddr4  %pI4 dest    %d\n", &xf->l34m.daddr4, ntohs(xf->l34m.dest));
 
   // return dp_ing_fc_main(ctx, xf);
-  return DP_PASS;
+  return TC_ACT_OK;
 }
 
 SEC("classifier/handshake")
@@ -81,7 +81,7 @@ int tc_hand_shake_func(struct __sk_buff *ctx) {
 
   xf = bpf_map_lookup_elem(&f4gw_xfrms, &z);
   if (!xf) {
-    return DP_DROP;
+    return TC_ACT_SHOT;
   }
 
   xf->pm.phit |= F4_DP_FC_HIT;
@@ -90,7 +90,7 @@ int tc_hand_shake_func(struct __sk_buff *ctx) {
   if (xf->pm.pipe_act & F4_PIPE_PASS ||
       xf->pm.pipe_act & F4_PIPE_TRAP) {
     xf->pm.rcode |= F4_PIPE_RC_MPT_PASS;
-    return DP_PASS;
+    return TC_ACT_OK;
   }
 
   return dp_ing_sh_main(ctx, xf);
@@ -103,7 +103,7 @@ int tc_conn_track_func(struct __sk_buff *ctx) {
 
   xf = bpf_map_lookup_elem(&f4gw_xfrms, &z);
   if (!xf) {
-    return DP_DROP;
+    return TC_ACT_SHOT;
   }
 
   return dp_ing_ct_main(ctx, xf);
@@ -111,10 +111,10 @@ int tc_conn_track_func(struct __sk_buff *ctx) {
 
 SEC("classifier/pass")
 int tc_pass(struct __sk_buff *ctx) {
-  return DP_PASS;
+  return TC_ACT_OK;
 }
 
 SEC("classifier/drop")
 int tc_drop(struct __sk_buff *ctx) {
-  return DP_DROP;
+  return TC_ACT_SHOT;
 }

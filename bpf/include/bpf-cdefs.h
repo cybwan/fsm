@@ -5,13 +5,13 @@
 #include <stdio.h>
 #include "bpf-dbg.h"
 
-#define DP_IFI(md) (((struct __sk_buff *)md)->ifindex)
-#define DP_IIFI(md) (((struct __sk_buff *)md)->ingress_ifindex)
-#define DP_OIFI(md) (((struct __sk_buff *)md)->ifindex)
-#define DP_PDATA(md) (((struct __sk_buff *)md)->data)
-#define DP_PDATA_END(md) (((struct __sk_buff *)md)->data_end)
-#define DP_MDATA(md) (((struct __sk_buff *)md)->data_meta)
-#define DP_GET_LEN(md) (((struct __sk_buff *)md)->len)
+#define FSM_IFI(md)          (((struct __sk_buff *)md)->ifindex)
+#define FSM_IGR_IFI(md)      (((struct __sk_buff *)md)->ingress_ifindex)
+#define FSM_EGR_IFI(md)      (((struct __sk_buff *)md)->ifindex)
+#define FSM_PKT_DATA(md)     (((struct __sk_buff *)md)->data)
+#define FSM_PKT_DATA_END(md) (((struct __sk_buff *)md)->data_end)
+#define FSM_PKT_META(md)     (((struct __sk_buff *)md)->data_meta)
+#define FSM_PKT_LEN(md)      (((struct __sk_buff *)md)->len)
 
 #define F4_PPLN_RDR(F)      (F->pm.pipe_act |= F4_PIPE_RDR);
 #define F4_PPLN_RDR_PRIO(F) (F->pm.pipe_act |= F4_PIPE_RDR_PRIO);
@@ -19,10 +19,6 @@
 #define F4_PPLN_SETCT(F)    (F->pm.pipe_act |= F4_PIPE_SET_CT);
 
 #define DP_F4_IS_EGR(md) (0)
-
-#define DP_REDIRECT TC_ACT_REDIRECT
-#define DP_DROP     TC_ACT_SHOT
-#define DP_PASS     TC_ACT_OK
 
 #define F4_PPLN_PASSC(F, C)         \
 do {                                \
@@ -242,8 +238,8 @@ dp_set_icmp_dst_ip(void *md, struct xfrm *xf, __be32 xip)
 static int __always_inline
 dp_do_out(void *ctx, struct xfrm *xf)
 {
-  void *start = DP_TC_PTR(DP_PDATA(ctx));
-  void *dend = DP_TC_PTR(DP_PDATA_END(ctx));
+  void *start = DP_TC_PTR(FSM_PKT_DATA(ctx));
+  void *dend = DP_TC_PTR(FSM_PKT_DATA_END(ctx));
   struct ethhdr *eth;
   int vlan;
 
@@ -261,7 +257,7 @@ dp_do_out(void *ctx, struct xfrm *xf)
         F4_PPLN_DROPC(xf, F4_PIPE_RC_PLERR);
         return -1;
       }
-      eth = DP_TC_PTR(DP_PDATA(ctx));
+      eth = DP_TC_PTR(FSM_PKT_DATA(ctx));
       memcpy(eth->h_dest, xf->l2m.dl_dst, 6);
       memcpy(eth->h_source, xf->l2m.dl_src, 6);
     }
@@ -270,7 +266,7 @@ dp_do_out(void *ctx, struct xfrm *xf)
     /* If existing vlan tag was present just replace vlan-id, else 
      * push a new vlan tag and set the vlan-id
      */
-    eth = DP_TC_PTR(DP_PDATA(ctx));
+    eth = DP_TC_PTR(FSM_PKT_DATA(ctx));
     if (xf->l2m.vlan[0] != 0) {
       // if (dp_swap_vlan_tag(ctx, xf, vlan) != 0) {
       //   F4_PPLN_DROPC(xf, F4_PIPE_RC_PLERR);
@@ -293,7 +289,7 @@ dp_tail_call(void *ctx,  struct xfrm *xf, void *fa, __u32 idx)
   int z = 0;
 
   if (xf->nm.ct_sts != 0) {
-    return DP_PASS;
+    return TC_ACT_OK;
   }
 
 #ifdef HAVE_DP_FC
@@ -306,7 +302,7 @@ dp_tail_call(void *ctx,  struct xfrm *xf, void *fa, __u32 idx)
 
   bpf_tail_call(ctx, &fsm_progs, idx);
 
-  return DP_PASS;
+  return TC_ACT_OK;
 }
 
 static int __always_inline

@@ -179,8 +179,8 @@ dp_ct_tcp_sm(void *ctx, struct xfrm *xf,
   struct dp_ct_dat *xtdat = &axtdat->ctd;
   ct_tcp_pinf_t *ts = &tdat->pi.t;
   ct_tcp_pinf_t *rts = &xtdat->pi.t;
-  void *dend = DP_TC_PTR(DP_PDATA_END(ctx));
-  struct tcphdr *t = DP_ADD_PTR(DP_PDATA(ctx), xf->pm.l4_off);
+  void *dend = DP_TC_PTR(FSM_PKT_DATA_END(ctx));
+  struct tcphdr *t = DP_ADD_PTR(FSM_PKT_DATA(ctx), xf->pm.l4_off);
   __u8 tcp_flags = xf->pm.tcp_flags;
   ct_tcp_pinfd_t *td = &ts->tcp_cts[dir];
   ct_tcp_pinfd_t *rtd;
@@ -474,8 +474,8 @@ dp_ct_icmp_sm(void *ctx, struct xfrm *xf,
   struct dp_ct_dat *xtdat = &axtdat->ctd;
   ct_icmp_pinf_t *is = &tdat->pi.i;
   ct_icmp_pinf_t *xis = &xtdat->pi.i;
-  void *dend = DP_TC_PTR(DP_PDATA_END(ctx));
-  struct icmphdr *i = DP_ADD_PTR(DP_PDATA(ctx), xf->pm.l4_off);
+  void *dend = DP_TC_PTR(FSM_PKT_DATA_END(ctx));
+  struct icmphdr *i = DP_ADD_PTR(FSM_PKT_DATA(ctx), xf->pm.l4_off);
   __u32 nstate;
   __u16 seq;
 
@@ -575,8 +575,8 @@ dp_ct_icmp6_sm(void *ctx, struct xfrm *xf,
   struct dp_ct_dat *xtdat = &axtdat->ctd;
   ct_icmp_pinf_t *is = &tdat->pi.i;
   ct_icmp_pinf_t *xis = &xtdat->pi.i;
-  void *dend = DP_TC_PTR(DP_PDATA_END(ctx));
-  struct icmp6hdr *i = DP_ADD_PTR(DP_PDATA(ctx), xf->pm.l4_off);
+  void *dend = DP_TC_PTR(FSM_PKT_DATA_END(ctx));
+  struct icmp6hdr *i = DP_ADD_PTR(FSM_PKT_DATA(ctx), xf->pm.l4_off);
   __u32 nstate;
   __u16 seq;
 

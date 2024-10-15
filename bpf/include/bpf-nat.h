@@ -4,10 +4,10 @@
 static int __always_inline
 dp_do_dnat(void *ctx, struct xfrm *xf)
 {
-  void *dend = DP_TC_PTR(DP_PDATA_END(ctx));
+  void *dend = DP_TC_PTR(FSM_PKT_DATA_END(ctx));
 
   if (xf->l34m.nw_proto == IPPROTO_TCP) {
-    struct tcphdr *tcp = DP_ADD_PTR(DP_PDATA(ctx), xf->pm.l4_off);
+    struct tcphdr *tcp = DP_ADD_PTR(FSM_PKT_DATA(ctx), xf->pm.l4_off);
     if ((void *)(tcp + 1) > dend) {
       F4_PPLN_DROPC(xf, F4_PIPE_RC_PLERR);
       return -1;
@@ -26,7 +26,7 @@ dp_do_dnat(void *ctx, struct xfrm *xf)
     dp_set_tcp_dport(ctx, xf, xf->nm.nrport);
 } 
   else if (xf->l34m.nw_proto == IPPROTO_UDP)  {
-    struct udphdr *udp = DP_ADD_PTR(DP_PDATA(ctx), xf->pm.l4_off);
+    struct udphdr *udp = DP_ADD_PTR(FSM_PKT_DATA(ctx), xf->pm.l4_off);
 
     if (udp + 1 > dend) {
       F4_PPLN_DROPC(xf, F4_PIPE_RC_PLERR);
@@ -55,15 +55,15 @@ dp_do_dnat(void *ctx, struct xfrm *xf)
 static int __always_inline
 dp_do_snat(void *ctx, struct xfrm *xf)
 {
-  void *dend = DP_TC_PTR(DP_PDATA_END(ctx));
+  void *dend = DP_TC_PTR(FSM_PKT_DATA_END(ctx));
 
   if (xf->l34m.nw_proto == IPPROTO_TCP)  {
-    struct iphdr *iph = DP_TC_PTR(DP_PDATA(ctx) + xf->pm.l3_off);
+    struct iphdr *iph = DP_TC_PTR(FSM_PKT_DATA(ctx) + xf->pm.l3_off);
     if ((void *)(iph + 1) > dend)  {
       F4_PPLN_DROPC(xf, F4_PIPE_RC_PLRT_ERR);
       return -1;
     }
-    struct tcphdr *tcp = DP_ADD_PTR(DP_PDATA(ctx), xf->pm.l4_off);
+    struct tcphdr *tcp = DP_ADD_PTR(FSM_PKT_DATA(ctx), xf->pm.l4_off);
     if ((void *)(tcp + 1) > dend) {
       F4_PPLN_DROPC(xf, F4_PIPE_RC_PLERR);
       return -1;
@@ -81,7 +81,7 @@ dp_do_snat(void *ctx, struct xfrm *xf)
     dp_set_tcp_sport(ctx, xf, xf->nm.nxport);
     // dp_set_tcp_dport(ctx, xf, xf->nm.nrport);
   } else if (xf->l34m.nw_proto == IPPROTO_UDP)  {
-    struct udphdr *udp = DP_ADD_PTR(DP_PDATA(ctx), xf->pm.l4_off);
+    struct udphdr *udp = DP_ADD_PTR(FSM_PKT_DATA(ctx), xf->pm.l4_off);
 
     if (udp + 1 > dend) {
       F4_PPLN_DROPC(xf, F4_PIPE_RC_PLERR);

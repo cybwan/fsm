@@ -276,13 +276,13 @@ dp_parse_ipv4(struct parser *p,
     __u8 *hit;
     hit = bpf_map_lookup_elem(&f4gw_igr_ipv4, &iph->daddr);
     if(hit != NULL) {
-      bpf_tail_call(md, &fsm_progs, F4_DP_PASS_PGM_ID);
+      bpf_tail_call(md, &fsm_progs, F4_TC_ACT_OK_PGM_ID);
     }
   } else if(xf->pm.egr) {
     __u8 *hit;
     hit = bpf_map_lookup_elem(&f4gw_egr_ipv4, &iph->daddr);
     if(hit != NULL) {
-      bpf_tail_call(md, &fsm_progs, F4_DP_PASS_PGM_ID);
+      bpf_tail_call(md, &fsm_progs, F4_TC_ACT_OK_PGM_ID);
     }
   }
 
@@ -373,9 +373,9 @@ dp_parse_d0(void *md,
   p.in_pkt = 0;
   p.skip_l2 = 0;
   p.skip_v6 = skip_v6;
-  p.start = DP_TC_PTR(DP_PDATA(md));
+  p.start = DP_TC_PTR(FSM_PKT_DATA(md));
   p.dbegin = DP_TC_PTR(p.start);
-  p.dend = DP_TC_PTR(DP_PDATA_END(md));
+  p.dend = DP_TC_PTR(FSM_PKT_DATA_END(md));
   
   xf->pm.py_bytes = DP_DIFF_PTR(p.dend, p.dbegin);
 
@@ -427,7 +427,7 @@ dp_unparse_packet_always(void *ctx,  struct xfrm *xf)
       // dp_sunp_tcall(ctx, xf);
     } else {
       if (dp_do_snat(ctx, xf) != 0) {
-        return DP_DROP;
+        return TC_ACT_SHOT;
       }
     }
   } else if (xf->pm.nf & F4_NAT_DST && xf->nm.dsr == 0) {
@@ -435,7 +435,7 @@ dp_unparse_packet_always(void *ctx,  struct xfrm *xf)
       // dp_sunp_tcall(ctx, xf);
     } else {
       if (dp_do_dnat(ctx, xf) != 0) {
-        return DP_DROP;
+        return TC_ACT_SHOT;
       }
     }
   }
