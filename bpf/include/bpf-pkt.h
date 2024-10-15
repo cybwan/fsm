@@ -223,13 +223,13 @@ static int __always_inline xpkt_decode_ipv4(struct decoder *coder, void *md,
         __u8 *hit;
         hit = bpf_map_lookup_elem(&f4gw_igr_ipv4, &iph->daddr);
         if (hit != NULL) {
-            bpf_tail_call(md, &fsm_progs, MESH_CNI_PASS_PROG_ID);
+            bpf_tail_call(md, &fsm_progs, FSM_CNI_PASS_PROG_ID);
         }
     } else if (pkt->pm.egr) {
         __u8 *hit;
         hit = bpf_map_lookup_elem(&f4gw_egr_ipv4, &iph->daddr);
         if (hit != NULL) {
-            bpf_tail_call(md, &fsm_progs, MESH_CNI_PASS_PROG_ID);
+            bpf_tail_call(md, &fsm_progs, FSM_CNI_PASS_PROG_ID);
         }
     }
 

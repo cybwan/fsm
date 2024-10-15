@@ -1,11 +1,11 @@
 #ifndef __F4_BPF_CONFIG_H__ 
 #define __F4_BPF_CONFIG_H__
 
-#define MESH_CNI_HANDSHAKE_PROG_ID (1)
-#define MESH_CNI_CONNTRACK_PROG_ID (2)
-#define MESH_CNI_PASS_PROG_ID      (3)
-#define MESH_CNI_DROP_PROG_ID      (4)
-#define FSM_PROGS_MAP_ENTRIES      (5)
+#define FSM_CNI_HANDSHAKE_PROG_ID (1)
+#define FSM_CNI_CONNTRACK_PROG_ID (2)
+#define FSM_CNI_PASS_PROG_ID      (3)
+#define FSM_CNI_DROP_PROG_ID      (4)
+#define FSM_PROGS_MAP_ENTRIES     (5)
 
 #define F4_MAX_LB_NODES      (2)
 #define F4_MAX_IFI_ADDRS     (4*1024)

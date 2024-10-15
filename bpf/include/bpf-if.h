@@ -148,7 +148,7 @@ dp_ing_sh_main(void *ctx,  struct xpkt *pkt)
   }
 
 out:
-  bpf_tail_call(ctx, &fsm_progs, MESH_CNI_CONNTRACK_PROG_ID);
+  bpf_tail_call(ctx, &fsm_progs, FSM_CNI_CONNTRACK_PROG_ID);
   return TC_ACT_OK;
 }
 
