@@ -15,9 +15,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/flomesh-io/fsm/pkg/cni/config"
-	"github.com/flomesh-io/fsm/pkg/cni/controller/cniserver"
-	"github.com/flomesh-io/fsm/pkg/cni/controller/helpers"
-	"github.com/flomesh-io/fsm/pkg/cni/controller/podwatcher"
+	"github.com/flomesh-io/fsm/pkg/cni/server/controller"
+	"github.com/flomesh-io/fsm/pkg/cni/server/helpers"
+	"github.com/flomesh-io/fsm/pkg/cni/server/watcher"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/service"
@@ -115,12 +115,12 @@ func main() {
 	stop := make(chan struct{}, 1)
 	if config.EnableCNI {
 		cniReady := make(chan struct{}, 1)
-		s := cniserver.NewServer(path.Join("/host", config.CNISock), "/sys/fs/bpf", cniReady, stop)
+		s := controller.NewServer(path.Join("/host", config.CNISock), "/sys/fs/bpf", cniReady, stop)
 		if err = s.Start(); err != nil {
 			log.Fatal().Err(err)
 		}
 	}
-	if err = podwatcher.Run(kubeClient, stop); err != nil {
+	if err = watcher.Run(kubeClient, stop); err != nil {
 		log.Fatal().Err(err)
 	}
 
