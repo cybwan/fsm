@@ -117,7 +117,7 @@ dp_ing_fc_main(void *ctx, struct xpkt *pkt)
   }
 
   bpf_map_update_elem(&fsm_xpkts, &z, pkt, BPF_ANY);
-  bpf_tail_call(ctx, &fsm_progs, F4_DP_SH_PGM_ID);
+  bpf_tail_call(ctx, &fsm_progs, MESH_CNI_HANDSHAKE_PROG_ID);
   return TC_ACT_SHOT;
 }
 

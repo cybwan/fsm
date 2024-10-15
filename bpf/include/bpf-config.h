@@ -1,12 +1,11 @@
 #ifndef __F4_BPF_CONFIG_H__ 
 #define __F4_BPF_CONFIG_H__
 
-#define F4_DP_PKT_PGM_ID      (0)
-#define F4_DP_SH_PGM_ID       (1)
-#define F4_DP_CT_PGM_ID       (2)
-#define F4_TC_ACT_OK_PGM_ID     (3)
-#define F4_TC_ACT_SHOT_PGM_ID     (4)
-#define F4_PGM_MAP_ENTRIES    (5)
+#define MESH_CNI_HANDSHAKE_PROG_ID (1)
+#define MESH_CNI_CONNTRACK_PROG_ID (2)
+#define MESH_CNI_PASS_PROG_ID      (3)
+#define MESH_CNI_DROP_PROG_ID      (4)
+#define FSM_PROGS_MAP_ENTRIES      (5)
 
 #define F4_MAX_LB_NODES      (2)
 #define F4_MAX_IFI_ADDRS     (4*1024)

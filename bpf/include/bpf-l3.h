@@ -81,7 +81,7 @@ dp_do_ctops(void *ctx, struct xpkt *pkt, void *fa_,
   return 0;
 
 ct_trk:
-  return dp_tail_call(ctx, pkt, fa_, F4_DP_CT_PGM_ID);
+  return dp_tail_call(ctx, pkt, fa_, MESH_CNI_CONNTRACK_PROG_ID);
 }
 
 static int __always_inline

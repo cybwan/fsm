@@ -9,7 +9,7 @@ struct bpf_map_def SEC("maps") fsm_progs = {
   .type = BPF_MAP_TYPE_PROG_ARRAY,
   .key_size = sizeof(__u32),
   .value_size = sizeof(__u32),
-  .max_entries = F4_PGM_MAP_ENTRIES,
+  .max_entries = FSM_PROGS_MAP_ENTRIES,
   //.pinning = 1,
 };
 #else /* New BTF definitions */
@@ -17,7 +17,7 @@ struct {
   __uint(type,        BPF_MAP_TYPE_PROG_ARRAY);
   __type(key,         __u32);
   __type(value,       __u32);
-  __uint(max_entries, F4_PGM_MAP_ENTRIES);
+  __uint(max_entries, FSM_PROGS_MAP_ENTRIES);
   //__uint(pinning,     1);
 } fsm_progs SEC(".maps");
 #endif
