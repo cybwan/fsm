@@ -23,20 +23,20 @@ func InitFsmProgsMap() {
 
 	progs := []ebpfProg{
 		{
-			progKey:  bpf.MESH_CNI_HANDSHAKE_PROG_ID,
-			progName: bpf.MESH_CNI_HANDSHAKE_PROG_NAME,
+			progKey:  bpf.FSM_CNI_HANDSHAKE_PROG_ID,
+			progName: bpf.FSM_CNI_HANDSHAKE_PROG_NAME,
 		},
 		{
-			progKey:  bpf.MESH_CNI_CONNTRACK_PROG_ID,
-			progName: bpf.MESH_CNI_CONNTRACK_PROG_NAME,
+			progKey:  bpf.FSM_CNI_CONNTRACK_PROG_ID,
+			progName: bpf.FSM_CNI_CONNTRACK_PROG_NAME,
 		},
 		{
-			progKey:  bpf.MESH_CNI_PASS_PROG_ID,
-			progName: bpf.MESH_CNI_PASS_PROG_NAME,
+			progKey:  bpf.FSM_CNI_PASS_PROG_ID,
+			progName: bpf.FSM_CNI_PASS_PROG_NAME,
 		},
 		{
-			progKey:  bpf.MESH_CNI_DROP_PROG_ID,
-			progName: bpf.MESH_CNI_DROP_PROG_NAME,
+			progKey:  bpf.FSM_CNI_DROP_PROG_ID,
+			progName: bpf.FSM_CNI_DROP_PROG_NAME,
 		},
 	}
 
