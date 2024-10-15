@@ -1,7 +1,7 @@
 package main
 
-import "github.com/flomesh-io/fsm/pkg/cni/bpf"
+import "github.com/flomesh-io/fsm/pkg/cni/bpf/emaps"
 
 func main() {
-	bpf.InitFsmProgsMap()
+	emaps.InitFsmProgsMap()
 }

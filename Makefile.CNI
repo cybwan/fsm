@@ -56,9 +56,9 @@ bpf: bpf-clean bpf-build
 
 .PHONY: load
 load: debug-fs bpf-fs bpf-build
-	bpftool prog loadall bpf/mesh.kern.o /sys/fs/bpf/mesh pinmaps /sys/fs/bpf/mesh
+	bpftool prog loadall bpf/mesh.kern.o /sys/fs/bpf/fsm pinmaps /sys/fs/bpf/fsm
 
 .PHONY: clean
 clean:
-	rm -rf /sys/fs/bpf/mesh
+	rm -rf /sys/fs/bpf/fsm
 
