@@ -1,12 +1,12 @@
-#ifndef __F4_BPF_UTILS_H__ 
+#ifndef __F4_BPF_UTILS_H__
 #define __F4_BPF_UTILS_H__
 #define INLINE __attribute__((__always_inline__)) static inline
 
-#define debug_printf(fmt, ...) do                        \
-  {                                                      \
-    char _fmt[] = fmt;                                   \
-    bpf_trace_printk(_fmt, sizeof(_fmt), ##__VA_ARGS__); \
-  } while (0)
+#define debug_printf(fmt, ...)                                                 \
+    do {                                                                       \
+        char _fmt[] = fmt;                                                     \
+        bpf_trace_printk(_fmt, sizeof(_fmt), ##__VA_ARGS__);                   \
+    } while (0)
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define ntohs(x) __builtin_bswap16(x)
