@@ -59,17 +59,17 @@ static int __always_inline dp_pkt_is_l2mcbc(struct xpkt *pkt, void *md)
     return 0;
 }
 
-static int __always_inline dp_parse_eth(struct decoder *p, void *md,
+static int __always_inline xpkt_decode_eth(struct decoder *coder, void *md,
                                         struct xpkt *pkt)
 {
     struct ethhdr *eth;
-    eth = XPKT_PTR(p->data_begin);
+    eth = XPKT_PTR(coder->data_begin);
 
-    if ((void *)(eth + 1) > p->data_end) {
+    if ((void *)(eth + 1) > coder->data_end) {
         return DP_PRET_FAIL;
     }
 
-    if (p->in_pkt) {
+    if (coder->in_pkt) {
         pkt->il2.valid = 1;
         memcpy(pkt->il2.dl_dst, eth->h_dest, 2 * 6);
         memcpy(pkt->pm.lkup_dmac, eth->h_dest, 6);
@@ -85,32 +85,31 @@ static int __always_inline dp_parse_eth(struct decoder *p, void *md,
         return DP_PRET_PASS;
     }
 
-    p->data_begin = XPKT_PTR_ADD(eth, sizeof(*eth));
+    coder->data_begin = XPKT_PTR_ADD(eth, sizeof(*eth));
 
     return DP_PRET_OK;
 }
 
-static int __always_inline dp_parse_vlan(struct decoder *p, void *md,
+static int __always_inline xpkt_decode_vlan(struct decoder *coder, void *md,
                                          struct xpkt *pkt)
 {
     struct __sk_buff *b = md;
     if (b->vlan_present) {
         pkt->l2.vlan[0] = htons((__u16)(b->vlan_tci));
-        debug_printf("vlan id %u\n", pkt->l2.vlan[0]);
     }
     return DP_PRET_OK;
 }
 
-static int __always_inline dp_parse_arp(struct decoder *p, void *md,
+static int __always_inline xpkt_decode_arp(struct decoder *coder, void *md,
                                         struct xpkt *pkt)
 {
-    struct arp_ethhdr *arp = XPKT_PTR(p->data_begin);
+    struct arp_ethhdr *arp = XPKT_PTR(coder->data_begin);
 
-    if ((void *)(arp + 1) > p->data_end) {
+    if ((void *)(arp + 1) > coder->data_end) {
         return DP_PRET_FAIL;
     }
 
-    if (p->in_pkt) {
+    if (coder->in_pkt) {
         if (arp->ar_pro == htons(ETH_P_IP) && arp->ar_pln == 4) {
             pkt->il34.saddr4 = arp->ar_spa;
             pkt->il34.daddr4 = arp->ar_tpa;
@@ -127,13 +126,13 @@ static int __always_inline dp_parse_arp(struct decoder *p, void *md,
     return DP_PRET_TRAP;
 }
 
-static int __always_inline dp_parse_tcp(struct decoder *p, void *md,
+static int __always_inline xpkt_decode_tcp(struct decoder *coder, void *md,
                                         struct xpkt *pkt)
 {
-    struct tcphdr *tcp = XPKT_PTR(p->data_begin);
+    struct tcphdr *tcp = XPKT_PTR(coder->data_begin);
     __u8 tcp_flags = 0;
 
-    if ((void *)(tcp + 1) > p->data_end) {
+    if ((void *)(tcp + 1) > coder->data_end) {
         /* In case of fragmented packets */
         return DP_PRET_OK;
     }
@@ -151,7 +150,7 @@ static int __always_inline dp_parse_tcp(struct decoder *p, void *md,
     if (tcp->urg)
         tcp_flags |= F4_TCP_URG;
 
-    if (p->in_pkt) {
+    if (coder->in_pkt) {
         if (tcp_flags & (F4_TCP_FIN | F4_TCP_RST)) {
             pkt->pm.il4fin = 1;
         }
@@ -174,17 +173,17 @@ static int __always_inline dp_parse_tcp(struct decoder *p, void *md,
     return DP_PRET_OK;
 }
 
-static int __always_inline dp_parse_icmp(struct decoder *p, void *md,
+static int __always_inline xpkt_decode_icmp(struct decoder *coder, void *md,
                                          struct xpkt *pkt)
 {
-    struct icmphdr *icmp = XPKT_PTR(p->data_begin);
+    struct icmphdr *icmp = XPKT_PTR(coder->data_begin);
 
-    if ((void *)(icmp + 1) > p->data_end) {
+    if ((void *)(icmp + 1) > coder->data_end) {
         return DP_PRET_OK;
     }
 
     if ((icmp->type == ICMP_ECHOREPLY || icmp->type == ICMP_ECHO)) {
-        if (p->in_pkt) {
+        if (coder->in_pkt) {
             pkt->il34.source = icmp->un.echo.id;
             pkt->il34.dest = icmp->un.echo.id;
         } else {
@@ -195,12 +194,12 @@ static int __always_inline dp_parse_icmp(struct decoder *p, void *md,
     return DP_PRET_OK;
 }
 
-static int __always_inline dp_parse_udp(struct decoder *p, void *md,
+static int __always_inline xpkt_decode_udp(struct decoder *coder, void *md,
                                         struct xpkt *pkt)
 {
-    struct udphdr *udp = XPKT_PTR(p->data_begin);
+    struct udphdr *udp = XPKT_PTR(coder->data_begin);
 
-    if ((void *)(udp + 1) > p->data_end) {
+    if ((void *)(udp + 1) > coder->data_end) {
         return DP_PRET_OK;
     }
 
@@ -210,18 +209,18 @@ static int __always_inline dp_parse_udp(struct decoder *p, void *md,
     return DP_PRET_OK;
 }
 
-static int __always_inline dp_parse_icmp6(struct decoder *p, void *md,
+static int __always_inline xpkt_decode_icmp6(struct decoder *coder, void *md,
                                           struct xpkt *pkt)
 {
-    struct icmp6hdr *icmp6 = XPKT_PTR(p->data_begin);
+    struct icmp6hdr *icmp6 = XPKT_PTR(coder->data_begin);
 
-    if ((void *)(icmp6 + 1) > p->data_end) {
+    if ((void *)(icmp6 + 1) > coder->data_end) {
         return DP_PRET_OK;
     }
 
     if ((icmp6->icmp6_type == ICMPV6_ECHO_REPLY ||
          icmp6->icmp6_type == ICMPV6_ECHO_REQUEST)) {
-        if (p->in_pkt) {
+        if (coder->in_pkt) {
             pkt->il34.source = icmp6->icmp6_dataun.u_echo.identifier;
             pkt->il34.dest = icmp6->icmp6_dataun.u_echo.identifier;
         } else {
@@ -235,17 +234,17 @@ static int __always_inline dp_parse_icmp6(struct decoder *p, void *md,
     return DP_PRET_OK;
 }
 
-static int __always_inline dp_parse_ipv4(struct decoder *p, void *md,
+static int __always_inline xpkt_decode_ipv4(struct decoder *coder, void *md,
                                          struct xpkt *pkt)
 {
-    struct iphdr *iph = XPKT_PTR(p->data_begin);
+    struct iphdr *iph = XPKT_PTR(coder->data_begin);
     int iphl = iph->ihl << 2;
 
-    if ((void *)(iph + 1) > p->data_end) {
+    if ((void *)(iph + 1) > coder->data_end) {
         return DP_PRET_FAIL;
     }
 
-    if (XPKT_PTR_ADD(iph, iphl) > p->data_end) {
+    if (XPKT_PTR_ADD(iph, iphl) > coder->data_end) {
         return DP_PRET_FAIL;
     }
 
@@ -273,8 +272,8 @@ static int __always_inline dp_parse_ipv4(struct decoder *p, void *md,
     pkt->l34.daddr4 = iph->daddr;
 
     if (ip_is_first_fragment(iph)) {
-        pkt->pm.l4_off = XPKT_PTR_SUB(XPKT_PTR_ADD(iph, iphl), p->start);
-        p->data_begin = XPKT_PTR_ADD(iph, iphl);
+        pkt->pm.l4_off = XPKT_PTR_SUB(XPKT_PTR_ADD(iph, iphl), coder->start);
+        coder->data_begin = XPKT_PTR_ADD(iph, iphl);
 
         if (ip_is_fragment(iph)) {
             pkt->l2.ssnid = iph->id;
@@ -282,11 +281,11 @@ static int __always_inline dp_parse_ipv4(struct decoder *p, void *md,
         }
 
         if (pkt->l34.nw_proto == IPPROTO_TCP) {
-            return dp_parse_tcp(p, md, pkt);
+            return xpkt_decode_tcp(coder, md, pkt);
         } else if (pkt->l34.nw_proto == IPPROTO_UDP) {
-            return dp_parse_udp(p, md, pkt);
+            return xpkt_decode_udp(coder, md, pkt);
         } else if (pkt->l34.nw_proto == IPPROTO_ICMP) {
-            return dp_parse_icmp(p, md, pkt);
+            return xpkt_decode_icmp(coder, md, pkt);
         }
     } else {
         if (ip_is_fragment(iph)) {
@@ -300,12 +299,12 @@ static int __always_inline dp_parse_ipv4(struct decoder *p, void *md,
     return DP_PRET_OK;
 }
 
-static int __always_inline dp_parse_ipv6(struct decoder *p, void *md,
+static int __always_inline xpkt_decode_ipv6(struct decoder *coder, void *md,
                                          struct xpkt *pkt)
 {
-    struct ipv6hdr *ip6 = XPKT_PTR(p->data_begin);
+    struct ipv6hdr *ip6 = XPKT_PTR(coder->data_begin);
 
-    if ((void *)(ip6 + 1) > p->data_end) {
+    if ((void *)(ip6 + 1) > coder->data_end) {
         return DP_PRET_FAIL;
     }
 
@@ -324,20 +323,20 @@ static int __always_inline dp_parse_ipv6(struct decoder *p, void *md,
     memcpy(&pkt->l34.saddr, &ip6->saddr, sizeof(ip6->saddr));
     memcpy(&pkt->l34.daddr, &ip6->daddr, sizeof(ip6->daddr));
 
-    pkt->pm.l4_off = XPKT_PTR_SUB(XPKT_PTR_ADD(ip6, sizeof(*ip6)), p->start);
-    p->data_begin = XPKT_PTR_ADD(ip6, sizeof(*ip6));
+    pkt->pm.l4_off = XPKT_PTR_SUB(XPKT_PTR_ADD(ip6, sizeof(*ip6)), coder->start);
+    coder->data_begin = XPKT_PTR_ADD(ip6, sizeof(*ip6));
 
     if (pkt->l34.nw_proto == IPPROTO_TCP) {
-        return dp_parse_tcp(p, md, pkt);
+        return xpkt_decode_tcp(coder, md, pkt);
     } else if (pkt->l34.nw_proto == IPPROTO_UDP) {
-        return dp_parse_udp(p, md, pkt);
+        return xpkt_decode_udp(coder, md, pkt);
     } else if (pkt->l34.nw_proto == IPPROTO_ICMPV6) {
-        return dp_parse_icmp6(p, md, pkt);
+        return xpkt_decode_icmp6(coder, md, pkt);
     }
     return DP_PRET_OK;
 }
 
-static int __always_inline fsm_xpkt_decode(void *md, struct xpkt *pkt,
+static int __always_inline xpkt_decode(void *md, struct xpkt *pkt,
                                           int skip_v6)
 {
     int ret = 0;
@@ -352,28 +351,28 @@ static int __always_inline fsm_xpkt_decode(void *md, struct xpkt *pkt,
 
     pkt->pm.py_bytes = XPKT_PTR_SUB(coder.data_end, coder.data_begin);
 
-    if ((ret = dp_parse_eth(&coder, md, pkt))) {
+    if ((ret = xpkt_decode_eth(&coder, md, pkt))) {
         goto handle_excp;
     }
 
-    if ((ret = dp_parse_vlan(&coder, md, pkt))) {
+    if ((ret = xpkt_decode_vlan(&coder, md, pkt))) {
         goto handle_excp;
     }
 
     pkt->pm.l3_off = XPKT_PTR_SUB(coder.data_begin, coder.start);
 
     if (pkt->l2.dl_type == htons(ETH_P_ARP)) {
-        ret = dp_parse_arp(&coder, md, pkt);
+        ret = xpkt_decode_arp(&coder, md, pkt);
     } else if (pkt->l2.dl_type == htons(ETH_P_IP)) {
-        ret = dp_parse_ipv4(&coder, md, pkt);
+        ret = xpkt_decode_ipv4(&coder, md, pkt);
     } else if (pkt->l2.dl_type == htons(ETH_P_IPV6)) {
         if (coder.skip_v6 == 1) {
             return 0;
         }
-        ret = dp_parse_ipv6(&coder, md, pkt);
+        ret = xpkt_decode_ipv6(&coder, md, pkt);
     }
     // else if (pkt->l2m.dl_type == htons(ETH_P_F4)) {
-    //   ret = dp_parse_f4(&p, md, pkt);
+    //   ret = dp_parse_f4(&coder, md, pkt);
     // }
 
     if (ret != 0) {
