@@ -1,11 +1,5 @@
 package bpf
 
-import "github.com/flomesh-io/fsm/pkg/logger"
-
-var (
-	log = logger.New("fsm-ebpf")
-)
-
 const (
 	BPF_FS = `/sys/fs/bpf`
 
