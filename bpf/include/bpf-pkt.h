@@ -346,9 +346,9 @@ static int __always_inline fsm_xpkt_decode(void *md, struct xpkt *pkt,
     coder.in_pkt = 0;
     coder.skip_l2 = 0;
     coder.skip_v6 = skip_v6;
-    coder.start = TC_PTR(FSM_PKT_DATA(md));
+    coder.start = TC_PTR(XPKT_DATA(md));
     coder.data_begin = TC_PTR(coder.start);
-    coder.data_end = TC_PTR(FSM_PKT_DATA_END(md));
+    coder.data_end = TC_PTR(XPKT_DATA_END(md));
 
     pkt->pm.py_bytes = TC_PTR_SUB(coder.data_end, coder.data_begin);
 

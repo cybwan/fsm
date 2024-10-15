@@ -5,13 +5,13 @@
 #include <stdio.h>
 #include "bpf-dbg.h"
 
-#define FSM_IFI(md)          (((struct __sk_buff *)md)->ifindex)
-#define FSM_IGR_IFI(md)      (((struct __sk_buff *)md)->ingress_ifindex)
-#define FSM_EGR_IFI(md)      (((struct __sk_buff *)md)->ifindex)
-#define FSM_PKT_DATA(md)     (((struct __sk_buff *)md)->data)
-#define FSM_PKT_DATA_END(md) (((struct __sk_buff *)md)->data_end)
-#define FSM_PKT_META(md)     (((struct __sk_buff *)md)->data_meta)
-#define FSM_PKT_LEN(md)      (((struct __sk_buff *)md)->len)
+#define XPKT_IFI(md)      (((struct __sk_buff *)md)->ifindex)
+#define XPKT_IGR_IFI(md)  (((struct __sk_buff *)md)->ingress_ifindex)
+#define XPKT_EGR_IFI(md)  (((struct __sk_buff *)md)->ifindex)
+#define XPKT_DATA(md)     (((struct __sk_buff *)md)->data)
+#define XPKT_DATA_END(md) (((struct __sk_buff *)md)->data_end)
+#define XPKT_META(md)     (((struct __sk_buff *)md)->data_meta)
+#define XPKT_LEN(md)      (((struct __sk_buff *)md)->len)
 
 #define F4_PPLN_RDR(F)      (F->pm.pipe_act |= F4_PIPE_RDR);
 #define F4_PPLN_RDR_PRIO(F) (F->pm.pipe_act |= F4_PIPE_RDR_PRIO);
@@ -238,8 +238,8 @@ dp_set_icmp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 static int __always_inline
 dp_do_out(void *ctx, struct xpkt *pkt)
 {
-  void *start = TC_PTR(FSM_PKT_DATA(ctx));
-  void *dend = TC_PTR(FSM_PKT_DATA_END(ctx));
+  void *start = TC_PTR(XPKT_DATA(ctx));
+  void *dend = TC_PTR(XPKT_DATA_END(ctx));
   struct ethhdr *eth;
   int vlan;
 
@@ -257,7 +257,7 @@ dp_do_out(void *ctx, struct xpkt *pkt)
         F4_PPLN_DROPC(pkt, F4_PIPE_RC_PLERR);
         return -1;
       }
-      eth = TC_PTR(FSM_PKT_DATA(ctx));
+      eth = TC_PTR(XPKT_DATA(ctx));
       memcpy(eth->h_dest, pkt->l2.dl_dst, 6);
       memcpy(eth->h_source, pkt->l2.dl_src, 6);
     }
@@ -266,7 +266,7 @@ dp_do_out(void *ctx, struct xpkt *pkt)
     /* If existing vlan tag was present just replace vlan-id, else 
      * push a new vlan tag and set the vlan-id
      */
-    eth = TC_PTR(FSM_PKT_DATA(ctx));
+    eth = TC_PTR(XPKT_DATA(ctx));
     if (pkt->l2.vlan[0] != 0) {
       // if (dp_swap_vlan_tag(ctx, pkt, vlan) != 0) {
       //   F4_PPLN_DROPC(pkt, F4_PIPE_RC_PLERR);
