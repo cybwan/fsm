@@ -119,10 +119,10 @@ struct dp_pi_mdi {
 }__attribute__((packed));
 
 
-struct dp_fr_mdi {
-    __u32            dat;
-    __u32            dat_end;
-    __u64            tstamp;
+struct xpkt_frame_meta {
+    __u32            data;
+    __u32            data_end;
+    __u64            ts;
 };
 
 /* Allow users of header file to redefine VLAN max depth */
@@ -130,7 +130,7 @@ struct dp_fr_mdi {
 #define MAX_STACKED_VLANS 3
 #endif
 
-struct dp_l2_mdi {
+struct xpkt_l2_meta {
     __u16            vlan[MAX_STACKED_VLANS]; 
     __u16            dl_type;
     __u8             dl_dst[6];
@@ -144,7 +144,7 @@ struct dp_l2_mdi {
 #define daddr4 daddr[0]
 #define xaddr4 xaddr[0]
 
-struct dp_l34_mdi {
+struct xpkt_l34_meta {
     __u8             tos;
     __u8             nw_proto;
 
@@ -164,7 +164,7 @@ struct dp_l34_mdi {
 #define nxip4 nxip[0]
 #define nrip4 nrip[0]
 
-struct dp_nat_mdi {
+struct xpkt_nat_meta {
     __u32            nxip[4];      /* NAT xIP */
     __u32            nrip[4];      /* NAT rIP (for one-arm) */
     __u16            nxport;       /* NAT xport */
@@ -185,12 +185,12 @@ struct dp_nat_mdi {
 };
 
 struct xpkt {
-    struct dp_fr_mdi  fm;
-    struct dp_l2_mdi  l2m;
-    struct dp_l34_mdi l34m;
-    struct dp_l2_mdi  il2m;
-    struct dp_l34_mdi il34m;
-    struct dp_nat_mdi nm;
+    struct xpkt_frame_meta fm;
+    struct xpkt_l2_meta    l2m;
+    struct xpkt_l34_meta   l34m;
+    struct xpkt_l2_meta    il2m;
+    struct xpkt_l34_meta   il34m;
+    struct xpkt_nat_meta   nm;
 
     /* Pipeline Info*/
     struct dp_pi_mdi  pm;
