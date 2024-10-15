@@ -52,12 +52,12 @@ dp_pipe_check_res(void *ctx, struct xpkt *pkt, void *fa)
       pkt->pm.oport = pkt->nat.nxifi;
     }
 
-    if (dp_unparse_packet_always(ctx, pkt) != 0) {
+    if (xpkt_encode_packet_always(ctx, pkt) != 0) {
         return TC_ACT_SHOT;
     }
 
     if (pkt->pm.pipe_act & F4_PIPE_RDR_MASK) {
-      // if (dp_unparse_packet(ctx, pkt) != 0) {
+      // if (xpkt_encode_packet(ctx, pkt) != 0) {
       //   return TC_ACT_SHOT;
       // }
       // if (pkt->pm.f4) {

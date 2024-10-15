@@ -87,8 +87,8 @@ dp_do_fcv4_lkup(void *ctx, struct xpkt *pkt)
   DP_XMAC_CP(pkt->l2.dl_dst, pkt->nat.nrmac);
   pkt->pm.oport = pkt->nat.nxifi;
   
-  dp_unparse_packet_always(ctx, pkt);
-  // dp_unparse_packet(ctx, pkt);
+  xpkt_encode_packet_always(ctx, pkt);
+  // xpkt_encode_packet(ctx, pkt);
 
   F4_PPLN_RDR(pkt);
 

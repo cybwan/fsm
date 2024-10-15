@@ -15,17 +15,17 @@
 #define IP_MF 0x2000     /* Flag: "More Fragments"	*/
 #define IP_OFFSET 0x1FFF /* "Fragment Offset" part	*/
 
-static __always_inline int ip_is_fragment(const struct iphdr *iph)
+static __always_inline int is_ip_fragment(const struct iphdr *iph)
 {
     return (iph->frag_off & htons(IP_MF | IP_OFFSET)) != 0;
 }
 
-static __always_inline int ip_is_first_fragment(const struct iphdr *iph)
+static __always_inline int is_first_ip_fragment(const struct iphdr *iph)
 {
     return (iph->frag_off & htons(IP_OFFSET)) == 0;
 }
 
-static inline int ipv6_addr_is_multicast(const struct in6_addr *addr)
+static inline int is_ipv6_addr_multicast(const struct in6_addr *addr)
 {
     return (addr->s6_addr32[0] & htonl(0xFF000000)) == htonl(0xFF000000);
 }
@@ -242,11 +242,11 @@ static int __always_inline xpkt_decode_ipv4(struct decoder *coder, void *md,
     pkt->l34.saddr4 = iph->saddr;
     pkt->l34.daddr4 = iph->daddr;
 
-    if (ip_is_first_fragment(iph)) {
+    if (is_first_ip_fragment(iph)) {
         pkt->pm.l4_off = XPKT_PTR_SUB(XPKT_PTR_ADD(iph, iphl), coder->start);
         coder->data_begin = XPKT_PTR_ADD(iph, iphl);
 
-        if (ip_is_fragment(iph)) {
+        if (is_ip_fragment(iph)) {
             pkt->l2.ssnid = iph->id;
             pkt->pm.goct = 1;
         }
@@ -259,7 +259,7 @@ static int __always_inline xpkt_decode_ipv4(struct decoder *coder, void *md,
             return xpkt_decode_icmp(coder, md, pkt);
         }
     } else {
-        if (ip_is_fragment(iph)) {
+        if (is_ip_fragment(iph)) {
             pkt->l34.source = iph->id;
             pkt->l34.dest = iph->id;
             pkt->l2.ssnid = iph->id;
@@ -279,8 +279,8 @@ static int __always_inline xpkt_decode_ipv6(struct decoder *coder, void *md,
         return DP_PRET_FAIL;
     }
 
-    if (ipv6_addr_is_multicast(&ip6->daddr) ||
-        ipv6_addr_is_multicast(&ip6->saddr)) {
+    if (is_ipv6_addr_multicast(&ip6->daddr) ||
+        is_ipv6_addr_multicast(&ip6->saddr)) {
         return DP_PRET_PASS;
     }
 
@@ -361,7 +361,7 @@ handle_excp:
     return ret;
 }
 
-static int __always_inline dp_unparse_packet_always(void *ctx, struct xpkt *pkt)
+static int __always_inline xpkt_encode_packet_always(void *ctx, struct xpkt *pkt)
 {
     if (pkt->pm.nf & F4_NAT_SRC && pkt->nat.dsr == 0) {
         if (pkt->l2.dl_type == ntohs(ETH_P_IPV6) || pkt->nat.nv6) {
@@ -384,7 +384,7 @@ static int __always_inline dp_unparse_packet_always(void *ctx, struct xpkt *pkt)
     return 0;
 }
 
-static int __always_inline dp_unparse_packet(void *ctx, struct xpkt *pkt)
+static int __always_inline xpkt_encode_packet(void *ctx, struct xpkt *pkt)
 {
     return dp_do_out(ctx, pkt);
 }
