@@ -2,7 +2,7 @@
 #define __F4_BPF_NAT_H__
 
 __attribute__((__always_inline__)) static inline int
-dp_do_dnat(void *ctx, struct xpkt *pkt)
+xpkt_do_dnat(void *ctx, struct xpkt *pkt)
 {
     void *dend = XPKT_PTR(XPKT_DATA_END(ctx));
 
@@ -52,7 +52,7 @@ dp_do_dnat(void *ctx, struct xpkt *pkt)
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_do_snat(void *ctx, struct xpkt *pkt)
+xpkt_do_snat(void *ctx, struct xpkt *pkt)
 {
     void *dend = XPKT_PTR(XPKT_DATA_END(ctx));
 

@@ -369,7 +369,7 @@ xpkt_encode_packet_always(void *ctx, struct xpkt *pkt)
         if (pkt->l2.dl_type == ntohs(ETH_P_IPV6) || pkt->nat.nv6) {
             // dp_sunp_tcall(ctx, xf);
         } else {
-            if (dp_do_snat(ctx, pkt) != 0) {
+            if (xpkt_do_snat(ctx, pkt) != 0) {
                 return TC_ACT_SHOT;
             }
         }
@@ -377,7 +377,7 @@ xpkt_encode_packet_always(void *ctx, struct xpkt *pkt)
         if (pkt->l2.dl_type == ntohs(ETH_P_IPV6)) {
             // dp_sunp_tcall(ctx, xf);
         } else {
-            if (dp_do_dnat(ctx, pkt) != 0) {
+            if (xpkt_do_dnat(ctx, pkt) != 0) {
                 return TC_ACT_SHOT;
             }
         }
