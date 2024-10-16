@@ -113,7 +113,7 @@ int tc_conn_track_func(struct __sk_buff *ctx)
         return TC_ACT_SHOT;
     }
 
-    return dp_ing_ct_main(ctx, pkt);
+    return xpkt_conntrack_proc(ctx, pkt);
 }
 
 SEC("classifier/pass")

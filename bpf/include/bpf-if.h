@@ -65,7 +65,7 @@ dp_pipe_check_res(void *ctx, struct xpkt *pkt, void *fa)
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ing_ct_main(void *ctx, struct xpkt *pkt)
+xpkt_conntrack_proc(void *ctx, struct xpkt *pkt)
 {
     int val = 0;
     struct xpkt_fib4_ops *fa = NULL;
@@ -87,10 +87,7 @@ dp_ing_ct_main(void *ctx, struct xpkt *pkt)
     dp_eg_l2(ctx, pkt, fa);
 
 res_end:
-    if (1) {
-        int ret = dp_pipe_check_res(ctx, pkt, fa);
-        return ret;
-    }
+    return dp_pipe_check_res(ctx, pkt, fa);
 }
 
 __attribute__((__always_inline__)) static inline int
