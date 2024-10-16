@@ -82,7 +82,7 @@ dp_ing_ct_main(void *ctx, struct xpkt *pkt)
         return TC_ACT_SHOT;
 
     if (pkt->pm.igr && (pkt->pm.phit & F4_DP_CTM_HIT) == 0) {
-        dp_do_nat(ctx, pkt);
+        xpkt_nat_proc(ctx, pkt);
     }
 
     val = dp_ct_in(ctx, pkt);

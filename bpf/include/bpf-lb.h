@@ -4,7 +4,7 @@
 #include "bpf-dbg.h"
 
 __attribute__((__always_inline__)) static inline int
-dp_pipe_set_nat(void *ctx, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
+xpkt_nat_set(void *ctx, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
 {
     pkt->pm.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
     XADDR_COPY(pkt->nat.nxip, na->xip);
@@ -21,7 +21,7 @@ dp_pipe_set_nat(void *ctx, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_sel_nat_ep(void *ctx, struct xpkt *pkt, struct dp_nat_tacts *act)
+xpkt_nat_endpoint(void *ctx, struct xpkt *pkt, struct dp_nat_tacts *act)
 {
     int sel = -1;
     __u8 n = 0;
@@ -111,8 +111,8 @@ dp_sel_nat_ep(void *ctx, struct xpkt *pkt, struct dp_nat_tacts *act)
     return sel;
 }
 
-__attribute__((__always_inline__)) static inline int dp_do_nat(void *ctx,
-                                                               struct xpkt *pkt)
+__attribute__((__always_inline__)) static inline int
+xpkt_nat_proc(void *ctx, struct xpkt *pkt)
 {
     struct dp_nat_key key;
     struct dp_xfrm_inf *nxfrm_act;
@@ -145,7 +145,7 @@ __attribute__((__always_inline__)) static inline int dp_do_nat(void *ctx,
     }
 
     if (act->ca.act_type == DP_SET_SNAT || act->ca.act_type == DP_SET_DNAT) {
-        sel = dp_sel_nat_ep(ctx, pkt, act);
+        sel = xpkt_nat_endpoint(ctx, pkt, act);
 
         pkt->nat.dsr = act->ca.oaux ? 1 : 0;
         pkt->nat.cdis = act->cdis ? 1 : 0;
