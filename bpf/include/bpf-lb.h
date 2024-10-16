@@ -9,8 +9,8 @@ dp_pipe_set_nat(void *ctx, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
     pkt->pm.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
     XADDR_COPY(pkt->nat.nxip, na->xip);
     XADDR_COPY(pkt->nat.nrip, na->rip);
-    DP_XMAC_CP(pkt->nat.nxmac, na->xmac);
-    DP_XMAC_CP(pkt->nat.nrmac, na->rmac);
+    XMAC_COPY(pkt->nat.nxmac, na->xmac);
+    XMAC_COPY(pkt->nat.nrmac, na->rmac);
     pkt->nat.nxifi = na->xifi;
     pkt->nat.nxport = na->xport;
     pkt->nat.nrport = na->rport;
@@ -159,8 +159,8 @@ __attribute__((__always_inline__)) static inline int dp_do_nat(void *ctx,
 
             XADDR_COPY(pkt->nat.nxip, nxfrm_act->nat_xip);
             XADDR_COPY(pkt->nat.nrip, nxfrm_act->nat_rip);
-            DP_XMAC_CP(pkt->nat.nxmac, nxfrm_act->nat_xmac);
-            DP_XMAC_CP(pkt->nat.nrmac, nxfrm_act->nat_rmac);
+            XMAC_COPY(pkt->nat.nxmac, nxfrm_act->nat_xmac);
+            XMAC_COPY(pkt->nat.nrmac, nxfrm_act->nat_rmac);
             pkt->nat.nxifi = nxfrm_act->nat_xifi;
             pkt->nat.nrport = nxfrm_act->nat_rport;
             if (nxfrm_act->nat_xport) {

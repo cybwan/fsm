@@ -122,8 +122,8 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key, nxfrm_inf_t *xi,
         xxi->nat_flags = F4_NAT_DST;
         xxi->nv6 = key->v6;
 
-        // DP_XMAC_CP(xxi->nat_xmac, pkt->l2m.dl_dst);
-        // DP_XMAC_CP(xxi->nat_rmac, pkt->l2m.dl_src);
+        // XMAC_COPY(xxi->nat_xmac, pkt->l2m.dl_dst);
+        // XMAC_COPY(xxi->nat_rmac, pkt->l2m.dl_src);
     }
     if (xi->nat_flags & F4_NAT_HDST) {
         XADDR_COPY(xkey->saddr, key->saddr);
@@ -783,8 +783,8 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
     xi->nat_flags = pkt->pm.nf;
     XADDR_COPY(xi->nat_xip, pkt->nat.nxip);
     XADDR_COPY(xi->nat_rip, pkt->nat.nrip);
-    // DP_XMAC_CP(xi->nat_xmac, pkt->nm.nxmac);
-    // DP_XMAC_CP(xi->nat_rmac, pkt->nm.nrmac);
+    // XMAC_COPY(xi->nat_xmac, pkt->nm.nxmac);
+    // XMAC_COPY(xi->nat_rmac, pkt->nm.nrmac);
     // xi->nat_xifi = pkt->nm.nxifi;
     xi->nat_xport = pkt->nat.nxport;
     xi->nat_rport = pkt->nat.nrport;
@@ -796,8 +796,8 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
     xxi->nat_rport = 0;
     XADDR_SET_ZERO(xxi->nat_xip);
     XADDR_SET_ZERO(xxi->nat_rip);
-    // DP_XMAC_SETZR(xxi->nat_xmac);
-    // DP_XMAC_SETZR(xxi->nat_rmac);
+    // XMAC_SET_ZERO(xxi->nat_xmac);
+    // XMAC_SET_ZERO(xxi->nat_rmac);
 
     if (pkt->pm.nf & (F4_NAT_DST | F4_NAT_SRC)) {
         if (XADDR_IS_ZERO(xi->nat_xip)) {
@@ -824,8 +824,8 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
                                     : DP_SET_SNAT;
             XADDR_COPY(adat->nat_act.xip, xi->nat_xip);
             XADDR_COPY(adat->nat_act.rip, xi->nat_rip);
-            // DP_XMAC_CP(adat->nat_act.xmac,  xi->nat_xmac);
-            // DP_XMAC_CP(adat->nat_act.rmac, xi->nat_rmac);
+            // XMAC_COPY(adat->nat_act.xmac,  xi->nat_xmac);
+            // XMAC_COPY(adat->nat_act.rmac, xi->nat_rmac);
             // adat->nat_act.xifi = xi->nat_xifi;
             adat->nat_act.xport = xi->nat_xport;
             adat->nat_act.rport = xi->nat_rport;
@@ -859,8 +859,8 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
                                      : DP_SET_SNAT;
             XADDR_COPY(axdat->nat_act.xip, xxi->nat_xip);
             XADDR_COPY(axdat->nat_act.rip, xxi->nat_rip);
-            // DP_XMAC_CP(axdat->nat_act.xmac, xxi->nat_xmac);
-            // DP_XMAC_CP(axdat->nat_act.rmac, xxi->nat_rmac);
+            // XMAC_COPY(axdat->nat_act.xmac, xxi->nat_xmac);
+            // XMAC_COPY(axdat->nat_act.rmac, xxi->nat_rmac);
             // axdat->nat_act.xifi = xxi->nat_xifi;
             axdat->nat_act.xport = xxi->nat_xport;
             axdat->nat_act.rport = xxi->nat_rport;

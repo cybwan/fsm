@@ -3,8 +3,8 @@
 
 #include "bpf-dbg.h"
 
-static int __always_inline dp_mk_fcv4_key(struct xpkt *pkt,
-                                          struct dp_fcv4_key *key)
+__attribute__((__always_inline__)) static inline int
+xpkt_init_fib_v4_key(struct xpkt *pkt, struct dp_fcv4_key *key)
 {
     key->daddr = pkt->l34.daddr4;
     key->saddr = pkt->l34.saddr4;
@@ -25,7 +25,7 @@ xpkt_fib_v4_find(void *ctx, struct xpkt *pkt)
     int ret = 1;
     int z = 0;
 
-    dp_mk_fcv4_key(pkt, &key);
+    xpkt_init_fib_v4_key(pkt, &key);
 
     acts = bpf_map_lookup_elem(&f4gw_fc_v4, &key);
     if (!acts) {
@@ -82,8 +82,8 @@ xpkt_fib_v4_find(void *ctx, struct xpkt *pkt)
 
     // DP_RUN_CT_HELPER(pkt);
 
-    DP_XMAC_CP(pkt->l2.dl_src, pkt->nat.nxmac);
-    DP_XMAC_CP(pkt->l2.dl_dst, pkt->nat.nrmac);
+    XMAC_COPY(pkt->l2.dl_src, pkt->nat.nxmac);
+    XMAC_COPY(pkt->l2.dl_dst, pkt->nat.nrmac);
     pkt->pm.oport = pkt->nat.nxifi;
 
     xpkt_encode_packet_always(ctx, pkt);

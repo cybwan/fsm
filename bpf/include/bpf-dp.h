@@ -388,7 +388,7 @@ struct dp_t2_port {
         (a)[3] = 0;                                                            \
     } while (0)
 
-#define DP_XMAC_CP(a, b)                                                       \
+#define XMAC_COPY(a, b)                                                        \
     do {                                                                       \
         (a)[0] = (b)[0];                                                       \
         (a)[1] = (b)[1];                                                       \
@@ -398,7 +398,7 @@ struct dp_t2_port {
         (a)[5] = (b)[5];                                                       \
     } while (0)
 
-#define DP_XMAC_SETZR(a)                                                       \
+#define XMAC_SET_ZERO(a)                                                       \
     do {                                                                       \
         (a)[0] = 0;                                                            \
         (a)[1] = 0;                                                            \

@@ -47,8 +47,8 @@ dp_pipe_check_res(void *ctx, struct xpkt *pkt, void *fa)
         }
 
         if (pkt->pm.pipe_act & F4_PIPE_RDR) {
-            // DP_XMAC_CP(pkt->l2m.dl_src, pkt->nm.nxmac);
-            // DP_XMAC_CP(pkt->l2m.dl_dst, pkt->nm.nrmac);
+            // XMAC_COPY(pkt->l2m.dl_src, pkt->nm.nxmac);
+            // XMAC_COPY(pkt->l2m.dl_dst, pkt->nm.nrmac);
             pkt->pm.oport = pkt->nat.nxifi;
         }
 
