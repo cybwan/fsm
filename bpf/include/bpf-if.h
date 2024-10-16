@@ -7,20 +7,14 @@
 #include "bpf-lb.h"
 
 __attribute__((__always_inline__)) static inline int
-dp_redir_packet(void *ctx, struct xpkt *pkt)
-{
-    return TC_ACT_REDIRECT;
-}
-
-__attribute__((__always_inline__)) static inline int
-dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct xpkt_fib4_ops *acts)
+dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct xpkt_fib4_ops *ops)
 {
     struct xpkt_fib4_key *key;
     int z = 0;
 
-    int oif = pkt->nat.nxifi;
-    if (oif) {
-        acts->ca.oaux = oif;
+    int oifi = pkt->nat.nxifi;
+    if (oifi) {
+        ops->ca.oaux = oifi;
     }
 
     key = bpf_map_lookup_elem(&fsm_fib4_key, &z);
@@ -32,8 +26,8 @@ dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct xpkt_fib4_ops *acts)
         return 1;
     }
 
-    acts->pten = pkt->pm.pten;
-    bpf_map_update_elem(&fsm_fib4, key, acts, BPF_ANY);
+    ops->pten = pkt->pm.pten;
+    bpf_map_update_elem(&fsm_fib4, key, ops, BPF_ANY);
     return 0;
 }
 
