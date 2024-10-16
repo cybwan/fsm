@@ -37,7 +37,7 @@ struct {
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_xfck = {
+struct bpf_map_def SEC("maps") fsm_fib4_key = {
     .type = BPF_MAP_TYPE_PERCPU_ARRAY,
     .key_size = sizeof(__u32),
     .value_size = sizeof(struct xpkt_fib4_key),
@@ -49,11 +49,11 @@ struct {
     __type(key, __u32);
     __type(value, struct xpkt_fib4_key);
     __uint(max_entries, 1);
-} f4gw_xfck SEC(".maps");
+} fsm_fib4_key SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_fcas = {
+struct bpf_map_def SEC("maps") fsm_fib4_ops = {
     .type = BPF_MAP_TYPE_PERCPU_ARRAY,
     .key_size = sizeof(__u32),
     .value_size = sizeof(struct xpkt_fib4_ops),
@@ -65,7 +65,7 @@ struct {
     __type(key, __u32);
     __type(value, struct xpkt_fib4_ops);
     __uint(max_entries, 1);
-} f4gw_fcas SEC(".maps");
+} fsm_fib4_ops SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS

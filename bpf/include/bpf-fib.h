@@ -33,13 +33,13 @@ xpkt_fib4_find(void *ctx, struct xpkt *pkt)
          * there is no need to make fcv4 key again in
          * tail-call sections
          */
-        bpf_map_update_elem(&f4gw_xfck, &z, &key, BPF_ANY);
+        bpf_map_update_elem(&fsm_fib4_key, &z, &key, BPF_ANY);
         return 0;
     }
 
     /* Check timeout */
     if (bpf_ktime_get_ns() - acts->its > FC_V4_DPTO) {
-        bpf_map_update_elem(&f4gw_xfck, &z, &key, BPF_ANY);
+        bpf_map_update_elem(&fsm_fib4_key, &z, &key, BPF_ANY);
         bpf_map_delete_elem(&fsm_fib4, &key);
         pkt->pm.rcode |= F4_PIPE_RC_FCTO;
         return 0;

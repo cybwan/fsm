@@ -23,7 +23,7 @@ dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct xpkt_fib4_ops *acts)
         acts->ca.oaux = oif;
     }
 
-    key = bpf_map_lookup_elem(&f4gw_xfck, &z);
+    key = bpf_map_lookup_elem(&fsm_fib4_key, &z);
     if (key == NULL) {
         return -1;
     }
@@ -77,7 +77,7 @@ dp_ing_ct_main(void *ctx, struct xpkt *pkt)
     int val = 0;
     struct xpkt_fib4_ops *fa = NULL;
 
-    fa = bpf_map_lookup_elem(&f4gw_fcas, &val);
+    fa = bpf_map_lookup_elem(&fsm_fib4_ops, &val);
     if (!fa)
         return TC_ACT_SHOT;
 
@@ -106,7 +106,7 @@ dp_ing_sh_main(void *ctx, struct xpkt *pkt)
     struct xpkt_fib4_ops *fa = NULL;
     int z = 0;
 
-    fa = bpf_map_lookup_elem(&f4gw_fcas, &z);
+    fa = bpf_map_lookup_elem(&fsm_fib4_ops, &z);
     if (!fa)
         return 0;
 
