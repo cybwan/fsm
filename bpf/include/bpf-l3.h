@@ -8,7 +8,7 @@
 __attribute__((__always_inline__)) static inline int
 dp_do_ctops(void *ctx, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
 {
-    struct dp_fc_tacts *fa = fa_;
+    struct xpkt_fib4_ops *fa = fa_;
     if (!act) {
         goto ct_trk;
     }
@@ -47,9 +47,9 @@ dp_do_ctops(void *ctx, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
     } else if (act->ca.act_type == DP_SET_SNAT ||
                act->ca.act_type == DP_SET_DNAT) {
         struct dp_nat_act *na;
-        struct dp_fc_tact *ta =
-            &fa->fcta[act->ca.act_type == DP_SET_SNAT ? DP_SET_SNAT
-                                                      : DP_SET_DNAT];
+        struct xpkt_fib4_op *ta =
+            &fa->ops[act->ca.act_type == DP_SET_SNAT ? DP_SET_SNAT
+                                                     : DP_SET_DNAT];
         ta->ca.act_type = act->ca.act_type;
         memcpy(&ta->nat_act, &act->nat_act, sizeof(act->nat_act));
 

@@ -217,7 +217,7 @@ struct dp_nat_act {
     __u8 nmh;
 };
 
-struct dp_fc_tact {
+struct xpkt_fib4_op {
     struct dp_cmn_act ca; /* Possible actions : See below */
     union {
         struct dp_rdr_act port_act;
@@ -225,13 +225,13 @@ struct dp_fc_tact {
     };
 };
 
-struct dp_fc_tacts {
+struct xpkt_fib4_ops {
     struct dp_cmn_act ca;
     __u64 its;
     __u32 zone;
     __u16 pad;
     __u16 pten;
-    struct dp_fc_tact fcta[F4_FCV4_MAP_ACTS];
+    struct xpkt_fib4_op ops[F4_FCV4_MAP_ACTS];
 };
 
 struct dp_nat_key {

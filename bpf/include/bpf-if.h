@@ -13,7 +13,7 @@ dp_redir_packet(void *ctx, struct xpkt *pkt)
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct dp_fc_tacts *acts)
+dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct xpkt_fib4_ops *acts)
 {
     struct xpkt_fib4_key *key;
     int z = 0;
@@ -75,7 +75,7 @@ __attribute__((__always_inline__)) static inline int
 dp_ing_ct_main(void *ctx, struct xpkt *pkt)
 {
     int val = 0;
-    struct dp_fc_tacts *fa = NULL;
+    struct xpkt_fib4_ops *fa = NULL;
 
     fa = bpf_map_lookup_elem(&f4gw_fcas, &val);
     if (!fa)
@@ -103,7 +103,7 @@ res_end:
 __attribute__((__always_inline__)) static inline int
 dp_ing_sh_main(void *ctx, struct xpkt *pkt)
 {
-    struct dp_fc_tacts *fa = NULL;
+    struct xpkt_fib4_ops *fa = NULL;
     int z = 0;
 
     fa = bpf_map_lookup_elem(&f4gw_fcas, &z);
@@ -117,7 +117,7 @@ dp_ing_sh_main(void *ctx, struct xpkt *pkt)
     fa->its = bpf_ktime_get_ns();
 #pragma clang loop unroll(full)
     for (z = 0; z < F4_FCV4_MAP_ACTS; z++) {
-        fa->fcta[z].ca.act_type = 0;
+        fa->ops[z].ca.act_type = 0;
     }
 
     // F4_DBG_PRINTK("[INGR] START--\n");

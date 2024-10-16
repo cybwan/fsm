@@ -20,8 +20,8 @@ __attribute__((__always_inline__)) static inline int
 xpkt_fib4_find(void *ctx, struct xpkt *pkt)
 {
     struct xpkt_fib4_key key;
-    struct dp_fc_tacts *acts;
-    struct dp_fc_tact *ta;
+    struct xpkt_fib4_ops *acts;
+    struct xpkt_fib4_op *ta;
     int ret = 1;
     int z = 0;
 
@@ -54,8 +54,8 @@ xpkt_fib4_find(void *ctx, struct xpkt *pkt)
     pkt->pm.zone = acts->zone;
     pkt->pm.pten = acts->pten;
 
-    if (acts->fcta[DP_SET_SNAT].ca.act_type == DP_SET_SNAT) {
-        ta = &acts->fcta[DP_SET_SNAT];
+    if (acts->ops[DP_SET_SNAT].ca.act_type == DP_SET_SNAT) {
+        ta = &acts->ops[DP_SET_SNAT];
 
         if (ta->nat_act.fr == 1 || ta->nat_act.doct) {
             pkt->pm.rcode |= F4_PIPE_RC_FCBP;
@@ -63,8 +63,8 @@ xpkt_fib4_find(void *ctx, struct xpkt *pkt)
         }
 
         dp_pipe_set_nat(ctx, pkt, &ta->nat_act, 1);
-    } else if (acts->fcta[DP_SET_DNAT].ca.act_type == DP_SET_DNAT) {
-        ta = &acts->fcta[DP_SET_DNAT];
+    } else if (acts->ops[DP_SET_DNAT].ca.act_type == DP_SET_DNAT) {
+        ta = &acts->ops[DP_SET_DNAT];
 
         if (ta->nat_act.fr == 1 || ta->nat_act.doct) {
             pkt->pm.rcode |= F4_PIPE_RC_FCBP;
