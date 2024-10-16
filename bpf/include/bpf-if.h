@@ -15,7 +15,7 @@ dp_redir_packet(void *ctx, struct xpkt *pkt)
 __attribute__((__always_inline__)) static inline int
 dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct dp_fc_tacts *acts)
 {
-    struct dp_fcv4_key *key;
+    struct xpkt_fib4_key *key;
     int z = 0;
 
     int oif = pkt->nat.nxifi;

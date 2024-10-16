@@ -189,14 +189,14 @@ struct dp_ct_dat {
     dp_pb_stats_t pb;
 };
 
-struct dp_fcv4_key {
+struct xpkt_fib4_key {
     __u32 daddr;
     __u32 saddr;
     __u16 sport;
     __u16 dport;
+    __u16 ifi;
     __u8 proto;
     __u8 pad;
-    __u16 in_port;
 };
 
 struct dp_nat_act {

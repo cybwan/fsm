@@ -4,28 +4,28 @@
 #include "bpf-dbg.h"
 
 __attribute__((__always_inline__)) static inline int
-xpkt_init_fib_v4_key(struct xpkt *pkt, struct dp_fcv4_key *key)
+xpkt_fib4_init_key(struct xpkt *pkt, struct xpkt_fib4_key *key)
 {
     key->daddr = pkt->l34.daddr4;
     key->saddr = pkt->l34.saddr4;
     key->sport = pkt->l34.source;
     key->dport = pkt->l34.dest;
     key->proto = pkt->l34.proto;
+    key->ifi = 0;
     key->pad = 0;
-    key->in_port = 0;
     return 0;
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_fib_v4_find(void *ctx, struct xpkt *pkt)
+xpkt_fib4_find(void *ctx, struct xpkt *pkt)
 {
-    struct dp_fcv4_key key;
+    struct xpkt_fib4_key key;
     struct dp_fc_tacts *acts;
     struct dp_fc_tact *ta;
     int ret = 1;
     int z = 0;
 
-    xpkt_init_fib_v4_key(pkt, &key);
+    xpkt_fib4_init_key(pkt, &key);
 
     acts = bpf_map_lookup_elem(&f4gw_fc_v4, &key);
     if (!acts) {
@@ -105,7 +105,7 @@ dp_ing_fc_main(void *ctx, struct xpkt *pkt)
     int z = 0;
     int oif;
     if (pkt->pm.pipe_act == 0 && pkt->l2.dl_type == ntohs(ETH_P_IP)) {
-        if (xpkt_fib_v4_find(ctx, pkt) == 1) {
+        if (xpkt_fib4_find(ctx, pkt) == 1) {
             if (pkt->pm.pipe_act == F4_PIPE_RDR) {
                 // oif = pkt->pm.oport;
                 // return bpf_redirect(oif, 0);
