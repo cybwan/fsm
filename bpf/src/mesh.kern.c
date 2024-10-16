@@ -99,7 +99,7 @@ int tc_hand_shake_func(struct __sk_buff *ctx)
         return TC_ACT_OK;
     }
 
-    return dp_ing_sh_main(ctx, pkt);
+    return xpkt_handshake_proc(ctx, pkt);
 }
 
 SEC("classifier/conntrack")

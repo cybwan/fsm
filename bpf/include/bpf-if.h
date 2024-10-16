@@ -7,7 +7,7 @@
 #include "bpf-lb.h"
 
 __attribute__((__always_inline__)) static inline int
-dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct xpkt_fib4_ops *ops)
+xpkt_fib4_insert(void *ctx, struct xpkt *pkt, struct xpkt_fib4_ops *ops)
 {
     struct xpkt_fib4_key *key;
     int z = 0;
@@ -94,7 +94,7 @@ res_end:
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ing_sh_main(void *ctx, struct xpkt *pkt)
+xpkt_handshake_proc(void *ctx, struct xpkt *pkt)
 {
     struct xpkt_fib4_ops *fa = NULL;
     int z = 0;
@@ -138,7 +138,7 @@ dp_ing_sh_main(void *ctx, struct xpkt *pkt)
     /* fast-cache is used only when certain conditions are met */
     if (F4_PIPE_FC_CAP(pkt)) {
         fa->zone = pkt->pm.zone;
-        dp_insert_fcv4(ctx, pkt, fa);
+        xpkt_fib4_insert(ctx, pkt, fa);
     }
 
 out:
