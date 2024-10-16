@@ -28,12 +28,12 @@ dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct dp_fc_tacts *acts)
         return -1;
     }
 
-    if (bpf_map_lookup_elem(&f4gw_fc_v4, key) != NULL) {
+    if (bpf_map_lookup_elem(&fsm_fib4, key) != NULL) {
         return 1;
     }
 
     acts->pten = pkt->pm.pten;
-    bpf_map_update_elem(&f4gw_fc_v4, key, acts, BPF_ANY);
+    bpf_map_update_elem(&fsm_fib4, key, acts, BPF_ANY);
     return 0;
 }
 

@@ -69,7 +69,7 @@ struct {
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_fc_v4 = {
+struct bpf_map_def SEC("maps") fsm_fib4 = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct xpkt_fib4_key),
     .value_size = sizeof(struct dp_fc_tacts),
@@ -83,7 +83,7 @@ struct {
     __type(value, struct dp_fc_tacts);
     __uint(max_entries, F4_FCV4_MAP_ENTRIES);
     __uint(map_flags, BPF_F_NO_PREALLOC);
-} f4gw_fc_v4 SEC(".maps");
+} fsm_fib4 SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS

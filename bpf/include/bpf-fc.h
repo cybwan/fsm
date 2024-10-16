@@ -27,7 +27,7 @@ xpkt_fib4_find(void *ctx, struct xpkt *pkt)
 
     xpkt_fib4_init_key(pkt, &key);
 
-    acts = bpf_map_lookup_elem(&f4gw_fc_v4, &key);
+    acts = bpf_map_lookup_elem(&fsm_fib4, &key);
     if (!acts) {
         /* xfck - fcache key table is maintained so that
          * there is no need to make fcv4 key again in
@@ -40,7 +40,7 @@ xpkt_fib4_find(void *ctx, struct xpkt *pkt)
     /* Check timeout */
     if (bpf_ktime_get_ns() - acts->its > FC_V4_DPTO) {
         bpf_map_update_elem(&f4gw_xfck, &z, &key, BPF_ANY);
-        bpf_map_delete_elem(&f4gw_fc_v4, &key);
+        bpf_map_delete_elem(&fsm_fib4, &key);
         pkt->pm.rcode |= F4_PIPE_RC_FCTO;
         return 0;
     }
@@ -94,7 +94,7 @@ xpkt_fib4_find(void *ctx, struct xpkt *pkt)
     return ret;
 
 del_out:
-    bpf_map_delete_elem(&f4gw_fc_v4, &key);
+    bpf_map_delete_elem(&fsm_fib4, &key);
     pkt->pm.rcode |= F4_PIPE_RC_FCBP;
     return 0;
 }
