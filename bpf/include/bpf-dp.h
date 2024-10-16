@@ -230,7 +230,6 @@ struct xpkt_fib4_ops {
     __u64 its;
     __u32 zone;
     __u16 pad;
-    __u16 pten;
     struct xpkt_fib4_op ops[F4_FCV4_MAP_ACTS];
 };
 

@@ -26,7 +26,6 @@ dp_insert_fcv4(void *ctx, struct xpkt *pkt, struct xpkt_fib4_ops *ops)
         return 1;
     }
 
-    ops->pten = pkt->pm.pten;
     bpf_map_update_elem(&fsm_fib4, key, ops, BPF_ANY);
     return 0;
 }

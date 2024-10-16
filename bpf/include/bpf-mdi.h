@@ -99,7 +99,6 @@ struct dp_pi_mdi {
     __u8 dbg : 1;
     __u8 goct : 1;
     __u8 nfc : 1;
-    __u8 pten : 2;
     __u8 il4fin : 1;
     __u8 dir : 1;
     __u16 l3_len;
