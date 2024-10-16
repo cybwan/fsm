@@ -17,7 +17,7 @@
         (k)->saddr[3] = pkt->l34.saddr[3];                                     \
         (k)->sport = pkt->l34.source;                                          \
         (k)->dport = pkt->l34.dest;                                            \
-        (k)->l4proto = pkt->l34.nw_proto;                                      \
+        (k)->proto = pkt->l34.proto;                                           \
         (k)->zone = pkt->pm.zone;                                              \
         (k)->v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;                \
     } while (0)
@@ -72,7 +72,7 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key, nxfrm_inf_t *xi,
     XADDR_COPY(xkey->saddr, key->daddr);
     xkey->sport = key->dport;
     xkey->dport = key->sport;
-    xkey->l4proto = key->l4proto;
+    xkey->proto = key->proto;
     xkey->zone = key->zone;
     xkey->v6 = key->v6;
 
@@ -94,7 +94,7 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key, nxfrm_inf_t *xi,
         // XADDR_COPY(xkey->daddr, xi->nat_xip);
         XADDR_COPY(xxi->nat_xip, key->daddr);
         XADDR_COPY(xxi->nat_rip, key->saddr);
-        if (key->l4proto != IPPROTO_ICMP) {
+        if (key->proto != IPPROTO_ICMP) {
             xkey->dport = xi->nat_xport;
             xkey->sport = xi->nat_rport;
             xxi->nat_xport = key->dport;
@@ -111,7 +111,7 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key, nxfrm_inf_t *xi,
         XADDR_COPY(xxi->nat_rip, pkt->l34.saddr);
         XADDR_COPY(xxi->nat_xip, pkt->l34.daddr);
 
-        if (key->l4proto != IPPROTO_ICMP) {
+        if (key->proto != IPPROTO_ICMP) {
             xkey->dport = xi->nat_xport;
             xkey->sport = xi->nat_rport;
             xxi->nat_xport = key->dport;
@@ -129,7 +129,7 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key, nxfrm_inf_t *xi,
         XADDR_COPY(xkey->saddr, key->saddr);
         XADDR_COPY(xkey->daddr, key->daddr);
 
-        if (key->l4proto != IPPROTO_ICMP) {
+        if (key->proto != IPPROTO_ICMP) {
             if (xi->nat_xport)
                 xkey->sport = xi->nat_xport;
             else
@@ -140,14 +140,14 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key, nxfrm_inf_t *xi,
         xxi->nv6 = key->v6;
         XADDR_SET_ZERO(xxi->nat_xip);
         XADDR_SET_ZERO(xi->nat_xip);
-        if (key->l4proto != IPPROTO_ICMP)
+        if (key->proto != IPPROTO_ICMP)
             xxi->nat_xport = key->dport;
     }
     if (xi->nat_flags & F4_NAT_HSRC) {
         XADDR_COPY(xkey->saddr, key->saddr);
         XADDR_COPY(xkey->daddr, key->daddr);
 
-        if (key->l4proto != IPPROTO_ICMP) {
+        if (key->proto != IPPROTO_ICMP) {
             if (xi->nat_xport)
                 xkey->dport = xi->nat_xport;
             else
@@ -159,7 +159,7 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key, nxfrm_inf_t *xi,
         XADDR_SET_ZERO(xxi->nat_xip);
         XADDR_SET_ZERO(xi->nat_xip);
 
-        if (key->l4proto != IPPROTO_ICMP)
+        if (key->proto != IPPROTO_ICMP)
             xxi->nat_xport = key->sport;
     }
 
@@ -657,7 +657,7 @@ dp_ct_sm(void *ctx, struct xpkt *pkt, struct dp_ct_tact *atdat,
 {
     int sm_ret = 0;
 
-    switch (pkt->l34.nw_proto) {
+    switch (pkt->l34.proto) {
     case IPPROTO_TCP:
         sm_ret = dp_ct_tcp_sm(ctx, pkt, atdat, axtdat, dir);
         break;
@@ -706,7 +706,7 @@ dp_ct_est(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
     CP_CT_NAT_TACTS(adat, atdat);
     CP_CT_NAT_TACTS(axdat, axtdat);
 
-    switch (pkt->l34.nw_proto) {
+    switch (pkt->l34.proto) {
     case IPPROTO_UDP:
         if (pkt->l2.ssnid) {
             if (pkt->pm.dir == CT_DIR_IN) {
@@ -771,12 +771,12 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
     XADDR_COPY(key.saddr, pkt->l34.saddr);
     key.sport = pkt->l34.source;
     key.dport = pkt->l34.dest;
-    key.l4proto = pkt->l34.nw_proto;
+    key.proto = pkt->l34.proto;
     key.zone = pkt->pm.zone;
     key.v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;
 
-    if (key.l4proto != IPPROTO_TCP && key.l4proto != IPPROTO_UDP &&
-        key.l4proto != IPPROTO_ICMP && key.l4proto != IPPROTO_ICMPV6) {
+    if (key.proto != IPPROTO_TCP && key.proto != IPPROTO_UDP &&
+        key.proto != IPPROTO_ICMP && key.proto != IPPROTO_ICMPV6) {
         return CT_SMR_INPROG;
     }
 

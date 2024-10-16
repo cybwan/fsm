@@ -73,7 +73,7 @@ dp_do_ctops(void *ctx, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
         F4_PPLN_DROPC(pkt, F4_PIPE_RC_ACT_DROP);
     }
 
-    if (pkt->l34.nw_proto == IPPROTO_TCP) {
+    if (pkt->l34.proto == IPPROTO_TCP) {
         dp_run_ctact_helper(pkt, act);
     }
 

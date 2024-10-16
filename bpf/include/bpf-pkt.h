@@ -85,13 +85,13 @@ xpkt_decode_arp(struct decoder *coder, void *md, struct xpkt *pkt)
             pkt->il34.saddr4 = arp->ar_spa;
             pkt->il34.daddr4 = arp->ar_tpa;
         }
-        pkt->il34.nw_proto = ntohs(arp->ar_op) & 0xff;
+        pkt->il34.proto = ntohs(arp->ar_op) & 0xff;
     } else {
         if (arp->ar_pro == htons(ETH_P_IP) && arp->ar_pln == 4) {
             pkt->l34.saddr4 = arp->ar_spa;
             pkt->l34.daddr4 = arp->ar_tpa;
         }
-        pkt->l34.nw_proto = ntohs(arp->ar_op) & 0xff;
+        pkt->l34.proto = ntohs(arp->ar_op) & 0xff;
     }
 
     return DP_PRET_TRAP;
@@ -238,7 +238,7 @@ xpkt_decode_ipv4(struct decoder *coder, void *md, struct xpkt *pkt)
 
     pkt->l34.valid = 1;
     pkt->l34.tos = iph->tos & 0xfc;
-    pkt->l34.nw_proto = iph->protocol;
+    pkt->l34.proto = iph->protocol;
     pkt->l34.saddr4 = iph->saddr;
     pkt->l34.daddr4 = iph->daddr;
 
@@ -251,11 +251,11 @@ xpkt_decode_ipv4(struct decoder *coder, void *md, struct xpkt *pkt)
             pkt->pm.goct = 1;
         }
 
-        if (pkt->l34.nw_proto == IPPROTO_TCP) {
+        if (pkt->l34.proto == IPPROTO_TCP) {
             return xpkt_decode_tcp(coder, md, pkt);
-        } else if (pkt->l34.nw_proto == IPPROTO_UDP) {
+        } else if (pkt->l34.proto == IPPROTO_UDP) {
             return xpkt_decode_udp(coder, md, pkt);
-        } else if (pkt->l34.nw_proto == IPPROTO_ICMP) {
+        } else if (pkt->l34.proto == IPPROTO_ICMP) {
             return xpkt_decode_icmp(coder, md, pkt);
         }
     } else {
@@ -290,7 +290,7 @@ xpkt_decode_ipv6(struct decoder *coder, void *md, struct xpkt *pkt)
     pkt->l34.valid = 1;
     pkt->l34.tos =
         ((ip6->priority << 4) | ((ip6->flow_lbl[0] & 0xf0) >> 4)) & 0xfc;
-    pkt->l34.nw_proto = ip6->nexthdr;
+    pkt->l34.proto = ip6->nexthdr;
     memcpy(&pkt->l34.saddr, &ip6->saddr, sizeof(ip6->saddr));
     memcpy(&pkt->l34.daddr, &ip6->daddr, sizeof(ip6->daddr));
 
@@ -298,11 +298,11 @@ xpkt_decode_ipv6(struct decoder *coder, void *md, struct xpkt *pkt)
         XPKT_PTR_SUB(XPKT_PTR_ADD(ip6, sizeof(*ip6)), coder->start);
     coder->data_begin = XPKT_PTR_ADD(ip6, sizeof(*ip6));
 
-    if (pkt->l34.nw_proto == IPPROTO_TCP) {
+    if (pkt->l34.proto == IPPROTO_TCP) {
         return xpkt_decode_tcp(coder, md, pkt);
-    } else if (pkt->l34.nw_proto == IPPROTO_UDP) {
+    } else if (pkt->l34.proto == IPPROTO_UDP) {
         return xpkt_decode_udp(coder, md, pkt);
-    } else if (pkt->l34.nw_proto == IPPROTO_ICMPV6) {
+    } else if (pkt->l34.proto == IPPROTO_ICMPV6) {
         return xpkt_decode_icmp6(coder, md, pkt);
     }
     return DP_PRET_OK;

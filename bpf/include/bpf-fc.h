@@ -10,7 +10,7 @@ xpkt_init_fib_v4_key(struct xpkt *pkt, struct dp_fcv4_key *key)
     key->saddr = pkt->l34.saddr4;
     key->sport = pkt->l34.source;
     key->dport = pkt->l34.dest;
-    key->l4proto = pkt->l34.nw_proto;
+    key->proto = pkt->l34.proto;
     key->pad = 0;
     key->in_port = 0;
     return 0;
@@ -123,14 +123,13 @@ __attribute__((__always_inline__)) static inline int
 dp_egr_main(void *ctx, struct xpkt *pkt)
 {
     if (pkt->l2.dl_type == ntohs(ETH_P_IP) &&
-        (pkt->l34.nw_proto == IPPROTO_TCP ||
-         pkt->l34.nw_proto == IPPROTO_UDP)) {
+        (pkt->l34.proto == IPPROTO_TCP || pkt->l34.proto == IPPROTO_UDP)) {
         struct dp_snat_opt_key key;
         struct dp_snat_opt_tact *adat = NULL;
 
         memset(&key, 0, sizeof(key));
         key.v6 = 0;
-        key.l4proto = pkt->l34.nw_proto;
+        key.proto = pkt->l34.proto;
         key.saddr = pkt->l34.saddr4;
         key.daddr = pkt->l34.daddr4;
         key.sport = ntohs(pkt->l34.source);
@@ -140,21 +139,21 @@ dp_egr_main(void *ctx, struct xpkt *pkt)
 
         if (adat != NULL) {
             if (pkt->pm.igr) {
-                if (pkt->l34.nw_proto == IPPROTO_TCP) {
+                if (pkt->l34.proto == IPPROTO_TCP) {
                     xpkt_csum_replace_tcp_dst_ip(ctx, pkt, adat->xaddr);
                     xpkt_csum_replace_tcp_dst_port(ctx, pkt,
                                                    htons(adat->xport));
-                } else if (pkt->l34.nw_proto == IPPROTO_UDP) {
+                } else if (pkt->l34.proto == IPPROTO_UDP) {
                     xpkt_csum_replace_udp_dst_ip(ctx, pkt, adat->xaddr);
                     xpkt_csum_replace_udp_dst_port(ctx, pkt,
                                                    htons(adat->xport));
                 }
             } else if (pkt->pm.egr) {
-                if (pkt->l34.nw_proto == IPPROTO_TCP) {
+                if (pkt->l34.proto == IPPROTO_TCP) {
                     xpkt_csum_replace_tcp_src_ip(ctx, pkt, adat->xaddr);
                     xpkt_csum_replace_tcp_src_port(ctx, pkt,
                                                    htons(adat->xport));
-                } else if (pkt->l34.nw_proto == IPPROTO_UDP) {
+                } else if (pkt->l34.proto == IPPROTO_UDP) {
                     xpkt_csum_replace_udp_src_ip(ctx, pkt, adat->xaddr);
                     xpkt_csum_replace_udp_src_port(ctx, pkt,
                                                    htons(adat->xport));

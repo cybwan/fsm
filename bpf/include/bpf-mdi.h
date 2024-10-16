@@ -140,7 +140,7 @@ struct xpkt_l2_meta {
 
 struct xpkt_l34_meta {
     __u8 tos;
-    __u8 nw_proto;
+    __u8 proto;
 
     __u8 valid;
     __u8 frg;

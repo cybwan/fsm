@@ -121,20 +121,20 @@ __attribute__((__always_inline__)) static inline int dp_do_nat(void *ctx,
 
     memset(&key, 0, sizeof(key));
     XADDR_COPY(key.daddr, pkt->l34.daddr);
-    if (pkt->l34.nw_proto != IPPROTO_ICMP) {
+    if (pkt->l34.proto != IPPROTO_ICMP) {
         key.dport = pkt->l34.dest;
     } else {
         key.dport = 0;
     }
     key.zone = pkt->pm.zone;
-    key.l4proto = pkt->l34.nw_proto;
+    key.proto = pkt->l34.proto;
     key.mark = (__u16)(pkt->pm.dp_mark & 0xffff);
     if (pkt->l2.dl_type == ntohs(ETH_P_IPV6)) {
         key.v6 = 1;
     }
 
     memset(&key, 0, sizeof(key));
-    key.l4proto = pkt->l34.nw_proto;
+    key.proto = pkt->l34.proto;
     key.v6 = 0;
 
     act = bpf_map_lookup_elem(&f4gw_nat, &key);
@@ -185,7 +185,7 @@ __attribute__((__always_inline__)) static inline int dp_do_nat(void *ctx,
         F4_PPLN_DROPC(pkt, F4_PIPE_RC_ACT_UNK);
     }
 
-    if (pkt->l34.nw_proto == IPPROTO_TCP || pkt->l34.nw_proto == IPPROTO_UDP) {
+    if (pkt->l34.proto == IPPROTO_TCP || pkt->l34.proto == IPPROTO_UDP) {
         struct dp_dnat_opt_key okey;
         struct dp_dnat_opt_tact oact;
 
@@ -193,7 +193,7 @@ __attribute__((__always_inline__)) static inline int dp_do_nat(void *ctx,
         memset(&oact, 0, sizeof(oact));
 
         okey.v6 = 0;
-        okey.l4proto = pkt->l34.nw_proto;
+        okey.proto = pkt->l34.proto;
         okey.xaddr = pkt->l34.saddr4;
         okey.xport = ntohs(pkt->l34.source);
 

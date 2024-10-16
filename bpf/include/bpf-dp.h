@@ -194,7 +194,7 @@ struct dp_fcv4_key {
     __u32 saddr;
     __u16 sport;
     __u16 dport;
-    __u8 l4proto;
+    __u8 proto;
     __u8 pad;
     __u16 in_port;
 };
@@ -239,7 +239,7 @@ struct dp_nat_key {
     __u16 dport;
     __u16 zone;
     __u16 mark;
-    __u8 l4proto;
+    __u8 proto;
     __u8 v6;
 };
 
@@ -277,7 +277,7 @@ struct dp_ct_key {
     __u16 sport;
     __u16 dport;
     __u16 zone;
-    __u8 l4proto;
+    __u8 proto;
     __u8 v6;
 };
 
@@ -313,7 +313,7 @@ struct dp_ct_ctrtact {
 struct dp_dnat_opt_key {
     __u32 xaddr;
     __u16 xport;
-    __u8 l4proto;
+    __u8 proto;
     __u8 v6;
 };
 
@@ -330,7 +330,7 @@ struct dp_snat_opt_key {
     __u32 saddr;
     __u16 dport;
     __u16 sport;
-    __u8 l4proto;
+    __u8 proto;
     __u8 v6;
 };
 
