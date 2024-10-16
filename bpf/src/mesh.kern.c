@@ -19,7 +19,7 @@
 #include "bpf-if.h"
 #include "bpf-l2.h"
 #include "bpf-l3.h"
-#include "bpf-fc.h"
+#include "bpf-fib.h"
 #include "bpf-lb.h"
 #include "bpf-ct.h"
 #include "bpf-pkt.h"
