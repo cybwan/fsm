@@ -22,3 +22,15 @@ test-init:
 test-reset:
 	@sudo ip link del cni0
 	@sudo ip netns del h1
+
+.PHONY: test-attach
+test-attach:
+	@sudo ip netns exec h1 tc qdisc add dev eth0 clsact
+	@sudo ip netns exec h1 tc filter add dev eth0 ingress bpf object-pinned /sys/fs/bpf/fsm/classifier_sidecar_ingress
+	@sudo ip netns exec h1 tc filter add dev eth0 egress bpf object-pinned /sys/fs/bpf/fsm/classifier_sidecar_egress
+
+.PHONY: test-detach
+test-detach:
+	@sudo ip netns exec h1 tc filter del dev eth0 ingress
+	@sudo ip netns exec h1 tc filter del dev eth0 egress
+	@sudo ip netns exec h1 tc qdisc del dev eth0 clsact

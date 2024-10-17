@@ -26,8 +26,8 @@
 
 char __LICENSE[] SEC("license") = "GPL";
 
-SEC("classifier/ingress")
-int tc_ingress(struct __sk_buff *ctx)
+SEC("classifier/sidecar/ingress")
+int sidecar_ingress(struct __sk_buff *ctx)
 {
     int z = 0;
     struct xpkt *pkt;
@@ -53,8 +53,8 @@ int tc_ingress(struct __sk_buff *ctx)
     return TC_ACT_OK;
 }
 
-SEC("classifier/egress")
-int tc_egress(struct __sk_buff *ctx)
+SEC("classifier/sidecar/egress")
+int sidecar_egress(struct __sk_buff *ctx)
 {
     int z = 0;
     struct xpkt *pkt;
