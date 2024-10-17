@@ -51,7 +51,7 @@ var (
 func GetTrafficControlIngressProg() *ebpf.Program {
 	if ingress == nil {
 		var err error
-		ingress, err = ebpf.LoadPinnedProgram("/sys/fs/bpf/mesh/classifier_ingress", nil)
+		ingress, err = ebpf.LoadPinnedProgram("/sys/fs/bpf/fsm/classifier_sidecar_ingress", nil)
 		if err != nil {
 			log.Error().Msgf("init ingress tc prog filed: %v", err)
 		}
@@ -63,7 +63,7 @@ func GetTrafficControlIngressProg() *ebpf.Program {
 func GetTrafficControlEgressProg() *ebpf.Program {
 	if egress == nil {
 		var err error
-		egress, err = ebpf.LoadPinnedProgram("/sys/fs/bpf/mesh/classifier_egress", nil)
+		egress, err = ebpf.LoadPinnedProgram("/sys/fs/bpf/fsm/classifier_sidecar_egress", nil)
 		if err != nil {
 			log.Error().Msgf("init egress tc prog filed: %v", err)
 		}
