@@ -134,7 +134,7 @@ dp_egr_main(void *ctx, struct xpkt *pkt)
         key.sport = ntohs(pkt->l34.source);
         key.dport = ntohs(pkt->l34.dest);
 
-        adat = bpf_map_lookup_elem(&f4gw_snat_opts, &key);
+        adat = bpf_map_lookup_elem(&fsm_snat_opt, &key);
 
         if (adat != NULL) {
             if (pkt->pm.igr) {

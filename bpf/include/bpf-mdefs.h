@@ -87,7 +87,7 @@ struct {
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_nat = {
+struct bpf_map_def SEC("maps") fsm_nat = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct dp_nat_key),
     .value_size = sizeof(struct dp_nat_tacts),
@@ -99,11 +99,11 @@ struct {
     __type(key, struct dp_nat_key);
     __type(value, struct dp_nat_tacts);
     __uint(max_entries, F4_NATV4_MAP_ENTRIES);
-} f4gw_nat SEC(".maps");
+} fsm_nat SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_nat_ep = {
+struct bpf_map_def SEC("maps") fsm_nat_ep = {
     .type = BPF_MAP_TYPE_ARRAY,
     .key_size = sizeof(__u32),
     .value_size = sizeof(struct dp_nat_epacts),
@@ -115,11 +115,11 @@ struct {
     __type(key, __u32);
     __type(value, struct dp_nat_epacts);
     __uint(max_entries, F4_NAT_EP_MAP_ENTRIES);
-} f4gw_nat_ep SEC(".maps");
+} fsm_nat_ep SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_xctk = {
+struct bpf_map_def SEC("maps") fsm_ct_key = {
     .type = BPF_MAP_TYPE_PERCPU_ARRAY,
     .key_size = sizeof(__u32),
     .value_size = sizeof(struct dp_ct_tact),
@@ -131,11 +131,11 @@ struct {
     __type(key, __u32);
     __type(value, struct dp_ct_tact);
     __uint(max_entries, 2);
-} f4gw_xctk SEC(".maps");
+} fsm_ct_key SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_ct_ctr = {
+struct bpf_map_def SEC("maps") fsm_ct_ctr = {
     .type = BPF_MAP_TYPE_ARRAY,
     .key_size = sizeof(__u32),
     .value_size = sizeof(struct dp_ct_ctrtact),
@@ -147,11 +147,11 @@ struct {
     __type(key, __u32);
     __type(value, struct dp_ct_ctrtact);
     __uint(max_entries, 1);
-} f4gw_ct_ctr SEC(".maps");
+} fsm_ct_ctr SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_ct = {
+struct bpf_map_def SEC("maps") fsm_ct = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct dp_ct_key),
     .value_size = sizeof(struct dp_ct_tact),
@@ -163,11 +163,11 @@ struct {
     __type(key, struct dp_ct_key);
     __type(value, struct dp_ct_tact);
     __uint(max_entries, F4_CT_MAP_ENTRIES);
-} f4gw_ct SEC(".maps");
+} fsm_ct SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_igr_ipv4 = {
+struct bpf_map_def SEC("maps") fsm_igr_ipv4 = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(__u32),
     .value_size = sizeof(__u8),
@@ -179,11 +179,11 @@ struct {
     __type(key, __u32);
     __type(value, __u8);
     __uint(max_entries, F4_MAX_IFI_ADDRS);
-} f4gw_igr_ipv4 SEC(".maps");
+} fsm_igr_ipv4 SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_egr_ipv4 = {
+struct bpf_map_def SEC("maps") fsm_egr_ipv4 = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(__u32),
     .value_size = sizeof(__u8),
@@ -195,11 +195,11 @@ struct {
     __type(key, __u32);
     __type(value, __u8);
     __uint(max_entries, F4_MAX_IFI_ADDRS);
-} f4gw_egr_ipv4 SEC(".maps");
+} fsm_egr_ipv4 SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_dnat_opts = {
+struct bpf_map_def SEC("maps") fsm_dnat_opt = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct dp_dnat_opt_key),
     .value_size = sizeof(struct dp_dnat_opt_tact),
@@ -213,11 +213,11 @@ struct {
     __type(value, struct dp_dnat_opt_tact);
     __uint(max_entries, F4_FCV4_MAP_ENTRIES);
     __uint(map_flags, BPF_F_NO_PREALLOC);
-} f4gw_dnat_opts SEC(".maps");
+} fsm_dnat_opt SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") f4gw_snat_opts = {
+struct bpf_map_def SEC("maps") fsm_snat_opt = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(struct dp_snat_opt_key),
     .value_size = sizeof(struct dp_snat_opt_tact),
@@ -231,6 +231,6 @@ struct {
     __type(value, struct dp_snat_opt_tact);
     __uint(max_entries, F4_FCV4_MAP_ENTRIES);
     __uint(map_flags, BPF_F_NO_PREALLOC);
-} f4gw_snat_opts SEC(".maps");
+} fsm_snat_opt SEC(".maps");
 #endif
 #endif

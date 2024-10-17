@@ -93,7 +93,7 @@ dp_do_ing_ct(void *ctx, struct xpkt *pkt, void *fa_)
     CT_KEY_GEN(&key, pkt);
 
     // pkt->pm.table_id = F4_DP_CT_MAP;
-    act = bpf_map_lookup_elem(&f4gw_ct, &key);
+    act = bpf_map_lookup_elem(&fsm_ct, &key);
     return dp_do_ctops(ctx, pkt, fa_, act);
 }
 

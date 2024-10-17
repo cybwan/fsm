@@ -85,7 +85,7 @@ xpkt_nat_endpoint(void *ctx, struct xpkt *pkt, struct dp_nat_tacts *act)
         struct dp_nat_epacts *epa;
         __u32 key = rule_num;
         __u32 lc = 0;
-        epa = bpf_map_lookup_elem(&f4gw_nat_ep, &key);
+        epa = bpf_map_lookup_elem(&fsm_nat_ep, &key);
         if (epa != NULL) {
             epa->ca.act_type = DP_SET_NACT_SESS;
             xpkt_spin_lock(&epa->lock);
@@ -137,7 +137,7 @@ xpkt_nat_proc(void *ctx, struct xpkt *pkt)
     key.proto = pkt->l34.proto;
     key.v6 = 0;
 
-    act = bpf_map_lookup_elem(&f4gw_nat, &key);
+    act = bpf_map_lookup_elem(&fsm_nat, &key);
     if (!act) {
         /* Default action - Nothing to do */
         pkt->pm.nf &= ~F4_NAT_DST;
@@ -203,7 +203,7 @@ xpkt_nat_proc(void *ctx, struct xpkt *pkt)
         oact.sport = ntohs(pkt->l34.source);
         oact.ts = bpf_ktime_get_ns();
 
-        bpf_map_update_elem(&f4gw_dnat_opts, &okey, &oact, BPF_ANY);
+        bpf_map_update_elem(&fsm_dnat_opt, &okey, &oact, BPF_ANY);
     }
 
     return 1;

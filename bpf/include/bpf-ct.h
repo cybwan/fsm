@@ -43,7 +43,7 @@ dp_ct_get_newctr(__u32 *nid)
     __u32 v = 0;
     struct dp_ct_ctrtact *ctr;
 
-    ctr = bpf_map_lookup_elem(&f4gw_ct_ctr, &k);
+    ctr = bpf_map_lookup_elem(&fsm_ct_ctr, &k);
 
     if (ctr == NULL) {
         return 0;
@@ -694,10 +694,10 @@ dp_ct_est(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
     int i, j, k;
 
     k = 0;
-    adat = bpf_map_lookup_elem(&f4gw_xctk, &k);
+    adat = bpf_map_lookup_elem(&fsm_ct_key, &k);
 
     k = 1;
-    axdat = bpf_map_lookup_elem(&f4gw_xctk, &k);
+    axdat = bpf_map_lookup_elem(&fsm_ct_key, &k);
 
     if (adat == NULL || axdat == NULL || tdat->xi.dsr || tdat->xi.nv6) {
         return 0;
@@ -715,14 +715,14 @@ dp_ct_est(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
                 key->sport = pkt->l2.ssnid;
                 key->dport = pkt->l2.ssnid;
                 adat->ctd.pi.frag = 1;
-                bpf_map_update_elem(&f4gw_ct, key, adat, BPF_ANY);
+                bpf_map_update_elem(&fsm_ct, key, adat, BPF_ANY);
             } else {
                 axdat->ctd.xi.osp = xkey->sport;
                 axdat->ctd.xi.odp = xkey->dport;
                 xkey->sport = pkt->l2.ssnid;
                 xkey->dport = pkt->l2.ssnid;
                 axdat->ctd.pi.frag = 1;
-                bpf_map_update_elem(&f4gw_ct, xkey, axdat, BPF_ANY);
+                bpf_map_update_elem(&fsm_ct, xkey, axdat, BPF_ANY);
             }
         }
         break;
@@ -754,10 +754,10 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
     int k;
 
     k = 0;
-    adat = bpf_map_lookup_elem(&f4gw_xctk, &k);
+    adat = bpf_map_lookup_elem(&fsm_ct_key, &k);
 
     k = 1;
-    axdat = bpf_map_lookup_elem(&f4gw_xctk, &k);
+    axdat = bpf_map_lookup_elem(&fsm_ct_key, &k);
 
     if (adat == NULL || axdat == NULL) {
         return smr;
@@ -811,8 +811,8 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
 
     dp_ct_proto_xfk_init(pkt, &key, xi, &xkey, xxi);
 
-    atdat = bpf_map_lookup_elem(&f4gw_ct, &key);
-    axtdat = bpf_map_lookup_elem(&f4gw_ct, &xkey);
+    atdat = bpf_map_lookup_elem(&fsm_ct, &key);
+    axtdat = bpf_map_lookup_elem(&fsm_ct, &xkey);
     if (pkt->pm.igr && (atdat == NULL || axtdat == NULL)) {
         adat->ca.ftrap = 0;
         adat->ca.oaux = 0;
@@ -884,11 +884,11 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
         axdat->ctd.pb.bytes = 0;
         axdat->ctd.pb.packets = 0;
 
-        bpf_map_update_elem(&f4gw_ct, &xkey, axdat, BPF_ANY);
-        bpf_map_update_elem(&f4gw_ct, &key, adat, BPF_ANY);
+        bpf_map_update_elem(&fsm_ct, &xkey, axdat, BPF_ANY);
+        bpf_map_update_elem(&fsm_ct, &key, adat, BPF_ANY);
 
-        atdat = bpf_map_lookup_elem(&f4gw_ct, &key);
-        axtdat = bpf_map_lookup_elem(&f4gw_ct, &xkey);
+        atdat = bpf_map_lookup_elem(&fsm_ct, &key);
+        axtdat = bpf_map_lookup_elem(&fsm_ct, &xkey);
     }
 
     if (atdat != NULL && axtdat != NULL) {
@@ -919,8 +919,8 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
                 axtdat->ca.act_type = DP_SET_NOP;
             }
         } else if (smr == CT_SMR_ERR || smr == CT_SMR_CTD) {
-            bpf_map_delete_elem(&f4gw_ct, &xkey);
-            bpf_map_delete_elem(&f4gw_ct, &key);
+            bpf_map_delete_elem(&fsm_ct, &xkey);
+            bpf_map_delete_elem(&fsm_ct, &key);
             // F4_DBG_PRINTK("[CTRK] bpf_map_delete_elem");
 
             if (atdat->ctd.dir == CT_DIR_IN) {
