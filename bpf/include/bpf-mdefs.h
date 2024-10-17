@@ -89,15 +89,15 @@ struct {
 #ifdef LEGACY_BPF_MAPS
 struct bpf_map_def SEC("maps") fsm_nat = {
     .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(struct dp_nat_key),
-    .value_size = sizeof(struct dp_nat_tacts),
+    .key_size = sizeof(struct xpkt_nat_key),
+    .value_size = sizeof(struct xpkt_nat_ops),
     .max_entries = F4_NATV4_MAP_ENTRIES,
 };
 #else /* New BTF definitions */
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
-    __type(key, struct dp_nat_key);
-    __type(value, struct dp_nat_tacts);
+    __type(key, struct xpkt_nat_key);
+    __type(value, struct xpkt_nat_ops);
     __uint(max_entries, F4_NATV4_MAP_ENTRIES);
 } fsm_nat SEC(".maps");
 #endif
@@ -106,14 +106,14 @@ struct {
 struct bpf_map_def SEC("maps") fsm_nat_ep = {
     .type = BPF_MAP_TYPE_ARRAY,
     .key_size = sizeof(__u32),
-    .value_size = sizeof(struct dp_nat_epacts),
+    .value_size = sizeof(struct xpkt_nat_ep_ops),
     .max_entries = F4_NAT_EP_MAP_ENTRIES,
 };
 #else /* New BTF definitions */
 struct {
     __uint(type, BPF_MAP_TYPE_ARRAY);
     __type(key, __u32);
-    __type(value, struct dp_nat_epacts);
+    __type(value, struct xpkt_nat_ep_ops);
     __uint(max_entries, F4_NAT_EP_MAP_ENTRIES);
 } fsm_nat_ep SEC(".maps");
 #endif

@@ -21,7 +21,7 @@ xpkt_nat_set(void *ctx, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_nat_endpoint(void *ctx, struct xpkt *pkt, struct dp_nat_tacts *act)
+xpkt_nat_endpoint(void *ctx, struct xpkt *pkt, struct xpkt_nat_ops *act)
 {
     int sel = -1;
     __u8 n = 0;
@@ -82,7 +82,7 @@ xpkt_nat_endpoint(void *ctx, struct xpkt *pkt, struct dp_nat_tacts *act)
         act->lts = now;
         xpkt_spin_unlock(&act->lock);
     } else if (act->sel_type == NAT_LB_SEL_LC) {
-        struct dp_nat_epacts *epa;
+        struct xpkt_nat_ep_ops *epa;
         __u32 key = rule_num;
         __u32 lc = 0;
         epa = bpf_map_lookup_elem(&fsm_nat_ep, &key);
@@ -114,9 +114,9 @@ xpkt_nat_endpoint(void *ctx, struct xpkt *pkt, struct dp_nat_tacts *act)
 __attribute__((__always_inline__)) static inline int
 xpkt_nat_proc(void *ctx, struct xpkt *pkt)
 {
-    struct dp_nat_key key;
+    struct xpkt_nat_key key;
     struct dp_xfrm_inf *nxfrm_act;
-    struct dp_nat_tacts *act;
+    struct xpkt_nat_ops *act;
     int sel;
 
     memset(&key, 0, sizeof(key));

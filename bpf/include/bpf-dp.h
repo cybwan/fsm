@@ -232,7 +232,7 @@ struct xpkt_fib4_ops {
     struct xpkt_fib4_op ops[F4_FCV4_MAP_ACTS];
 };
 
-struct dp_nat_key {
+struct xpkt_nat_key {
     __u32 daddr[4];
     __u16 dport;
     __u16 zone;
@@ -249,7 +249,7 @@ struct dp_nat_key {
 
 #define NAT_LB_PERSIST_TIMEOUT (10800000000000ULL)
 
-struct dp_nat_tacts {
+struct xpkt_nat_ops {
     struct dp_cmn_act ca;
     __u64 ito;
     __u64 pto;
@@ -263,7 +263,7 @@ struct dp_nat_tacts {
     __u64 base_to;
 };
 
-struct dp_nat_epacts {
+struct xpkt_nat_ep_ops {
     struct dp_cmn_act ca;
     struct bpf_spin_lock lock;
     __u32 active_sess[F4_MAX_NXFRMS];
