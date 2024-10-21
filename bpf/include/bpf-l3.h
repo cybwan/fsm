@@ -90,7 +90,6 @@ dp_do_ing_ct(skb_t *skb, struct xpkt *pkt, void *fa_)
     struct dp_ct_key key;
     struct dp_ct_tact *act;
 
-    key.zone = 0;
     XADDR_COPY(key.daddr, pkt->l34.daddr);
     XADDR_COPY(key.saddr, pkt->l34.saddr);
     key.sport = pkt->l34.source;

@@ -253,10 +253,9 @@ struct dp_ct_key {
     __u32 saddr[4];
     __u16 sport;
     __u16 dport;
-    __u16 zone;
     __u8 proto;
     __u8 v6;
-};
+} __attribute__((packed));
 
 struct dp_ct_tact {
     struct dp_cmn_act ca; /* Possible actions :

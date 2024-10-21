@@ -57,7 +57,6 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key,
     xkey->sport = key->dport;
     xkey->dport = key->sport;
     xkey->proto = key->proto;
-    xkey->zone = key->zone;
     xkey->v6 = key->v6;
 
     /* Apply NAT xfrm if needed */
@@ -725,7 +724,6 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
     key.sport = pkt->l34.source;
     key.dport = pkt->l34.dest;
     key.proto = pkt->l34.proto;
-    key.zone = 0;
     key.v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;
 
     if (key.proto != IPPROTO_TCP && key.proto != IPPROTO_UDP &&
