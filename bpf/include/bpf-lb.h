@@ -74,7 +74,6 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
     } else {
         key.dport = 0;
     }
-    key.zone = pkt->ctx.zone;
     key.proto = pkt->l34.proto;
     if (pkt->l2.dl_type == ntohs(ETH_P_IPV6)) {
         key.v6 = 1;
