@@ -65,8 +65,9 @@ dp_ct_get_newctr(__u32 *nid)
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key, nxfrm_inf_t *xi,
-                     struct dp_ct_key *xkey, nxfrm_inf_t *xxi)
+dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key,
+                     nat_endpoint_t *xi, struct dp_ct_key *xkey,
+                     nat_endpoint_t *xxi)
 {
     XADDR_COPY(xkey->daddr, key->saddr);
     XADDR_COPY(xkey->saddr, key->daddr);
@@ -748,8 +749,8 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
     struct dp_ct_tact *axdat;
     struct dp_ct_tact *atdat;
     struct dp_ct_tact *axtdat;
-    nxfrm_inf_t *xi;
-    nxfrm_inf_t *xxi;
+    nat_endpoint_t *xi;
+    nat_endpoint_t *xxi;
     int smr = CT_SMR_ERR;
     int k;
 

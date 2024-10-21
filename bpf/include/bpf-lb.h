@@ -21,90 +21,43 @@ xpkt_nat_set(skb_t *skb, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_nat_endpoint(skb_t *skb, struct xpkt *pkt, struct xpkt_nat_ops *act)
+xpkt_nat_endpoint(skb_t *skb, struct xpkt *pkt, struct xpkt_nat_ops *ops)
 {
     int sel = -1;
     __u8 n = 0;
     __u16 i = 0;
-    struct dp_xfrm_inf *nxfrm_act;
-    __u16 rule_num = act->ca.cidx;
+    struct xpkt_nat_endpoint *nxfrm_act;
 
-    if (act->sel_type == NAT_LB_SEL_RR) {
-        xpkt_spin_lock(&act->lock);
-        i = act->sel_hint;
+    if (ops->algo == NAT_LB_RDRB) {
+        xpkt_spin_lock(&ops->lock);
+        i = ops->sel_hint;
 
         while (n < F4_MAX_NXFRMS) {
             if (i >= 0 && i < F4_MAX_NXFRMS) {
-                nxfrm_act = &act->nxfrms[i];
+                nxfrm_act = &ops->nxfrms[i];
                 if (nxfrm_act->inactive == 0) {
-                    act->sel_hint = (i + 1) % act->nxfrm;
+                    ops->sel_hint = (i + 1) % ops->nxfrm;
                     sel = i;
                     break;
                 }
             }
             i++;
-            i = i % act->nxfrm;
+            i = i % ops->nxfrm;
             n++;
         }
-        xpkt_spin_unlock(&act->lock);
-    } else if (act->sel_type == NAT_LB_SEL_HASH) {
-        sel = xpkt_get_pkt_hash(skb) % act->nxfrm;
+        xpkt_spin_unlock(&ops->lock);
+    } else if (ops->algo == NAT_LB_HASH) {
+        sel = xpkt_get_pkt_hash(skb) % ops->nxfrm;
         if (sel >= 0 && sel < F4_MAX_NXFRMS) {
             /* Fall back if hash selection gives us a deadend */
-            if (act->nxfrms[sel].inactive) {
+            if (ops->nxfrms[sel].inactive) {
                 for (i = 0; i < F4_MAX_NXFRMS; i++) {
-                    if (act->nxfrms[i].inactive == 0) {
+                    if (ops->nxfrms[i].inactive == 0) {
                         sel = i;
                         break;
                     }
                 }
             }
-        }
-    } else if (act->sel_type == NAT_LB_SEL_RR_PERSIST) {
-        __u64 now = bpf_ktime_get_ns();
-        __u64 base;
-        __u64 tfc = 0;
-
-        xpkt_spin_lock(&act->lock);
-        if (act->base_to == 0 || now - act->lts > act->pto) {
-            act->base_to = (now / act->pto) * act->pto;
-        }
-        base = act->base_to;
-        if (act->pto) {
-            tfc = base / act->pto;
-        } else {
-            act->pto = NAT_LB_PERSIST_TIMEOUT;
-            tfc = base / NAT_LB_PERSIST_TIMEOUT;
-        }
-        sel = (pkt->l34.saddr4 & 0xff) ^ ((pkt->l34.saddr4 >> 24) & 0xff) ^
-              (tfc & 0xff);
-        sel %= act->nxfrm;
-        act->lts = now;
-        xpkt_spin_unlock(&act->lock);
-    } else if (act->sel_type == NAT_LB_SEL_LC) {
-        struct xpkt_nat_ep_ops *epa;
-        __u32 key = rule_num;
-        __u32 lc = 0;
-        epa = bpf_map_lookup_elem(&fsm_nat_ep, &key);
-        if (epa != NULL) {
-            epa->ca.act_type = DP_SET_NACT_SESS;
-            xpkt_spin_lock(&epa->lock);
-            for (i = 0; i < F4_MAX_NXFRMS; i++) {
-                __u32 as = epa->active_sess[i];
-                if (sel < 0) {
-                    sel = i;
-                    lc = as;
-                } else {
-                    if (lc > as) {
-                        sel = i;
-                        lc = as;
-                    }
-                }
-            }
-            if (sel >= 0 && sel < F4_MAX_NXFRMS) {
-                epa->active_sess[sel]++;
-            }
-            xpkt_spin_unlock(&epa->lock);
         }
     }
 
@@ -115,8 +68,8 @@ __attribute__((__always_inline__)) static inline int
 xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
 {
     struct xpkt_nat_key key;
-    struct dp_xfrm_inf *nxfrm_act;
-    struct xpkt_nat_ops *act;
+    struct xpkt_nat_endpoint *nxfrm_act;
+    struct xpkt_nat_ops *ops;
     int sel;
 
     memset(&key, 0, sizeof(key));
@@ -137,25 +90,22 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
     key.proto = pkt->l34.proto;
     key.v6 = 0;
 
-    act = bpf_map_lookup_elem(&fsm_nat, &key);
-    if (!act) {
+    ops = bpf_map_lookup_elem(&fsm_nat, &key);
+    if (!ops) {
         /* Default action - Nothing to do */
         pkt->ctx.nf &= ~F4_NAT_DST;
         return 0;
     }
 
-    if (act->ca.act_type == DP_SET_SNAT || act->ca.act_type == DP_SET_DNAT) {
-        sel = xpkt_nat_endpoint(skb, pkt, act);
-
-        pkt->nat.dsr = act->ca.oaux ? 1 : 0;
-        pkt->nat.cdis = act->cdis ? 1 : 0;
-        pkt->ctx.nf = act->ca.act_type == DP_SET_SNAT ? F4_NAT_SRC : F4_NAT_DST;
+    if (ops->nat_type == DP_SET_SNAT || ops->nat_type == DP_SET_DNAT) {
+        sel = xpkt_nat_endpoint(skb, pkt, ops);
+        pkt->ctx.nf = ops->nat_type == DP_SET_SNAT ? F4_NAT_SRC : F4_NAT_DST;
 
         /* FIXME - Do not select inactive end-points
          * Need multi-passes for selection
          */
         if (sel >= 0 && sel < F4_MAX_NXFRMS) {
-            nxfrm_act = &act->nxfrms[sel];
+            nxfrm_act = &ops->nxfrms[sel];
 
             XADDR_COPY(pkt->nat.nxip, nxfrm_act->nat_xip);
             XADDR_COPY(pkt->nat.nrip, nxfrm_act->nat_rip);
@@ -171,8 +121,7 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
 
             pkt->nat.nv6 = nxfrm_act->nv6 ? 1 : 0;
             pkt->nat.sel_aid = sel;
-            pkt->nat.ito = act->ito;
-            pkt->ctx.rule_id = act->ca.cidx;
+            pkt->nat.ito = ops->ito;
 
             /* Special case related to host-dnat */
             if (pkt->l34.saddr4 == pkt->nat.nxip4 &&

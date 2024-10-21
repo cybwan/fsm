@@ -154,7 +154,7 @@ struct dp_rdr_act {
 #define nat_xip4 nat_xip[0]
 #define nat_rip4 nat_rip[0]
 
-struct dp_xfrm_inf {
+struct xpkt_nat_endpoint {
     /* F4_NAT_XXX flags */
     __u8 nat_flags;
     __u8 inactive;
@@ -172,7 +172,7 @@ struct dp_xfrm_inf {
     __u16 osp; // original src port
     __u16 odp; // original dst port
 };
-typedef struct dp_xfrm_inf nxfrm_inf_t;
+typedef struct xpkt_nat_endpoint nat_endpoint_t;
 
 struct dp_pb_stats {
     __u64 bytes;
@@ -187,7 +187,7 @@ struct dp_ct_dat {
     ct_pinf_t pi;
     ct_dir_t dir;
     ct_smr_t smr;
-    nxfrm_inf_t xi;
+    nat_endpoint_t xi;
     dp_pb_stats_t pb;
 };
 
@@ -243,24 +243,20 @@ struct xpkt_nat_key {
     __u8 v6;
 };
 
-#define NAT_LB_SEL_RR 0
-#define NAT_LB_SEL_HASH 1
-#define NAT_LB_SEL_PRIO 2
-#define NAT_LB_SEL_RR_PERSIST 3
-#define NAT_LB_SEL_LC 4
+#define NAT_LB_RDRB 0
+#define NAT_LB_HASH 1
 
 #define NAT_LB_PERSIST_TIMEOUT (10800000000000ULL)
 
 struct xpkt_nat_ops {
-    struct dp_cmn_act ca;
+    __u8 nat_type;
     __u64 ito;
     __u64 pto;
     struct bpf_spin_lock lock;
-    __u8 cdis;
     __u16 sel_hint;
-    __u16 sel_type;
+    __u16 algo;
     __u16 nxfrm;
-    struct dp_xfrm_inf nxfrms[F4_MAX_NXFRMS];
+    struct xpkt_nat_endpoint nxfrms[F4_MAX_NXFRMS];
     __u64 lts;
     __u64 base_to;
 };
