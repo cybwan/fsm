@@ -155,13 +155,9 @@ struct dp_rdr_act {
 #define nat_rip4 nat_rip[0]
 
 struct xpkt_nat_endpoint {
-    /* F4_NAT_XXX flags */
     __u8 nat_flags;
-    __u8 inactive;
-    __u8 wprio;
-    __u8 nv6;
-    __u8 dsr;
-    __u8 _padding;
+    __u8 inactive : 4;
+    __u8 nv6 : 4;
     __u16 nat_xifi;
     __u16 nat_xport;
     __u16 nat_rport;
@@ -169,8 +165,6 @@ struct xpkt_nat_endpoint {
     __u32 nat_rip[4];
     __u8 nat_xmac[6];
     __u8 nat_rmac[6];
-    __u16 osp; // original src port
-    __u16 odp; // original dst port
 };
 typedef struct xpkt_nat_endpoint nat_endpoint_t;
 

@@ -77,17 +77,6 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key,
     xkey->zone = key->zone;
     xkey->v6 = key->v6;
 
-    if (xi->dsr) {
-        if (xi->nat_flags & F4_NAT_DST) {
-            xxi->nat_flags = F4_NAT_SRC;
-            XADDR_COPY(xxi->nat_xip, key->daddr);
-            xxi->nat_xport = key->dport;
-            xxi->nv6 = xi->nv6;
-        }
-        xxi->dsr = xi->dsr;
-        return 0;
-    }
-
     /* Apply NAT xfrm if needed */
     if (xi->nat_flags & F4_NAT_DST) {
         xkey->v6 = (__u8)(xi->nv6);
@@ -700,7 +689,7 @@ dp_ct_est(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
     k = 1;
     axdat = bpf_map_lookup_elem(&fsm_ct_key, &k);
 
-    if (adat == NULL || axdat == NULL || tdat->xi.dsr || tdat->xi.nv6) {
+    if (adat == NULL || axdat == NULL || tdat->xi.nv6) {
         return 0;
     }
 
@@ -711,15 +700,11 @@ dp_ct_est(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
     case IPPROTO_UDP:
         if (pkt->l2.ssnid) {
             if (pkt->ctx.dir == CT_DIR_IN) {
-                adat->ctd.xi.osp = key->sport;
-                adat->ctd.xi.odp = key->dport;
                 key->sport = pkt->l2.ssnid;
                 key->dport = pkt->l2.ssnid;
                 adat->ctd.pi.frag = 1;
                 bpf_map_update_elem(&fsm_ct, key, adat, BPF_ANY);
             } else {
-                axdat->ctd.xi.osp = xkey->sport;
-                axdat->ctd.xi.odp = xkey->dport;
                 xkey->sport = pkt->l2.ssnid;
                 xkey->dport = pkt->l2.ssnid;
                 axdat->ctd.pi.frag = 1;
@@ -790,7 +775,6 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
     xi->nat_xport = pkt->nat.nxport;
     xi->nat_rport = pkt->nat.nrport;
     xi->nv6 = pkt->nat.nv6;
-    xi->dsr = pkt->nat.dsr;
 
     xxi->nat_flags = 0;
     xxi->nat_xport = 0;
