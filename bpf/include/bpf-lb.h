@@ -26,7 +26,18 @@ xpkt_nat_lb(skb_t *skb, struct xpkt *pkt, struct xpkt_nat_ops *ops)
     __u8 ep_sel = 0;
     struct xpkt_nat_lb *ep;
 
+    if (ops->lb_algo == NAT_LB_HASH) {
+        bpf_set_hash_invalid(skb);
+        sel = bpf_get_hash_recalc(skb) % ops->ep_cnt;
+        if (sel >= 0 && sel < F4_MAX_ENDPOINTS) {
+            if (ops->endpoints[sel].inactive) {
+                goto lb_rr;
+            }
+        }
+    }
+
     if (ops->lb_algo == NAT_LB_RDRB) {
+    lb_rr:
         xpkt_spin_lock(&ops->lock);
         ep_sel = ops->ep_sel;
         while (ep_idx < F4_MAX_ENDPOINTS) {
@@ -43,18 +54,6 @@ xpkt_nat_lb(skb_t *skb, struct xpkt *pkt, struct xpkt_nat_ops *ops)
             ep_idx++;
         }
         xpkt_spin_unlock(&ops->lock);
-    } else if (ops->lb_algo == NAT_LB_HASH) {
-        sel = xpkt_get_pkt_hash(skb) % ops->ep_cnt;
-        if (sel >= 0 && sel < F4_MAX_ENDPOINTS) {
-            if (ops->endpoints[sel].inactive) {
-                for (ep_sel = 0; ep_sel < F4_MAX_ENDPOINTS; ep_sel++) {
-                    if (ops->endpoints[ep_sel].inactive == 0) {
-                        sel = ep_sel;
-                        break;
-                    }
-                }
-            }
-        }
     }
 
     return sel;

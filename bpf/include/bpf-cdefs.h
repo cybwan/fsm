@@ -38,13 +38,6 @@
         F->ctx.rcode = C;                                                      \
     } while (0)
 
-__attribute__((__always_inline__)) static inline __u32
-xpkt_get_pkt_hash(void *md)
-{
-    bpf_set_hash_invalid(md);
-    return bpf_get_hash_recalc(md);
-}
-
 __attribute__((__always_inline__)) static inline int
 xpkt_skb_buf_add_l2(void *md, int delta)
 {
