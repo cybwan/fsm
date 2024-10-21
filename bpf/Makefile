@@ -9,6 +9,8 @@ format:
 .PHONY: test-init
 test-init: test-reset
 	# Configure load-balancer end-point h1
+	@echo 1 > /proc/sys/net/ipv4/ip_forward
+	@sudo iptables -t nat -A POSTROUTING -o ens33 -j MASQUERADE
 	@sudo ip netns add h1
 	@sudo ip link add cni0 type veth peer name eth0 netns h1
 	@sudo ip link set cni0 up
@@ -22,6 +24,7 @@ test-init: test-reset
 test-reset:
 	@sudo ip link del cni0 || true
 	@sudo ip netns del h1 || true
+	@sudo iptables -t nat -F || true
 
 .PHONY: test-attach
 test-attach:
