@@ -76,11 +76,7 @@ type bpfDpCtTact struct {
 		Smr uint32
 		Xi  struct {
 			NatFlags uint8
-			Inactive uint8
-			Wprio    uint8
 			Nv6      uint8
-			Dsr      uint8
-			Padding  uint8
 			NatXifi  uint16
 			NatXport uint16
 			NatRport uint16
@@ -88,10 +84,9 @@ type bpfDpCtTact struct {
 			NatRip   [4]uint32
 			NatXmac  [6]uint8
 			NatRmac  [6]uint8
-			Osp      uint16
-			Odp      uint16
+			Inactive uint8
+			_        [3]byte
 		}
-		_  [4]byte
 		Pb struct {
 			Bytes   uint64
 			Packets uint64
@@ -197,14 +192,13 @@ type bpfXpkt struct {
 		SelAid     uint8
 		Nv6        uint8
 		XlateProto uint8
-		Dsr        uint8
-		Cdis       uint8
+		_          [2]byte
 		Ito        uint64
 	}
-	Pm struct {
+	Ctx struct {
 		Bd        uint16
 		PyBytes   uint16
-		PipeAct   uint8
+		Act       uint8
 		L3Off     uint8
 		Phit      uint16
 		NhNum     uint16
@@ -285,20 +279,6 @@ type bpfXpktFib4Ops struct {
 	_ [4]byte
 }
 
-type bpfXpktNatEpOps struct {
-	Ca struct {
-		ActType uint8
-		Ftrap   uint8
-		Oaux    uint16
-		Cidx    uint32
-		Fwrid   uint32
-		Mark    uint16
-		Record  uint16
-	}
-	Lock       struct{ Val uint32 }
-	ActiveSess [16]uint32
-}
-
 type bpfXpktNatKey struct {
 	Daddr [4]uint32
 	Dport uint16
@@ -309,30 +289,17 @@ type bpfXpktNatKey struct {
 }
 
 type bpfXpktNatOps struct {
-	Ca struct {
-		ActType uint8
-		Ftrap   uint8
-		Oaux    uint16
-		Cidx    uint32
-		Fwrid   uint32
-		Mark    uint16
-		Record  uint16
-	}
-	Ito     uint64
-	Pto     uint64
-	Lock    struct{ Val uint32 }
-	Cdis    uint8
-	_       [1]byte
-	SelHint uint16
-	SelType uint16
-	Nxfrm   uint16
-	Nxfrms  [16]struct {
+	Ito       uint64
+	Pto       uint64
+	Lock      struct{ Val uint32 }
+	NatType   uint8
+	_         [1]byte
+	LbAlgo    uint16
+	EpSel     uint16
+	EpCnt     uint16
+	Endpoints [16]struct {
 		NatFlags uint8
-		Inactive uint8
-		Wprio    uint8
 		Nv6      uint8
-		Dsr      uint8
-		Padding  uint8
 		NatXifi  uint16
 		NatXport uint16
 		NatRport uint16
@@ -340,12 +307,10 @@ type bpfXpktNatOps struct {
 		NatRip   [4]uint32
 		NatXmac  [6]uint8
 		NatRmac  [6]uint8
-		Osp      uint16
-		Odp      uint16
+		Inactive uint8
+		_        [3]byte
 	}
-	_      [4]byte
-	Lts    uint64
-	BaseTo uint64
+	_ [4]byte
 }
 
 // loadBpf returns the embedded CollectionSpec for bpf.
@@ -389,11 +354,11 @@ type bpfSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfProgramSpecs struct {
+	SidecarEgress   *ebpf.ProgramSpec `ebpf:"sidecar_egress"`
+	SidecarIngress  *ebpf.ProgramSpec `ebpf:"sidecar_ingress"`
 	TcConnTrackFunc *ebpf.ProgramSpec `ebpf:"tc_conn_track_func"`
 	TcDrop          *ebpf.ProgramSpec `ebpf:"tc_drop"`
-	TcEgress        *ebpf.ProgramSpec `ebpf:"tc_egress"`
 	TcHandShakeFunc *ebpf.ProgramSpec `ebpf:"tc_hand_shake_func"`
-	TcIngress       *ebpf.ProgramSpec `ebpf:"tc_ingress"`
 	TcPass          *ebpf.ProgramSpec `ebpf:"tc_pass"`
 }
 
@@ -411,7 +376,6 @@ type bpfMapSpecs struct {
 	FsmFib4Ops *ebpf.MapSpec `ebpf:"fsm_fib4_ops"`
 	FsmIgrIpv4 *ebpf.MapSpec `ebpf:"fsm_igr_ipv4"`
 	FsmNat     *ebpf.MapSpec `ebpf:"fsm_nat"`
-	FsmNatEp   *ebpf.MapSpec `ebpf:"fsm_nat_ep"`
 	FsmProgs   *ebpf.MapSpec `ebpf:"fsm_progs"`
 	FsmSnatOpt *ebpf.MapSpec `ebpf:"fsm_snat_opt"`
 	FsmXpkts   *ebpf.MapSpec `ebpf:"fsm_xpkts"`
@@ -446,7 +410,6 @@ type bpfMaps struct {
 	FsmFib4Ops *ebpf.Map `ebpf:"fsm_fib4_ops"`
 	FsmIgrIpv4 *ebpf.Map `ebpf:"fsm_igr_ipv4"`
 	FsmNat     *ebpf.Map `ebpf:"fsm_nat"`
-	FsmNatEp   *ebpf.Map `ebpf:"fsm_nat_ep"`
 	FsmProgs   *ebpf.Map `ebpf:"fsm_progs"`
 	FsmSnatOpt *ebpf.Map `ebpf:"fsm_snat_opt"`
 	FsmXpkts   *ebpf.Map `ebpf:"fsm_xpkts"`
@@ -464,7 +427,6 @@ func (m *bpfMaps) Close() error {
 		m.FsmFib4Ops,
 		m.FsmIgrIpv4,
 		m.FsmNat,
-		m.FsmNatEp,
 		m.FsmProgs,
 		m.FsmSnatOpt,
 		m.FsmXpkts,
@@ -475,21 +437,21 @@ func (m *bpfMaps) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfPrograms struct {
+	SidecarEgress   *ebpf.Program `ebpf:"sidecar_egress"`
+	SidecarIngress  *ebpf.Program `ebpf:"sidecar_ingress"`
 	TcConnTrackFunc *ebpf.Program `ebpf:"tc_conn_track_func"`
 	TcDrop          *ebpf.Program `ebpf:"tc_drop"`
-	TcEgress        *ebpf.Program `ebpf:"tc_egress"`
 	TcHandShakeFunc *ebpf.Program `ebpf:"tc_hand_shake_func"`
-	TcIngress       *ebpf.Program `ebpf:"tc_ingress"`
 	TcPass          *ebpf.Program `ebpf:"tc_pass"`
 }
 
 func (p *bpfPrograms) Close() error {
 	return _BpfClose(
+		p.SidecarEgress,
+		p.SidecarIngress,
 		p.TcConnTrackFunc,
 		p.TcDrop,
-		p.TcEgress,
 		p.TcHandShakeFunc,
-		p.TcIngress,
 		p.TcPass,
 	)
 }

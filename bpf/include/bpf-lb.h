@@ -19,39 +19,37 @@ xpkt_nat_set(skb_t *skb, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_nat_endpoint(skb_t *skb, struct xpkt *pkt, struct xpkt_nat_ops *ops)
+xpkt_nat_lb(skb_t *skb, struct xpkt *pkt, struct xpkt_nat_ops *ops)
 {
     int sel = -1;
-    __u8 n = 0;
-    __u16 i = 0;
-    struct xpkt_nat_endpoint *nxfrm_act;
+    __u8 ep_idx = 0;
+    __u8 ep_sel = 0;
+    struct xpkt_nat_lb *ep;
 
-    if (ops->algo == NAT_LB_RDRB) {
+    if (ops->lb_algo == NAT_LB_RDRB) {
         xpkt_spin_lock(&ops->lock);
-        i = ops->sel_hint;
-
-        while (n < F4_MAX_NXFRMS) {
-            if (i >= 0 && i < F4_MAX_NXFRMS) {
-                nxfrm_act = &ops->nxfrms[i];
-                if (nxfrm_act->inactive == 0) {
-                    ops->sel_hint = (i + 1) % ops->nxfrm;
-                    sel = i;
+        ep_sel = ops->ep_sel;
+        while (ep_idx < F4_MAX_ENDPOINTS) {
+            if (ep_sel < F4_MAX_ENDPOINTS) {
+                ep = &ops->endpoints[ep_sel];
+                if (ep->inactive == 0) {
+                    ops->ep_sel = (ep_sel + 1) % ops->ep_cnt;
+                    sel = ep_sel;
                     break;
                 }
             }
-            i++;
-            i = i % ops->nxfrm;
-            n++;
+            ep_sel++;
+            ep_sel = ep_sel % ops->ep_cnt;
+            ep_idx++;
         }
         xpkt_spin_unlock(&ops->lock);
-    } else if (ops->algo == NAT_LB_HASH) {
-        sel = xpkt_get_pkt_hash(skb) % ops->nxfrm;
-        if (sel >= 0 && sel < F4_MAX_NXFRMS) {
-            /* Fall back if hash selection gives us a deadend */
-            if (ops->nxfrms[sel].inactive) {
-                for (i = 0; i < F4_MAX_NXFRMS; i++) {
-                    if (ops->nxfrms[i].inactive == 0) {
-                        sel = i;
+    } else if (ops->lb_algo == NAT_LB_HASH) {
+        sel = xpkt_get_pkt_hash(skb) % ops->ep_cnt;
+        if (sel >= 0 && sel < F4_MAX_ENDPOINTS) {
+            if (ops->endpoints[sel].inactive) {
+                for (ep_sel = 0; ep_sel < F4_MAX_ENDPOINTS; ep_sel++) {
+                    if (ops->endpoints[ep_sel].inactive == 0) {
+                        sel = ep_sel;
                         break;
                     }
                 }
@@ -66,7 +64,7 @@ __attribute__((__always_inline__)) static inline int
 xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
 {
     struct xpkt_nat_key key;
-    struct xpkt_nat_endpoint *nxfrm_act;
+    struct xpkt_nat_lb *ep;
     struct xpkt_nat_ops *ops;
     int sel;
 
@@ -96,28 +94,28 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
     }
 
     if (ops->nat_type == DP_SET_SNAT || ops->nat_type == DP_SET_DNAT) {
-        sel = xpkt_nat_endpoint(skb, pkt, ops);
+        sel = xpkt_nat_lb(skb, pkt, ops);
         pkt->ctx.nf = ops->nat_type == DP_SET_SNAT ? F4_NAT_SRC : F4_NAT_DST;
 
         /* FIXME - Do not select inactive end-points
          * Need multi-passes for selection
          */
-        if (sel >= 0 && sel < F4_MAX_NXFRMS) {
-            nxfrm_act = &ops->nxfrms[sel];
+        if (sel >= 0 && sel < F4_MAX_ENDPOINTS) {
+            ep = &ops->endpoints[sel];
 
-            XADDR_COPY(pkt->nat.nxip, nxfrm_act->nat_xip);
-            XADDR_COPY(pkt->nat.nrip, nxfrm_act->nat_rip);
-            XMAC_COPY(pkt->nat.nxmac, nxfrm_act->nat_xmac);
-            XMAC_COPY(pkt->nat.nrmac, nxfrm_act->nat_rmac);
-            pkt->nat.nxifi = nxfrm_act->nat_xifi;
-            pkt->nat.nrport = nxfrm_act->nat_rport;
-            if (nxfrm_act->nat_xport) {
-                pkt->nat.nxport = nxfrm_act->nat_xport;
+            XADDR_COPY(pkt->nat.nxip, ep->nat_xip);
+            XADDR_COPY(pkt->nat.nrip, ep->nat_rip);
+            XMAC_COPY(pkt->nat.nxmac, ep->nat_xmac);
+            XMAC_COPY(pkt->nat.nrmac, ep->nat_rmac);
+            pkt->nat.nxifi = ep->nat_xifi;
+            pkt->nat.nrport = ep->nat_rport;
+            if (ep->nat_xport) {
+                pkt->nat.nxport = ep->nat_xport;
             } else {
                 pkt->nat.nxport = pkt->l34.source;
             }
 
-            pkt->nat.nv6 = nxfrm_act->nv6 ? 1 : 0;
+            pkt->nat.nv6 = ep->nv6 ? 1 : 0;
             pkt->nat.sel_aid = sel;
             pkt->nat.ito = ops->ito;
 

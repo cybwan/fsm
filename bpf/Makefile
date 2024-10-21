@@ -4,7 +4,7 @@ SHELL = bash
 
 .PHONY: format
 format:
-	find . -regex '.*\.\(c\|h\)' -exec clang-format -style=file -i {} \;
+	@find . -regex '.*\.\(c\|h\)' -exec clang-format -style=file -i {} \;
 
 .PHONY: kern-trace
 kern-trace:

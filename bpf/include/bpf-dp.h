@@ -154,10 +154,9 @@ struct dp_rdr_act {
 #define nat_xip4 nat_xip[0]
 #define nat_rip4 nat_rip[0]
 
-struct xpkt_nat_endpoint {
+struct xpkt_nat_lb {
     __u8 nat_flags;
-    __u8 inactive : 4;
-    __u8 nv6 : 4;
+    __u8 nv6;
     __u16 nat_xifi;
     __u16 nat_xport;
     __u16 nat_rport;
@@ -165,8 +164,9 @@ struct xpkt_nat_endpoint {
     __u32 nat_rip[4];
     __u8 nat_xmac[6];
     __u8 nat_rmac[6];
+    __u8 inactive;
 };
-typedef struct xpkt_nat_endpoint nat_endpoint_t;
+typedef struct xpkt_nat_lb nat_endpoint_t;
 
 struct dp_pb_stats {
     __u64 bytes;
@@ -241,22 +241,14 @@ struct xpkt_nat_key {
 #define NAT_LB_PERSIST_TIMEOUT (10800000000000ULL)
 
 struct xpkt_nat_ops {
-    __u8 nat_type;
     __u64 ito;
     __u64 pto;
     struct bpf_spin_lock lock;
-    __u16 sel_hint;
-    __u16 algo;
-    __u16 nxfrm;
-    struct xpkt_nat_endpoint nxfrms[F4_MAX_NXFRMS];
-    __u64 lts;
-    __u64 base_to;
-};
-
-struct xpkt_nat_ep_ops {
-    struct dp_cmn_act ca;
-    struct bpf_spin_lock lock;
-    __u32 active_sess[F4_MAX_NXFRMS];
+    __u8 nat_type;
+    __u8 lb_algo;
+    __u8 ep_sel;
+    __u8 ep_cnt;
+    struct xpkt_nat_lb endpoints[F4_MAX_ENDPOINTS];
 };
 
 struct dp_ct_key {
