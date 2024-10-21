@@ -30,17 +30,22 @@ test-reset:
 	@sudo ip netns del h1 || true
 	@sudo iptables -t nat -F || true
 
-.PHONY: test-attach
-test-attach:
+.PHONY: test-tc-attach
+test-tc-attach:
 	@sudo ip netns exec h1 tc qdisc add dev eth0 clsact
 	@sudo ip netns exec h1 tc filter add dev eth0 ingress bpf object-pinned /sys/fs/bpf/fsm/classifier_sidecar_ingress
 	@sudo ip netns exec h1 tc filter add dev eth0 egress bpf object-pinned /sys/fs/bpf/fsm/classifier_sidecar_egress
 
-.PHONY: test-detach
-test-detach:
+.PHONY: test-tc-detach
+test-tc-detach:
 	@sudo ip netns exec h1 tc filter del dev eth0 ingress
 	@sudo ip netns exec h1 tc filter del dev eth0 egress
 	@sudo ip netns exec h1 tc qdisc del dev eth0 clsact
+
+.PHONY: test-tc-show
+test-tc-show:
+	@sudo ip netns exec h1 tc filter show dev eth0 ingress
+	@sudo ip netns exec h1 tc filter show dev eth0 egress
 
 .PHONY: pipy-demo
 pipy-demo:
