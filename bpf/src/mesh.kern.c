@@ -43,11 +43,13 @@ int sidecar_ingress(struct __sk_buff *ctx)
 
     xpkt_decode(ctx, pkt, 1);
 
-    FSM_DBG("[DBG] tc_ingress ========\n");
-    FSM_DBG("[DBG] tc_ingress pkt->l34m saddr4  %pI4 source  %d\n",
-            &pkt->l34.saddr4, ntohs(pkt->l34.source));
-    FSM_DBG("[DBG] tc_ingress pkt->l34m daddr4  %pI4 dest    %d\n",
-            &pkt->l34.daddr4, ntohs(pkt->l34.dest));
+    if (F4_DEBUG_IGR(pkt)) {
+        FSM_DBG("[DBG] tc_ingress ========\n");
+        FSM_DBG("[DBG] tc_ingress pkt->l34m saddr4  %pI4 source  %d\n",
+                &pkt->l34.saddr4, ntohs(pkt->l34.source));
+        FSM_DBG("[DBG] tc_ingress pkt->l34m daddr4  %pI4 dest    %d\n",
+                &pkt->l34.daddr4, ntohs(pkt->l34.dest));
+    }
 
     // return dp_ing_fc_main(ctx, pkt);
     return TC_ACT_OK;
@@ -70,12 +72,13 @@ int sidecar_egress(struct __sk_buff *ctx)
 
     xpkt_decode(ctx, pkt, 1);
 
-    FSM_DBG("[DBG] tc_egress ========\n");
-    FSM_DBG("[DBG] tc_egress pkt->l34m saddr4  %pI4 source  %d\n",
-            &pkt->l34.saddr4, ntohs(pkt->l34.source));
-    FSM_DBG("[DBG] tc_egress pkt->l34m daddr4  %pI4 dest    %d\n",
-            &pkt->l34.daddr4, ntohs(pkt->l34.dest));
-
+    if (F4_DEBUG_EGR(pkt)) {
+        FSM_DBG("[DBG] tc_egress ========\n");
+        FSM_DBG("[DBG] tc_egress pkt->l34m saddr4  %pI4 source  %d\n",
+                &pkt->l34.saddr4, ntohs(pkt->l34.source));
+        FSM_DBG("[DBG] tc_egress pkt->l34m daddr4  %pI4 dest    %d\n",
+                &pkt->l34.daddr4, ntohs(pkt->l34.dest));
+    }
     // return dp_ing_fc_main(ctx, pkt);
     return TC_ACT_OK;
 }
