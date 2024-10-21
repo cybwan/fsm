@@ -37,3 +37,7 @@ test-detach:
 	@sudo ip netns exec h1 tc filter del dev eth0 ingress
 	@sudo ip netns exec h1 tc filter del dev eth0 egress
 	@sudo ip netns exec h1 tc qdisc del dev eth0 clsact
+
+.PHONY: pipy-demo
+pipy-demo:
+	pipy -e "pipy().listen(8080).serveHTTP(new Message('hi, it works.\n'))"
