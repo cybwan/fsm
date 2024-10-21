@@ -349,43 +349,43 @@ struct dp_t2_port {
 #define XPKT_PTR_ADD(x, len) ((void *)(((__u8 *)((long)x)) + (len)))
 #define XPKT_PTR_SUB(x, y) (((__u8 *)XPKT_PTR(x)) - ((__u8 *)XPKT_PTR(y)))
 
-#define XADDR_IS_ZERO(a)                                                       \
-    ((a)[0] == 0 && (a)[1] == 0 && (a)[2] == 0 && (a)[3] == 0)
+#define XADDR_IS_ZERO(var)                                                     \
+    ((var)[0] == 0 && (var)[1] == 0 && (var)[2] == 0 && (var)[3] == 0)
 
-#define XADDR_COPY(a, b)                                                       \
+#define XADDR_COPY(dst, src)                                                   \
     do {                                                                       \
-        (a)[0] = (b)[0];                                                       \
-        (a)[1] = (b)[1];                                                       \
-        (a)[2] = (b)[2];                                                       \
-        (a)[3] = (b)[3];                                                       \
+        (dst)[0] = (src)[0];                                                   \
+        (dst)[1] = (src)[1];                                                   \
+        (dst)[2] = (src)[2];                                                   \
+        (dst)[3] = (src)[3];                                                   \
     } while (0)
 
-#define XADDR_SET_ZERO(a)                                                      \
+#define XADDR_SET_ZERO(var)                                                    \
     do {                                                                       \
-        (a)[0] = 0;                                                            \
-        (a)[1] = 0;                                                            \
-        (a)[2] = 0;                                                            \
-        (a)[3] = 0;                                                            \
+        (var)[0] = 0;                                                          \
+        (var)[1] = 0;                                                          \
+        (var)[2] = 0;                                                          \
+        (var)[3] = 0;                                                          \
     } while (0)
 
-#define XMAC_COPY(a, b)                                                        \
+#define XMAC_COPY(dst, src)                                                    \
     do {                                                                       \
-        (a)[0] = (b)[0];                                                       \
-        (a)[1] = (b)[1];                                                       \
-        (a)[2] = (b)[2];                                                       \
-        (a)[3] = (b)[3];                                                       \
-        (a)[4] = (b)[4];                                                       \
-        (a)[5] = (b)[5];                                                       \
+        (dst)[0] = (src)[0];                                                   \
+        (dst)[1] = (src)[1];                                                   \
+        (dst)[2] = (src)[2];                                                   \
+        (dst)[3] = (src)[3];                                                   \
+        (dst)[4] = (src)[4];                                                   \
+        (dst)[5] = (src)[5];                                                   \
     } while (0)
 
-#define XMAC_SET_ZERO(a)                                                       \
+#define XMAC_SET_ZERO(var)                                                     \
     do {                                                                       \
-        (a)[0] = 0;                                                            \
-        (a)[1] = 0;                                                            \
-        (a)[2] = 0;                                                            \
-        (a)[3] = 0;                                                            \
-        (a)[4] = 0;                                                            \
-        (a)[5] = 0;                                                            \
+        (var)[0] = 0;                                                          \
+        (var)[1] = 0;                                                          \
+        (var)[2] = 0;                                                          \
+        (var)[3] = 0;                                                          \
+        (var)[4] = 0;                                                          \
+        (var)[5] = 0;                                                          \
     } while (0)
 
 #endif
