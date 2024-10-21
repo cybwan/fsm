@@ -15,8 +15,6 @@ xpkt_nat_set(skb_t *skb, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
     pkt->nat.nxport = na->xport;
     pkt->nat.nrport = na->rport;
     pkt->nat.nv6 = na->nv6 ? 1 : 0;
-    pkt->nat.dsr = na->dsr;
-    pkt->nat.cdis = na->cdis;
     return 0;
 }
 

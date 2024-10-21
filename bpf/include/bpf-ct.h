@@ -204,12 +204,6 @@ dp_ct_tcp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
 
     switch (ts->state) {
     case CT_TCP_CLOSED:
-
-        if (pkt->nat.dsr) {
-            nstate = CT_TCP_EST;
-            goto end;
-        }
-
         /* If DP starts after TCP was established
          * we need to somehow handle this particular case
          */
@@ -398,8 +392,7 @@ dp_ct_udp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
 
     switch (us->state) {
     case CT_UDP_CNI:
-
-        if (pkt->nat.dsr || pkt->l2.ssnid) {
+        if (pkt->l2.ssnid) {
             nstate = CT_UDP_EST;
             break;
         }
@@ -504,11 +497,6 @@ dp_ct_icmp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
 
     switch (is->state) {
     case CT_ICMP_CLOSED:
-        if (pkt->nat.dsr) {
-            nstate = CT_ICMP_REPS;
-            goto end;
-        }
-
         if (i->type != ICMP_ECHO) {
             is->errs = 1;
             goto end;
@@ -600,10 +588,6 @@ dp_ct_icmp6_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
 
     switch (is->state) {
     case CT_ICMP_CLOSED:
-        if (pkt->nat.dsr) {
-            nstate = CT_ICMP_REPS;
-            goto end;
-        }
         if (i->icmp6_type != ICMPV6_ECHO_REQUEST) {
             is->errs = 1;
             goto end;
@@ -817,8 +801,6 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
             adat->nat_act.doct = 0;
             adat->nat_act.aid = pkt->nat.sel_aid;
             adat->nat_act.nv6 = pkt->nat.nv6 ? 1 : 0;
-            adat->nat_act.dsr = pkt->nat.dsr;
-            adat->nat_act.cdis = pkt->nat.cdis;
             adat->ito = pkt->nat.ito;
         } else {
             adat->ito = 0;
@@ -853,8 +835,6 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
             axdat->nat_act.rid = pkt->ctx.rule_id;
             axdat->nat_act.aid = pkt->nat.sel_aid;
             axdat->nat_act.nv6 = key.v6 ? 1 : 0;
-            axdat->nat_act.dsr = pkt->nat.dsr;
-            axdat->nat_act.cdis = pkt->nat.cdis;
             axdat->ito = pkt->nat.ito;
         } else {
             axdat->ito = 0;

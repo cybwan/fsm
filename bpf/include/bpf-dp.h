@@ -208,8 +208,6 @@ struct dp_nat_act {
     __u32 rid;
     __u32 aid;
     __u8 nv6;
-    __u8 dsr;
-    __u8 cdis;
     __u8 nmh;
 };
 

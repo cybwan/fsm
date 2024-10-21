@@ -365,7 +365,7 @@ handle_excp:
 __attribute__((__always_inline__)) static inline int
 xpkt_encode_packet_always(skb_t *skb, struct xpkt *pkt)
 {
-    if (pkt->ctx.nf & F4_NAT_SRC && pkt->nat.dsr == 0) {
+    if (pkt->ctx.nf & F4_NAT_SRC) {
         if (pkt->l2.dl_type == ntohs(ETH_P_IPV6) || pkt->nat.nv6) {
             // dp_sunp_tcall(skb, xf);
         } else {
@@ -373,7 +373,7 @@ xpkt_encode_packet_always(skb_t *skb, struct xpkt *pkt)
                 return TC_ACT_SHOT;
             }
         }
-    } else if (pkt->ctx.nf & F4_NAT_DST && pkt->nat.dsr == 0) {
+    } else if (pkt->ctx.nf & F4_NAT_DST) {
         if (pkt->l2.dl_type == ntohs(ETH_P_IPV6)) {
             // dp_sunp_tcall(skb, xf);
         } else {
