@@ -17,7 +17,7 @@ xpkt_fib4_init_key(struct xpkt *pkt, struct xpkt_fib4_key *key)
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_fib4_find(void *ctx, struct xpkt *pkt)
+xpkt_fib4_find(skb_t *skb, struct xpkt *pkt)
 {
     struct xpkt_fib4_key key;
     struct xpkt_fib4_ops *acts;
@@ -61,7 +61,7 @@ xpkt_fib4_find(void *ctx, struct xpkt *pkt)
             return 0;
         }
 
-        xpkt_nat_set(ctx, pkt, &ta->nat_act, 1);
+        xpkt_nat_set(skb, pkt, &ta->nat_act, 1);
     } else if (acts->ops[DP_SET_DNAT].ca.act_type == DP_SET_DNAT) {
         ta = &acts->ops[DP_SET_DNAT];
 
@@ -70,7 +70,7 @@ xpkt_fib4_find(void *ctx, struct xpkt *pkt)
             return 0;
         }
 
-        xpkt_nat_set(ctx, pkt, &ta->nat_act, 0);
+        xpkt_nat_set(skb, pkt, &ta->nat_act, 0);
     }
 
     /* Catch any conditions which need us to go to cp/ct */
@@ -85,8 +85,8 @@ xpkt_fib4_find(void *ctx, struct xpkt *pkt)
     XMAC_COPY(pkt->l2.dl_dst, pkt->nat.nrmac);
     pkt->pm.oport = pkt->nat.nxifi;
 
-    xpkt_encode_packet_always(ctx, pkt);
-    // xpkt_encode_packet(ctx, pkt);
+    xpkt_encode_packet_always(skb, pkt);
+    // xpkt_encode_packet(skb, pkt);
 
     F4_PPLN_RDR(pkt);
 
@@ -99,12 +99,12 @@ del_out:
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ing_fc_main(void *ctx, struct xpkt *pkt)
+dp_ing_fc_main(skb_t *skb, struct xpkt *pkt)
 {
     int z = 0;
     int oif;
     if (pkt->pm.pipe_act == 0 && pkt->l2.dl_type == ntohs(ETH_P_IP)) {
-        if (xpkt_fib4_find(ctx, pkt) == 1) {
+        if (xpkt_fib4_find(skb, pkt) == 1) {
             if (pkt->pm.pipe_act == F4_PIPE_RDR) {
                 // oif = pkt->pm.oport;
                 // return bpf_redirect(oif, 0);
@@ -114,12 +114,12 @@ dp_ing_fc_main(void *ctx, struct xpkt *pkt)
     }
 
     bpf_map_update_elem(&fsm_xpkts, &z, pkt, BPF_ANY);
-    bpf_tail_call(ctx, &fsm_progs, FSM_CNI_HANDSHAKE_PROG_ID);
+    bpf_tail_call(skb, &fsm_progs, FSM_CNI_HANDSHAKE_PROG_ID);
     return TC_ACT_SHOT;
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_egr_main(void *ctx, struct xpkt *pkt)
+dp_egr_main(skb_t *skb, struct xpkt *pkt)
 {
     if (pkt->l2.dl_type == ntohs(ETH_P_IP) &&
         (pkt->l34.proto == IPPROTO_TCP || pkt->l34.proto == IPPROTO_UDP)) {
@@ -139,22 +139,22 @@ dp_egr_main(void *ctx, struct xpkt *pkt)
         if (adat != NULL) {
             if (pkt->pm.igr) {
                 if (pkt->l34.proto == IPPROTO_TCP) {
-                    xpkt_csum_replace_tcp_dst_ip(ctx, pkt, adat->xaddr);
-                    xpkt_csum_replace_tcp_dst_port(ctx, pkt,
+                    xpkt_csum_replace_tcp_dst_ip(skb, pkt, adat->xaddr);
+                    xpkt_csum_replace_tcp_dst_port(skb, pkt,
                                                    htons(adat->xport));
                 } else if (pkt->l34.proto == IPPROTO_UDP) {
-                    xpkt_csum_replace_udp_dst_ip(ctx, pkt, adat->xaddr);
-                    xpkt_csum_replace_udp_dst_port(ctx, pkt,
+                    xpkt_csum_replace_udp_dst_ip(skb, pkt, adat->xaddr);
+                    xpkt_csum_replace_udp_dst_port(skb, pkt,
                                                    htons(adat->xport));
                 }
             } else if (pkt->pm.egr) {
                 if (pkt->l34.proto == IPPROTO_TCP) {
-                    xpkt_csum_replace_tcp_src_ip(ctx, pkt, adat->xaddr);
-                    xpkt_csum_replace_tcp_src_port(ctx, pkt,
+                    xpkt_csum_replace_tcp_src_ip(skb, pkt, adat->xaddr);
+                    xpkt_csum_replace_tcp_src_port(skb, pkt,
                                                    htons(adat->xport));
                 } else if (pkt->l34.proto == IPPROTO_UDP) {
-                    xpkt_csum_replace_udp_src_ip(ctx, pkt, adat->xaddr);
-                    xpkt_csum_replace_udp_src_port(ctx, pkt,
+                    xpkt_csum_replace_udp_src_ip(skb, pkt, adat->xaddr);
+                    xpkt_csum_replace_udp_src_port(skb, pkt,
                                                    htons(adat->xport));
                 }
             }

@@ -6,7 +6,7 @@
 #include "bpf-lb.h"
 
 __attribute__((__always_inline__)) static inline int
-dp_do_ctops(void *ctx, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
+dp_do_ctops(skb_t *skb, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
 {
     struct xpkt_fib4_ops *fa = fa_;
     if (!act) {
@@ -59,7 +59,7 @@ dp_do_ctops(void *ctx, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
             na->fr = 1;
         }
 
-        xpkt_nat_set(ctx, pkt, na, act->ca.act_type == DP_SET_SNAT ? 1 : 0);
+        xpkt_nat_set(skb, pkt, na, act->ca.act_type == DP_SET_SNAT ? 1 : 0);
 
         if (na->fr == 1 || na->doct || pkt->pm.goct) {
             goto ct_trk;
@@ -80,11 +80,11 @@ dp_do_ctops(void *ctx, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
     return 0;
 
 ct_trk:
-    return xpkt_tail_call(ctx, pkt, fa_, FSM_CNI_CONNTRACK_PROG_ID);
+    return xpkt_tail_call(skb, pkt, fa_, FSM_CNI_CONNTRACK_PROG_ID);
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_do_ing_ct(void *ctx, struct xpkt *pkt, void *fa_)
+dp_do_ing_ct(skb_t *skb, struct xpkt *pkt, void *fa_)
 {
 
     struct dp_ct_key key;
@@ -94,35 +94,35 @@ dp_do_ing_ct(void *ctx, struct xpkt *pkt, void *fa_)
 
     // pkt->pm.table_id = F4_DP_CT_MAP;
     act = bpf_map_lookup_elem(&fsm_ct, &key);
-    return dp_do_ctops(ctx, pkt, fa_, act);
+    return dp_do_ctops(skb, pkt, fa_, act);
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_l3_fwd(void *ctx, struct xpkt *pkt, void *fa)
+dp_l3_fwd(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     if (pkt->l2.dl_type == htons(ETH_P_IP)) {
         if (pkt->pm.nf && pkt->nat.nv6 != 0) {
             pkt->nat.xlate_proto = 1;
-            // dp_do_ipv6_fwd(ctx, pkt, fa);
+            // dp_do_ipv6_fwd(skb, pkt, fa);
         } else {
-            // dp_do_ipv4_fwd(ctx, pkt, fa);
+            // dp_do_ipv4_fwd(skb, pkt, fa);
         }
     } else if (pkt->l2.dl_type == htons(ETH_P_IPV6)) {
         if (pkt->pm.nf && pkt->nat.nv6 == 0) {
             pkt->nat.xlate_proto = 1;
-            // dp_do_ipv4_fwd(ctx, pkt, fa);
+            // dp_do_ipv4_fwd(skb, pkt, fa);
         } else {
-            // dp_do_ipv6_fwd(ctx, pkt, fa);
+            // dp_do_ipv6_fwd(skb, pkt, fa);
         }
     }
     return 0;
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ing_l3(void *ctx, struct xpkt *pkt, void *fa)
+dp_ing_l3(skb_t *skb, struct xpkt *pkt, void *fa)
 {
-    dp_do_ing_ct(ctx, pkt, fa);
-    // dp_l3_fwd(ctx, pkt, fa);
+    dp_do_ing_ct(skb, pkt, fa);
+    // dp_l3_fwd(skb, pkt, fa);
     return 0;
 }
 

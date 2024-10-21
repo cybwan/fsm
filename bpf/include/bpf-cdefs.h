@@ -242,10 +242,10 @@ xpkt_csum_replace_icmp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_do_out(void *ctx, struct xpkt *pkt)
+xpkt_do_out(skb_t *skb, struct xpkt *pkt)
 {
-    void *start = XPKT_PTR(XPKT_DATA(ctx));
-    void *dend = XPKT_PTR(XPKT_DATA_END(ctx));
+    void *start = XPKT_PTR(XPKT_DATA(skb));
+    void *dend = XPKT_PTR(XPKT_DATA_END(skb));
     struct ethhdr *eth;
     int vlan;
 
@@ -254,7 +254,7 @@ xpkt_do_out(void *ctx, struct xpkt *pkt)
     if (vlan == 0) {
         /* Strip existing vlan. Nothing to do if there was no vlan tag */
         if (pkt->l2.vlan[0] != 0) {
-            // if (dp_remove_vlan_tag(ctx, xf) != 0) {
+            // if (dp_remove_vlan_tag(skb, xf) != 0) {
             //   F4_PPLN_DROPC(xf, F4_PIPE_RC_PLERR);
             //   return -1;
             // }
@@ -263,7 +263,7 @@ xpkt_do_out(void *ctx, struct xpkt *pkt)
                 F4_PPLN_DROPC(pkt, F4_PIPE_RC_PLERR);
                 return -1;
             }
-            eth = XPKT_PTR(XPKT_DATA(ctx));
+            eth = XPKT_PTR(XPKT_DATA(skb));
             memcpy(eth->h_dest, pkt->l2.dl_dst, 6);
             memcpy(eth->h_source, pkt->l2.dl_src, 6);
         }
@@ -272,14 +272,14 @@ xpkt_do_out(void *ctx, struct xpkt *pkt)
         /* If existing vlan tag was present just replace vlan-id, else
          * push a new vlan tag and set the vlan-id
          */
-        eth = XPKT_PTR(XPKT_DATA(ctx));
+        eth = XPKT_PTR(XPKT_DATA(skb));
         if (pkt->l2.vlan[0] != 0) {
-            // if (dp_swap_vlan_tag(ctx, pkt, vlan) != 0) {
+            // if (dp_swap_vlan_tag(skb, pkt, vlan) != 0) {
             //   F4_PPLN_DROPC(pkt, F4_PIPE_RC_PLERR);
             //   return -1;
             // }
         } else {
-            // if (dp_insert_vlan_tag(ctx, pkt, vlan) != 0) {
+            // if (dp_insert_vlan_tag(skb, pkt, vlan) != 0) {
             //   F4_PPLN_DROPC(pkt, F4_PIPE_RC_PLERR);
             //   return -1;
             // }
@@ -290,7 +290,7 @@ xpkt_do_out(void *ctx, struct xpkt *pkt)
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_tail_call(void *ctx, struct xpkt *pkt, void *fa, __u32 idx)
+xpkt_tail_call(skb_t *skb, struct xpkt *pkt, void *fa, __u32 idx)
 {
     int z = 0;
 
@@ -305,7 +305,7 @@ xpkt_tail_call(void *ctx, struct xpkt *pkt, void *fa, __u32 idx)
 
     bpf_map_update_elem(&fsm_xpkts, &z, pkt, BPF_ANY);
 
-    bpf_tail_call(ctx, &fsm_progs, idx);
+    bpf_tail_call(skb, &fsm_progs, idx);
 
     return TC_ACT_OK;
 }

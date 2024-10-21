@@ -363,21 +363,21 @@ handle_excp:
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_encode_packet_always(void *ctx, struct xpkt *pkt)
+xpkt_encode_packet_always(skb_t *skb, struct xpkt *pkt)
 {
     if (pkt->pm.nf & F4_NAT_SRC && pkt->nat.dsr == 0) {
         if (pkt->l2.dl_type == ntohs(ETH_P_IPV6) || pkt->nat.nv6) {
-            // dp_sunp_tcall(ctx, xf);
+            // dp_sunp_tcall(skb, xf);
         } else {
-            if (xpkt_do_snat(ctx, pkt) != 0) {
+            if (xpkt_do_snat(skb, pkt) != 0) {
                 return TC_ACT_SHOT;
             }
         }
     } else if (pkt->pm.nf & F4_NAT_DST && pkt->nat.dsr == 0) {
         if (pkt->l2.dl_type == ntohs(ETH_P_IPV6)) {
-            // dp_sunp_tcall(ctx, xf);
+            // dp_sunp_tcall(skb, xf);
         } else {
-            if (xpkt_do_dnat(ctx, pkt) != 0) {
+            if (xpkt_do_dnat(skb, pkt) != 0) {
                 return TC_ACT_SHOT;
             }
         }
@@ -387,9 +387,9 @@ xpkt_encode_packet_always(void *ctx, struct xpkt *pkt)
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_encode_packet(void *ctx, struct xpkt *pkt)
+xpkt_encode_packet(skb_t *skb, struct xpkt *pkt)
 {
-    return xpkt_do_out(ctx, pkt);
+    return xpkt_do_out(skb, pkt);
 }
 
 #endif

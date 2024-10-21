@@ -4,7 +4,7 @@
 #include "bpf-dbg.h"
 
 __attribute__((__always_inline__)) static inline int
-xpkt_nat_set(void *ctx, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
+xpkt_nat_set(skb_t *skb, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
 {
     pkt->pm.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
     XADDR_COPY(pkt->nat.nxip, na->xip);
@@ -21,7 +21,7 @@ xpkt_nat_set(void *ctx, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_nat_endpoint(void *ctx, struct xpkt *pkt, struct xpkt_nat_ops *act)
+xpkt_nat_endpoint(skb_t *skb, struct xpkt *pkt, struct xpkt_nat_ops *act)
 {
     int sel = -1;
     __u8 n = 0;
@@ -48,7 +48,7 @@ xpkt_nat_endpoint(void *ctx, struct xpkt *pkt, struct xpkt_nat_ops *act)
         }
         xpkt_spin_unlock(&act->lock);
     } else if (act->sel_type == NAT_LB_SEL_HASH) {
-        sel = xpkt_get_pkt_hash(ctx) % act->nxfrm;
+        sel = xpkt_get_pkt_hash(skb) % act->nxfrm;
         if (sel >= 0 && sel < F4_MAX_NXFRMS) {
             /* Fall back if hash selection gives us a deadend */
             if (act->nxfrms[sel].inactive) {
@@ -112,7 +112,7 @@ xpkt_nat_endpoint(void *ctx, struct xpkt *pkt, struct xpkt_nat_ops *act)
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_nat_proc(void *ctx, struct xpkt *pkt)
+xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
 {
     struct xpkt_nat_key key;
     struct dp_xfrm_inf *nxfrm_act;
@@ -145,7 +145,7 @@ xpkt_nat_proc(void *ctx, struct xpkt *pkt)
     }
 
     if (act->ca.act_type == DP_SET_SNAT || act->ca.act_type == DP_SET_DNAT) {
-        sel = xpkt_nat_endpoint(ctx, pkt, act);
+        sel = xpkt_nat_endpoint(skb, pkt, act);
 
         pkt->nat.dsr = act->ca.oaux ? 1 : 0;
         pkt->nat.cdis = act->cdis ? 1 : 0;

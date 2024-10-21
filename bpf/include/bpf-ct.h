@@ -167,15 +167,15 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key, nxfrm_inf_t *xi,
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ct_tcp_sm(void *ctx, struct xpkt *pkt, struct dp_ct_tact *atdat,
+dp_ct_tcp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
              struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
     struct dp_ct_dat *xtdat = &axtdat->ctd;
     ct_tcp_pinf_t *ts = &tdat->pi.t;
     ct_tcp_pinf_t *rts = &xtdat->pi.t;
-    void *dend = XPKT_PTR(XPKT_DATA_END(ctx));
-    struct tcphdr *t = XPKT_PTR_ADD(XPKT_DATA(ctx), pkt->pm.l4_off);
+    void *dend = XPKT_PTR(XPKT_DATA_END(skb));
+    struct tcphdr *t = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->pm.l4_off);
     __u8 tcp_flags = pkt->pm.tcp_flags;
     ct_tcp_pinfd_t *td = &ts->tcp_cts[dir];
     ct_tcp_pinfd_t *rtd;
@@ -385,7 +385,7 @@ end:
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ct_udp_sm(void *ctx, struct xpkt *pkt, struct dp_ct_tact *atdat,
+dp_ct_udp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
              struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
@@ -458,15 +458,15 @@ dp_ct_udp_sm(void *ctx, struct xpkt *pkt, struct dp_ct_tact *atdat,
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ct_icmp_sm(void *ctx, struct xpkt *pkt, struct dp_ct_tact *atdat,
+dp_ct_icmp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
               struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
     struct dp_ct_dat *xtdat = &axtdat->ctd;
     ct_icmp_pinf_t *is = &tdat->pi.i;
     ct_icmp_pinf_t *xis = &xtdat->pi.i;
-    void *dend = XPKT_PTR(XPKT_DATA_END(ctx));
-    struct icmphdr *i = XPKT_PTR_ADD(XPKT_DATA(ctx), pkt->pm.l4_off);
+    void *dend = XPKT_PTR(XPKT_DATA_END(skb));
+    struct icmphdr *i = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->pm.l4_off);
     __u32 nstate;
     __u16 seq;
 
@@ -557,15 +557,15 @@ end:
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ct_icmp6_sm(void *ctx, struct xpkt *pkt, struct dp_ct_tact *atdat,
+dp_ct_icmp6_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
                struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
     struct dp_ct_dat *xtdat = &axtdat->ctd;
     ct_icmp_pinf_t *is = &tdat->pi.i;
     ct_icmp_pinf_t *xis = &xtdat->pi.i;
-    void *dend = XPKT_PTR(XPKT_DATA_END(ctx));
-    struct icmp6hdr *i = XPKT_PTR_ADD(XPKT_DATA(ctx), pkt->pm.l4_off);
+    void *dend = XPKT_PTR(XPKT_DATA_END(skb));
+    struct icmp6hdr *i = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->pm.l4_off);
     __u32 nstate;
     __u16 seq;
 
@@ -652,23 +652,23 @@ end:
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ct_sm(void *ctx, struct xpkt *pkt, struct dp_ct_tact *atdat,
+dp_ct_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
          struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
     int sm_ret = 0;
 
     switch (pkt->l34.proto) {
     case IPPROTO_TCP:
-        sm_ret = dp_ct_tcp_sm(ctx, pkt, atdat, axtdat, dir);
+        sm_ret = dp_ct_tcp_sm(skb, pkt, atdat, axtdat, dir);
         break;
     case IPPROTO_UDP:
-        sm_ret = dp_ct_udp_sm(ctx, pkt, atdat, axtdat, dir);
+        sm_ret = dp_ct_udp_sm(skb, pkt, atdat, axtdat, dir);
         break;
     case IPPROTO_ICMP:
-        sm_ret = dp_ct_icmp_sm(ctx, pkt, atdat, axtdat, dir);
+        sm_ret = dp_ct_icmp_sm(skb, pkt, atdat, axtdat, dir);
         break;
     case IPPROTO_ICMPV6:
-        sm_ret = dp_ct_icmp6_sm(ctx, pkt, atdat, axtdat, dir);
+        sm_ret = dp_ct_icmp6_sm(skb, pkt, atdat, axtdat, dir);
         break;
     default:
         sm_ret = CT_SMR_UNT;
@@ -739,7 +739,7 @@ dp_ct_del(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
+__attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
                                                               struct xpkt *pkt)
 {
     struct dp_ct_key key;
@@ -898,11 +898,11 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
         if (atdat->ctd.dir == CT_DIR_IN) {
             pkt->pm.dir = CT_DIR_IN;
             pkt->pm.phit |= F4_DP_CTSI_HIT;
-            smr = dp_ct_sm(ctx, pkt, atdat, axtdat, CT_DIR_IN);
+            smr = dp_ct_sm(skb, pkt, atdat, axtdat, CT_DIR_IN);
         } else {
             pkt->pm.dir = CT_DIR_OUT;
             pkt->pm.phit |= F4_DP_CTSO_HIT;
-            smr = dp_ct_sm(ctx, pkt, axtdat, atdat, CT_DIR_OUT);
+            smr = dp_ct_sm(skb, pkt, axtdat, atdat, CT_DIR_OUT);
         }
 
         if (smr == CT_SMR_EST) {
@@ -930,7 +930,7 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(void *ctx,
             }
 
             if (xi->nat_flags) {
-                // dp_do_dec_nat_sess(ctx, xf, atdat->ctd.rid, atdat->ctd.aid);
+                // dp_do_dec_nat_sess(skb, xf, atdat->ctd.rid, atdat->ctd.aid);
             }
         }
     }

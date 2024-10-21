@@ -5,7 +5,7 @@
 #include "bpf-l3.h"
 
 __attribute__((__always_inline__)) static inline int
-dp_eg_l2(void *ctx, struct xpkt *pkt, void *fa)
+dp_eg_l2(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     // /* Any processing based on results from L3 */
     // if (pkt->pm.pipe_act & F4_PIPE_RDR_MASK) {
@@ -13,36 +13,36 @@ dp_eg_l2(void *ctx, struct xpkt *pkt, void *fa)
     // }
 
     // if (pkt->pm.nh_num != 0) {
-    //   dp_do_nh_lkup(ctx, xf, fa);
+    //   dp_do_nh_lkup(skb, xf, fa);
     // }
 
-    // dp_do_map_stats(ctx, xf, F4_DP_TX_BD_STATS_MAP, pkt->pm.bd);
+    // dp_do_map_stats(skb, xf, F4_DP_TX_BD_STATS_MAP, pkt->pm.bd);
 
-    // dp_do_dmac_lkup(ctx, xf, fa);
+    // dp_do_dmac_lkup(skb, xf, fa);
     return 0;
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ing_fwd(void *ctx, struct xpkt *pkt, void *fa)
+dp_ing_fwd(skb_t *skb, struct xpkt *pkt, void *fa)
 {
-    dp_ing_l3(ctx, pkt, fa);
-    return dp_eg_l2(ctx, pkt, fa);
+    dp_ing_l3(skb, pkt, fa);
+    return dp_eg_l2(skb, pkt, fa);
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ing_l2_top(void *ctx, struct xpkt *pkt, void *fa)
+dp_ing_l2_top(skb_t *skb, struct xpkt *pkt, void *fa)
 {
-    // dp_do_smac_lkup(ctx, pkt, fa);
-    // dp_do_tmac_lkup(ctx, pkt, fa);
-    // dp_do_tun_lkup(ctx, pkt, fa);
+    // dp_do_smac_lkup(skb, pkt, fa);
+    // dp_do_tmac_lkup(skb, pkt, fa);
+    // dp_do_tun_lkup(skb, pkt, fa);
     return 0;
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_ing_l2(void *ctx, struct xpkt *pkt, void *fa)
+dp_ing_l2(skb_t *skb, struct xpkt *pkt, void *fa)
 {
-    // dp_ing_l2_top(ctx, pkt, fa);
-    return dp_ing_fwd(ctx, pkt, fa);
+    // dp_ing_l2_top(skb, pkt, fa);
+    return dp_ing_fwd(skb, pkt, fa);
 }
 
 #endif

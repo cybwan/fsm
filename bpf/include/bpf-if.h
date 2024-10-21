@@ -7,7 +7,7 @@
 #include "bpf-lb.h"
 
 __attribute__((__always_inline__)) static inline int
-xpkt_fib4_insert(void *ctx, struct xpkt *pkt, struct xpkt_fib4_ops *ops)
+xpkt_fib4_insert(skb_t *skb, struct xpkt *pkt, struct xpkt_fib4_ops *ops)
 {
     struct xpkt_fib4_key *key;
     int z = 0;
@@ -31,7 +31,7 @@ xpkt_fib4_insert(void *ctx, struct xpkt *pkt, struct xpkt_fib4_ops *ops)
 }
 
 __attribute__((__always_inline__)) static inline int
-dp_pipe_check_res(void *ctx, struct xpkt *pkt, void *fa)
+dp_pipe_check_res(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     if (pkt->pm.pipe_act) {
 
@@ -45,16 +45,16 @@ dp_pipe_check_res(void *ctx, struct xpkt *pkt, void *fa)
             pkt->pm.oport = pkt->nat.nxifi;
         }
 
-        if (xpkt_encode_packet_always(ctx, pkt) != 0) {
+        if (xpkt_encode_packet_always(skb, pkt) != 0) {
             return TC_ACT_SHOT;
         }
 
         if (pkt->pm.pipe_act & F4_PIPE_RDR_MASK) {
-            // if (xpkt_encode_packet(ctx, pkt) != 0) {
+            // if (xpkt_encode_packet(skb, pkt) != 0) {
             //   return TC_ACT_SHOT;
             // }
             // if (pkt->pm.f4) {
-            //   if (dp_f4_packet(ctx, pkt) != 0) {
+            //   if (dp_f4_packet(skb, pkt) != 0) {
             //     return TC_ACT_SHOT;
             //   }
             // }
@@ -65,7 +65,7 @@ dp_pipe_check_res(void *ctx, struct xpkt *pkt, void *fa)
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_conntrack_proc(void *ctx, struct xpkt *pkt)
+xpkt_conntrack_proc(skb_t *skb, struct xpkt *pkt)
 {
     int val = 0;
     struct xpkt_fib4_ops *fa = NULL;
@@ -75,23 +75,23 @@ xpkt_conntrack_proc(void *ctx, struct xpkt *pkt)
         return TC_ACT_SHOT;
 
     if (pkt->pm.igr && (pkt->pm.phit & F4_DP_CTM_HIT) == 0) {
-        xpkt_nat_proc(ctx, pkt);
+        xpkt_nat_proc(skb, pkt);
     }
 
-    val = dp_ct_in(ctx, pkt);
+    val = dp_ct_in(skb, pkt);
     if (val < 0) {
         return TC_ACT_OK;
     }
 
-    dp_l3_fwd(ctx, pkt, fa);
-    dp_eg_l2(ctx, pkt, fa);
+    dp_l3_fwd(skb, pkt, fa);
+    dp_eg_l2(skb, pkt, fa);
 
 res_end:
-    return dp_pipe_check_res(ctx, pkt, fa);
+    return dp_pipe_check_res(skb, pkt, fa);
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_handshake_proc(void *ctx, struct xpkt *pkt)
+xpkt_handshake_proc(skb_t *skb, struct xpkt *pkt)
 {
     struct xpkt_fib4_ops *fa = NULL;
     int z = 0;
@@ -117,11 +117,11 @@ xpkt_handshake_proc(void *ctx, struct xpkt *pkt)
     //  * doing any further processing
     //  */
     // if (pkt->pm.mirr != 0) {
-    //   dp_do_mirr_lkup(ctx, pkt);
+    //   dp_do_mirr_lkup(skb, pkt);
     //   goto out;
     // }
 
-    // dp_ing(ctx, pkt);
+    // dp_ing(skb, pkt);
 
     /* If there are pipeline errors at this stage,
      * we again skip any further processing
@@ -130,16 +130,16 @@ xpkt_handshake_proc(void *ctx, struct xpkt *pkt)
         goto out;
     }
 
-    dp_ing_l2(ctx, pkt, fa);
+    dp_ing_l2(skb, pkt, fa);
 
     /* fast-cache is used only when certain conditions are met */
     if (F4_PIPE_FC_CAP(pkt)) {
         fa->zone = pkt->pm.zone;
-        xpkt_fib4_insert(ctx, pkt, fa);
+        xpkt_fib4_insert(skb, pkt, fa);
     }
 
 out:
-    bpf_tail_call(ctx, &fsm_progs, FSM_CNI_CONNTRACK_PROG_ID);
+    bpf_tail_call(skb, &fsm_progs, FSM_CNI_CONNTRACK_PROG_ID);
     return TC_ACT_OK;
 }
 

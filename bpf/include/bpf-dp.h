@@ -1,6 +1,8 @@
 #ifndef __F4_BPF_DP_H__
 #define __F4_BPF_DP_H__
 
+typedef struct __sk_buff skb_t;
+
 enum {
     DP_SET_DROP = 0,
     DP_SET_SNAT = 1,

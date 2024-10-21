@@ -27,7 +27,7 @@
 char __LICENSE[] SEC("license") = "GPL";
 
 SEC("classifier/sidecar/ingress")
-int sidecar_ingress(struct __sk_buff *ctx)
+int sidecar_ingress(struct __sk_buff *skb)
 {
     int z = 0;
     struct xpkt *pkt;
@@ -39,9 +39,9 @@ int sidecar_ingress(struct __sk_buff *ctx)
     memset(pkt, 0, sizeof *pkt);
 
     pkt->pm.igr = 1;
-    pkt->pm.ifi = ctx->ingress_ifindex;
+    pkt->pm.ifi = skb->ingress_ifindex;
 
-    xpkt_decode(ctx, pkt, 1);
+    xpkt_decode(skb, pkt, 1);
 
     if (F4_DEBUG_IGR(pkt)) {
         FSM_DBG("[DBG] tc_ingress ========\n");
@@ -51,12 +51,12 @@ int sidecar_ingress(struct __sk_buff *ctx)
                 &pkt->l34.daddr4, ntohs(pkt->l34.dest));
     }
 
-    // return dp_ing_fc_main(ctx, pkt);
+    // return dp_ing_fc_main(skb, pkt);
     return TC_ACT_OK;
 }
 
 SEC("classifier/sidecar/egress")
-int sidecar_egress(struct __sk_buff *ctx)
+int sidecar_egress(skb_t *skb)
 {
     int z = 0;
     struct xpkt *pkt;
@@ -68,9 +68,9 @@ int sidecar_egress(struct __sk_buff *ctx)
     memset(pkt, 0, sizeof *pkt);
 
     pkt->pm.egr = 1;
-    pkt->pm.ifi = ctx->ingress_ifindex;
+    pkt->pm.ifi = skb->ingress_ifindex;
 
-    xpkt_decode(ctx, pkt, 1);
+    xpkt_decode(skb, pkt, 1);
 
     if (F4_DEBUG_EGR(pkt)) {
         FSM_DBG("[DBG] tc_egress ========\n");
@@ -79,12 +79,12 @@ int sidecar_egress(struct __sk_buff *ctx)
         FSM_DBG("[DBG] tc_egress pkt->l34m daddr4  %pI4 dest    %d\n",
                 &pkt->l34.daddr4, ntohs(pkt->l34.dest));
     }
-    // return dp_ing_fc_main(ctx, pkt);
+    // return dp_ing_fc_main(skb, pkt);
     return TC_ACT_OK;
 }
 
 SEC("classifier/handshake")
-int tc_hand_shake_func(struct __sk_buff *ctx)
+int tc_hand_shake_func(struct __sk_buff *skb)
 {
     int z = 0;
     struct xpkt *pkt;
@@ -102,11 +102,11 @@ int tc_hand_shake_func(struct __sk_buff *ctx)
         return TC_ACT_OK;
     }
 
-    return xpkt_handshake_proc(ctx, pkt);
+    return xpkt_handshake_proc(skb, pkt);
 }
 
 SEC("classifier/conntrack")
-int tc_conn_track_func(struct __sk_buff *ctx)
+int tc_conn_track_func(struct __sk_buff *skb)
 {
     int z = 0;
     struct xpkt *pkt;
@@ -116,11 +116,11 @@ int tc_conn_track_func(struct __sk_buff *ctx)
         return TC_ACT_SHOT;
     }
 
-    return xpkt_conntrack_proc(ctx, pkt);
+    return xpkt_conntrack_proc(skb, pkt);
 }
 
 SEC("classifier/pass")
-int tc_pass(struct __sk_buff *ctx) { return TC_ACT_OK; }
+int tc_pass(struct __sk_buff *skb) { return TC_ACT_OK; }
 
 SEC("classifier/drop")
-int tc_drop(struct __sk_buff *ctx) { return TC_ACT_SHOT; }
+int tc_drop(struct __sk_buff *skb) { return TC_ACT_SHOT; }
