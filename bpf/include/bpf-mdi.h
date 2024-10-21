@@ -105,7 +105,6 @@ struct xpkt_context {
     __u16 l3_plen;
     __u16 il3_len;
     __u16 il3_plen;
-    __u16 dp_mark;
     __u16 dp_rec;
     __u16 tun_off;
     __u16 fw_mid;
