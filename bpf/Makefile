@@ -10,8 +10,8 @@ format:
 kern-trace:
 	@sudo cat /sys/kernel/debug/tracing/trace_pipe|grep bpf_trace_printk
 
-.PHONY: test-init
-test-init: test-reset
+.PHONY: test-up
+test-up: test-reset
 	# Configure load-balancer end-point h1
 	@echo 1 > /proc/sys/net/ipv4/ip_forward
 	@sudo iptables -t nat -A POSTROUTING -o ens33 -j MASQUERADE
