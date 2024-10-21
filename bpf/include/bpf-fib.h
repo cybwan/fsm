@@ -51,7 +51,6 @@ xpkt_fib4_find(skb_t *skb, struct xpkt *pkt)
     }
 
     pkt->ctx.phit |= F4_DP_FC_HIT;
-    pkt->ctx.zone = acts->zone;
 
     if (acts->ops[DP_SET_SNAT].ca.act_type == DP_SET_SNAT) {
         ta = &acts->ops[DP_SET_SNAT];

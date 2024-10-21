@@ -103,7 +103,6 @@ xpkt_handshake_proc(skb_t *skb, struct xpkt *pkt)
     /* No nonsense no loop */
     fa->ca.ftrap = 0;
     fa->ca.cidx = 0;
-    fa->zone = 0;
     fa->its = bpf_ktime_get_ns();
 #pragma clang loop unroll(full)
     for (z = 0; z < F4_FCV4_MAP_ACTS; z++) {
@@ -134,7 +133,6 @@ xpkt_handshake_proc(skb_t *skb, struct xpkt *pkt)
 
     /* fast-cache is used only when certain conditions are met */
     if (F4_PIPE_FC_CAP(pkt)) {
-        fa->zone = pkt->ctx.zone;
         xpkt_fib4_insert(skb, pkt, fa);
     }
 
