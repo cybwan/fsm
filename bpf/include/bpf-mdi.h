@@ -169,7 +169,7 @@ struct xpkt_nat_meta {
 #define F4_PIPE_CT_INP 1
 #define F4_PIPE_CT_EST 2
     __u8 ct_sts; /* Conntrack state */
-    __u8 sel_aid;
+    __u8 ep_sel;
     __u8 nv6;
     __u8 xlate_proto;
     __u64 ito;

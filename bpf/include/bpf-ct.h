@@ -799,7 +799,7 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
             adat->nat_act.xport = xi->nat_xport;
             adat->nat_act.rport = xi->nat_rport;
             adat->nat_act.doct = 0;
-            adat->nat_act.aid = pkt->nat.sel_aid;
+            adat->nat_act.aid = pkt->nat.ep_sel;
             adat->nat_act.nv6 = pkt->nat.nv6 ? 1 : 0;
             adat->ito = pkt->nat.ito;
         } else {
@@ -810,7 +810,7 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
 
         /* FIXME This is duplicated data */
         adat->ctd.rid = pkt->ctx.rule_id;
-        adat->ctd.aid = pkt->nat.sel_aid;
+        adat->ctd.aid = pkt->nat.ep_sel;
         adat->ctd.smr = CT_SMR_INIT;
         adat->ctd.pb.bytes = 0;
         adat->ctd.pb.packets = 0;
@@ -833,7 +833,7 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
             axdat->nat_act.rport = xxi->nat_rport;
             axdat->nat_act.doct = 0;
             axdat->nat_act.rid = pkt->ctx.rule_id;
-            axdat->nat_act.aid = pkt->nat.sel_aid;
+            axdat->nat_act.aid = pkt->nat.ep_sel;
             axdat->nat_act.nv6 = key.v6 ? 1 : 0;
             axdat->ito = pkt->nat.ito;
         } else {

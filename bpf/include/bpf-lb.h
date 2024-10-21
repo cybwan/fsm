@@ -65,7 +65,7 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
     struct xpkt_nat_key key;
     struct xpkt_nat_endpoint *ep;
     struct xpkt_nat_ops *ops;
-    int sel;
+    int ep_sel;
 
     memset(&key, 0, sizeof(key));
     XADDR_COPY(key.daddr, pkt->l34.daddr);
@@ -93,14 +93,14 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
     }
 
     if (ops->nat_type == DP_SET_SNAT || ops->nat_type == DP_SET_DNAT) {
-        sel = xpkt_nat_endpoint(skb, pkt, ops);
+        ep_sel = xpkt_nat_endpoint(skb, pkt, ops);
         pkt->ctx.nf = ops->nat_type == DP_SET_SNAT ? F4_NAT_SRC : F4_NAT_DST;
 
         /* FIXME - Do not select inactive end-points
          * Need multi-passes for selection
          */
-        if (sel >= 0 && sel < F4_MAX_ENDPOINTS) {
-            ep = &ops->endpoints[sel];
+        if (ep_sel >= 0 && ep_sel < F4_MAX_ENDPOINTS) {
+            ep = &ops->endpoints[ep_sel];
 
             XADDR_COPY(pkt->nat.nxip, ep->nat_xip);
             XADDR_COPY(pkt->nat.nrip, ep->nat_rip);
@@ -115,7 +115,7 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
             }
 
             pkt->nat.nv6 = ep->nv6 ? 1 : 0;
-            pkt->nat.sel_aid = sel;
+            pkt->nat.ep_sel = ep_sel;
             pkt->nat.ito = ops->ito;
 
             /* Special case related to host-dnat */
