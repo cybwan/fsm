@@ -165,7 +165,7 @@ struct xpkt_nat_endpoint {
     __u8 nat_xmac[6];
     __u8 nat_rmac[6];
     __u8 inactive;
-};
+} __attribute__((packed));
 typedef struct xpkt_nat_endpoint nat_endpoint_t;
 
 struct dp_pb_stats {

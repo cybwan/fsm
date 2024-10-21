@@ -34,7 +34,6 @@ type bpfDpCtKey struct {
 	Saddr [4]uint32
 	Sport uint16
 	Dport uint16
-	Zone  uint16
 	Proto uint8
 	V6    uint8
 }
@@ -85,8 +84,8 @@ type bpfDpCtTact struct {
 			NatXmac  [6]uint8
 			NatRmac  [6]uint8
 			Inactive uint8
-			_        [3]byte
 		}
+		_  [3]byte
 		Pb struct {
 			Bytes   uint64
 			Packets uint64
@@ -189,7 +188,7 @@ type bpfXpkt struct {
 		Nxmac      [6]uint8
 		Nrmac      [6]uint8
 		CtSts      uint8
-		SelAid     uint8
+		EpSel      uint8
 		Nv6        uint8
 		XlateProto uint8
 		_          [2]byte
@@ -211,7 +210,6 @@ type bpfXpkt struct {
 		LkupDmac  [6]uint8
 		Iport     uint16
 		Oport     uint16
-		Zone      uint16
 		L4Off     uint8
 		TableId   uint8
 		Sseid     uint64
@@ -229,7 +227,6 @@ type bpfXpkt struct {
 		L3Plen    uint16
 		Il3Len    uint16
 		Il3Plen   uint16
-		DpMark    uint16
 		DpRec     uint16
 		TunOff    uint16
 		FwMid     uint16
@@ -258,9 +255,8 @@ type bpfXpktFib4Ops struct {
 		Mark    uint16
 		Record  uint16
 	}
-	Its  uint64
-	Zone uint32
-	Ops  [7]struct {
+	Its uint64
+	Ops [7]struct {
 		Ca struct {
 			ActType uint8
 			Ftrap   uint8
@@ -276,14 +272,11 @@ type bpfXpktFib4Ops struct {
 		}
 		_ [60]byte
 	}
-	_ [4]byte
 }
 
 type bpfXpktNatKey struct {
 	Daddr [4]uint32
 	Dport uint16
-	Zone  uint16
-	Mark  uint16
 	Proto uint8
 	V6    uint8
 }
@@ -293,10 +286,9 @@ type bpfXpktNatOps struct {
 	Pto       uint64
 	Lock      struct{ Val uint32 }
 	NatType   uint8
-	_         [1]byte
-	LbAlgo    uint16
-	EpSel     uint16
-	EpCnt     uint16
+	LbAlgo    uint8
+	EpSel     uint8
+	EpCnt     uint8
 	Endpoints [16]struct {
 		NatFlags uint8
 		Nv6      uint8
@@ -308,9 +300,7 @@ type bpfXpktNatOps struct {
 		NatXmac  [6]uint8
 		NatRmac  [6]uint8
 		Inactive uint8
-		_        [3]byte
 	}
-	_ [4]byte
 }
 
 // loadBpf returns the embedded CollectionSpec for bpf.
