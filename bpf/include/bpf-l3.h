@@ -59,7 +59,7 @@ dp_do_ctops(skb_t *skb, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
             na->fr = 1;
         }
 
-        xpkt_nat_set(skb, pkt, na, act->ca.act_type == DP_SET_SNAT ? 1 : 0);
+        xpkt_nat_load(skb, pkt, na, act->ca.act_type == DP_SET_SNAT ? 1 : 0);
 
         if (na->fr == 1 || na->doct || pkt->ctx.goct) {
             goto ct_trk;

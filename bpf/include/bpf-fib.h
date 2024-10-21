@@ -61,7 +61,7 @@ xpkt_fib4_find(skb_t *skb, struct xpkt *pkt)
             return 0;
         }
 
-        xpkt_nat_set(skb, pkt, &ta->nat_act, 1);
+        xpkt_nat_load(skb, pkt, &ta->nat_act, 1);
     } else if (acts->ops[DP_SET_DNAT].ca.act_type == DP_SET_DNAT) {
         ta = &acts->ops[DP_SET_DNAT];
 
@@ -70,7 +70,7 @@ xpkt_fib4_find(skb_t *skb, struct xpkt *pkt)
             return 0;
         }
 
-        xpkt_nat_set(skb, pkt, &ta->nat_act, 0);
+        xpkt_nat_load(skb, pkt, &ta->nat_act, 0);
     }
 
     /* Catch any conditions which need us to go to cp/ct */

@@ -4,7 +4,7 @@
 #include "bpf-dbg.h"
 
 __attribute__((__always_inline__)) static inline int
-xpkt_nat_set(skb_t *skb, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
+xpkt_nat_load(skb_t *skb, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
 {
     pkt->ctx.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
     XADDR_COPY(pkt->nat.nxip, na->xip);
@@ -19,12 +19,12 @@ xpkt_nat_set(skb_t *skb, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
 }
 
 __attribute__((__always_inline__)) static inline int
-xpkt_nat_lb(skb_t *skb, struct xpkt *pkt, struct xpkt_nat_ops *ops)
+xpkt_nat_endpoint(skb_t *skb, struct xpkt *pkt, struct xpkt_nat_ops *ops)
 {
     int sel = -1;
     __u8 ep_idx = 0;
     __u8 ep_sel = 0;
-    struct xpkt_nat_lb *ep;
+    struct xpkt_nat_endpoint *ep;
 
     if (ops->lb_algo == NAT_LB_HASH) {
         bpf_set_hash_invalid(skb);
@@ -63,7 +63,7 @@ __attribute__((__always_inline__)) static inline int
 xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
 {
     struct xpkt_nat_key key;
-    struct xpkt_nat_lb *ep;
+    struct xpkt_nat_endpoint *ep;
     struct xpkt_nat_ops *ops;
     int sel;
 
@@ -93,7 +93,7 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
     }
 
     if (ops->nat_type == DP_SET_SNAT || ops->nat_type == DP_SET_DNAT) {
-        sel = xpkt_nat_lb(skb, pkt, ops);
+        sel = xpkt_nat_endpoint(skb, pkt, ops);
         pkt->ctx.nf = ops->nat_type == DP_SET_SNAT ? F4_NAT_SRC : F4_NAT_DST;
 
         /* FIXME - Do not select inactive end-points
