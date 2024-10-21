@@ -38,9 +38,9 @@ test-tc-attach:
 
 .PHONY: test-tc-detach
 test-tc-detach:
-	@sudo ip netns exec h1 tc filter del dev eth0 ingress
-	@sudo ip netns exec h1 tc filter del dev eth0 egress
-	@sudo ip netns exec h1 tc qdisc del dev eth0 clsact
+	@sudo ip netns exec h1 tc filter del dev eth0 ingress || true
+	@sudo ip netns exec h1 tc filter del dev eth0 egress || true
+	@sudo ip netns exec h1 tc qdisc del dev eth0 clsact || true
 
 .PHONY: test-tc-show
 test-tc-show:
