@@ -68,7 +68,6 @@ struct xpkt_context {
     __u8 lkup_dmac[6];
     __u16 iport;
     __u16 oport;
-    __u16 zone;
     __u8 l4_off;
     __u8 table_id;
 

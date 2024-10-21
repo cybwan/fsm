@@ -90,9 +90,14 @@ dp_do_ing_ct(skb_t *skb, struct xpkt *pkt, void *fa_)
     struct dp_ct_key key;
     struct dp_ct_tact *act;
 
-    CT_KEY_GEN(&key, pkt);
+    key.zone = 0;
+    XADDR_COPY(key.daddr, pkt->l34.daddr);
+    XADDR_COPY(key.saddr, pkt->l34.saddr);
+    key.sport = pkt->l34.source;
+    key.dport = pkt->l34.dest;
+    key.proto = pkt->l34.proto;
+    key.v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;
 
-    // pkt->ctx.table_id = F4_DP_CT_MAP;
     act = bpf_map_lookup_elem(&fsm_ct, &key);
     return dp_do_ctops(skb, pkt, fa_, act);
 }

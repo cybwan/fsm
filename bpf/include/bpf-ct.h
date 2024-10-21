@@ -5,23 +5,6 @@
 #include "bpf-dp.h"
 #include "bpf-mdi.h"
 
-#define CT_KEY_GEN(k, xf)                                                      \
-    do {                                                                       \
-        (k)->daddr[0] = pkt->l34.daddr[0];                                     \
-        (k)->daddr[1] = pkt->l34.daddr[1];                                     \
-        (k)->daddr[2] = pkt->l34.daddr[2];                                     \
-        (k)->daddr[3] = pkt->l34.daddr[3];                                     \
-        (k)->saddr[0] = pkt->l34.saddr[0];                                     \
-        (k)->saddr[1] = pkt->l34.saddr[1];                                     \
-        (k)->saddr[2] = pkt->l34.saddr[2];                                     \
-        (k)->saddr[3] = pkt->l34.saddr[3];                                     \
-        (k)->sport = pkt->l34.source;                                          \
-        (k)->dport = pkt->l34.dest;                                            \
-        (k)->proto = pkt->l34.proto;                                           \
-        (k)->zone = pkt->ctx.zone;                                             \
-        (k)->v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;                \
-    } while (0)
-
 #define dp_run_ctact_helper(x, a)                                              \
     do {                                                                       \
         switch ((a)->ca.act_type) {                                            \
@@ -742,7 +725,7 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
     key.sport = pkt->l34.source;
     key.dport = pkt->l34.dest;
     key.proto = pkt->l34.proto;
-    key.zone = pkt->ctx.zone;
+    key.zone = 0;
     key.v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;
 
     if (key.proto != IPPROTO_TCP && key.proto != IPPROTO_UDP &&
