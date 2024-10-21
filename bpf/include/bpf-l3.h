@@ -13,7 +13,7 @@ dp_do_ctops(skb_t *skb, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
         goto ct_trk;
     }
 
-    pkt->pm.phit |= F4_DP_CTM_HIT;
+    pkt->ctx.phit |= F4_DP_CTM_HIT;
 
     act->lts = bpf_ktime_get_ns();
 
@@ -24,7 +24,7 @@ dp_do_ctops(skb_t *skb, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
         goto ct_trk;
     } else if (act->ca.act_type == DP_SET_NOP) {
         struct dp_rdr_act *ar = &act->port_act;
-        if (pkt->pm.l4fin) {
+        if (pkt->ctx.l4fin) {
             ar->fr = 1;
         }
 
@@ -34,7 +34,7 @@ dp_do_ctops(skb_t *skb, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
 
     } else if (act->ca.act_type == DP_SET_RDR_PORT) {
         struct dp_rdr_act *ar = &act->port_act;
-        if (pkt->pm.l4fin) {
+        if (pkt->ctx.l4fin) {
             ar->fr = 1;
         }
 
@@ -43,7 +43,7 @@ dp_do_ctops(skb_t *skb, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
         }
 
         F4_PPLN_RDR_PRIO(pkt);
-        pkt->pm.oport = ar->oport;
+        pkt->ctx.oport = ar->oport;
     } else if (act->ca.act_type == DP_SET_SNAT ||
                act->ca.act_type == DP_SET_DNAT) {
         struct dp_nat_act *na;
@@ -55,13 +55,13 @@ dp_do_ctops(skb_t *skb, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
 
         na = &act->nat_act;
 
-        if (pkt->pm.l4fin) {
+        if (pkt->ctx.l4fin) {
             na->fr = 1;
         }
 
         xpkt_nat_set(skb, pkt, na, act->ca.act_type == DP_SET_SNAT ? 1 : 0);
 
-        if (na->fr == 1 || na->doct || pkt->pm.goct) {
+        if (na->fr == 1 || na->doct || pkt->ctx.goct) {
             goto ct_trk;
         }
 
@@ -92,7 +92,7 @@ dp_do_ing_ct(skb_t *skb, struct xpkt *pkt, void *fa_)
 
     CT_KEY_GEN(&key, pkt);
 
-    // pkt->pm.table_id = F4_DP_CT_MAP;
+    // pkt->ctx.table_id = F4_DP_CT_MAP;
     act = bpf_map_lookup_elem(&fsm_ct, &key);
     return dp_do_ctops(skb, pkt, fa_, act);
 }
@@ -101,14 +101,14 @@ __attribute__((__always_inline__)) static inline int
 dp_l3_fwd(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     if (pkt->l2.dl_type == htons(ETH_P_IP)) {
-        if (pkt->pm.nf && pkt->nat.nv6 != 0) {
+        if (pkt->ctx.nf && pkt->nat.nv6 != 0) {
             pkt->nat.xlate_proto = 1;
             // dp_do_ipv6_fwd(skb, pkt, fa);
         } else {
             // dp_do_ipv4_fwd(skb, pkt, fa);
         }
     } else if (pkt->l2.dl_type == htons(ETH_P_IPV6)) {
-        if (pkt->pm.nf && pkt->nat.nv6 == 0) {
+        if (pkt->ctx.nf && pkt->nat.nv6 == 0) {
             pkt->nat.xlate_proto = 1;
             // dp_do_ipv4_fwd(skb, pkt, fa);
         } else {

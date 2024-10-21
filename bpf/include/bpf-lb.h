@@ -6,7 +6,7 @@
 __attribute__((__always_inline__)) static inline int
 xpkt_nat_set(skb_t *skb, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
 {
-    pkt->pm.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
+    pkt->ctx.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
     XADDR_COPY(pkt->nat.nxip, na->xip);
     XADDR_COPY(pkt->nat.nrip, na->rip);
     XMAC_COPY(pkt->nat.nxmac, na->xmac);
@@ -126,9 +126,9 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
     } else {
         key.dport = 0;
     }
-    key.zone = pkt->pm.zone;
+    key.zone = pkt->ctx.zone;
     key.proto = pkt->l34.proto;
-    key.mark = (__u16)(pkt->pm.dp_mark & 0xffff);
+    key.mark = (__u16)(pkt->ctx.dp_mark & 0xffff);
     if (pkt->l2.dl_type == ntohs(ETH_P_IPV6)) {
         key.v6 = 1;
     }
@@ -140,7 +140,7 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
     act = bpf_map_lookup_elem(&fsm_nat, &key);
     if (!act) {
         /* Default action - Nothing to do */
-        pkt->pm.nf &= ~F4_NAT_DST;
+        pkt->ctx.nf &= ~F4_NAT_DST;
         return 0;
     }
 
@@ -149,7 +149,7 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
 
         pkt->nat.dsr = act->ca.oaux ? 1 : 0;
         pkt->nat.cdis = act->cdis ? 1 : 0;
-        pkt->pm.nf = act->ca.act_type == DP_SET_SNAT ? F4_NAT_SRC : F4_NAT_DST;
+        pkt->ctx.nf = act->ca.act_type == DP_SET_SNAT ? F4_NAT_SRC : F4_NAT_DST;
 
         /* FIXME - Do not select inactive end-points
          * Need multi-passes for selection
@@ -172,14 +172,15 @@ xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
             pkt->nat.nv6 = nxfrm_act->nv6 ? 1 : 0;
             pkt->nat.sel_aid = sel;
             pkt->nat.ito = act->ito;
-            pkt->pm.rule_id = act->ca.cidx;
+            pkt->ctx.rule_id = act->ca.cidx;
 
             /* Special case related to host-dnat */
-            if (pkt->l34.saddr4 == pkt->nat.nxip4 && pkt->pm.nf == F4_NAT_DST) {
+            if (pkt->l34.saddr4 == pkt->nat.nxip4 &&
+                pkt->ctx.nf == F4_NAT_DST) {
                 pkt->nat.nxip4 = 0;
             }
         } else {
-            pkt->pm.nf = 0;
+            pkt->ctx.nf = 0;
         }
     } else {
         F4_PPLN_DROPC(pkt, F4_PIPE_RC_ACT_UNK);

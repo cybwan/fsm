@@ -20,12 +20,12 @@
 #define DST_PORT 8080
 
 #define F4_DEBUG_IGR(x)                                                        \
-    (x->pm.igr == 1 && x->l2.dl_type == ntohs(ETH_P_IP) &&                     \
+    (x->ctx.igr == 1 && x->l2.dl_type == ntohs(ETH_P_IP) &&                    \
      x->l34.proto == IPPROTO_TCP && x->l34.saddr4 == DST_ADDR &&               \
      x->l34.daddr4 == SRC_ADDR && x->l34.source == htons(DST_PORT))
 
 #define F4_DEBUG_EGR(x)                                                        \
-    (x->pm.egr == 1 && x->l2.dl_type == ntohs(ETH_P_IP) &&                     \
+    (x->ctx.egr == 1 && x->l2.dl_type == ntohs(ETH_P_IP) &&                    \
      x->l34.proto == IPPROTO_TCP && x->l34.saddr4 == SRC_ADDR &&               \
      x->l34.daddr4 == DST_ADDR && x->l34.dest == htons(DST_PORT))
 

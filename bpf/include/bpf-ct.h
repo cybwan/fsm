@@ -18,7 +18,7 @@
         (k)->sport = pkt->l34.source;                                          \
         (k)->dport = pkt->l34.dest;                                            \
         (k)->proto = pkt->l34.proto;                                           \
-        (k)->zone = pkt->pm.zone;                                              \
+        (k)->zone = pkt->ctx.zone;                                             \
         (k)->v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;                \
     } while (0)
 
@@ -118,7 +118,7 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key, nxfrm_inf_t *xi,
             xxi->nat_rport = key->sport;
         }
 
-        // xxi->nat_xifi = pkt->pm.ifi;
+        // xxi->nat_xifi = pkt->ctx.ifi;
         xxi->nat_flags = F4_NAT_DST;
         xxi->nv6 = key->v6;
 
@@ -175,8 +175,8 @@ dp_ct_tcp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
     ct_tcp_pinf_t *ts = &tdat->pi.t;
     ct_tcp_pinf_t *rts = &xtdat->pi.t;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
-    struct tcphdr *t = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->pm.l4_off);
-    __u8 tcp_flags = pkt->pm.tcp_flags;
+    struct tcphdr *t = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
+    __u8 tcp_flags = pkt->ctx.tcp_flags;
     ct_tcp_pinfd_t *td = &ts->tcp_cts[dir];
     ct_tcp_pinfd_t *rtd;
     __u32 seq;
@@ -196,12 +196,12 @@ dp_ct_tcp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
     if (dir == CT_DIR_IN) {
         tdat->pi.t.tcp_cts[0].pseq = t->seq;
         tdat->pi.t.tcp_cts[0].pack = t->ack_seq;
-        tdat->pb.bytes += pkt->pm.l3_len;
+        tdat->pb.bytes += pkt->ctx.l3_len;
         tdat->pb.packets += 1;
     } else {
         xtdat->pi.t.tcp_cts[0].pseq = t->seq;
         xtdat->pi.t.tcp_cts[0].pack = t->ack_seq;
-        xtdat->pb.bytes += pkt->pm.l3_len;
+        xtdat->pb.bytes += pkt->ctx.l3_len;
         xtdat->pb.packets += 1;
     }
 
@@ -397,11 +397,11 @@ dp_ct_udp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
     xpkt_spin_lock(&atdat->lock);
 
     if (dir == CT_DIR_IN) {
-        tdat->pb.bytes += pkt->pm.l3_len;
+        tdat->pb.bytes += pkt->ctx.l3_len;
         tdat->pb.packets += 1;
         us->pkts_seen++;
     } else {
-        xtdat->pb.bytes += pkt->pm.l3_len;
+        xtdat->pb.bytes += pkt->ctx.l3_len;
         xtdat->pb.packets += 1;
         us->rpkts_seen++;
     }
@@ -426,13 +426,13 @@ dp_ct_udp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
             nstate = CT_UDP_EST;
         break;
     case CT_UDP_EST:
-        if (pkt->pm.l4fin) {
+        if (pkt->ctx.l4fin) {
             nstate = CT_UDP_FINI;
             us->fndir = dir;
         }
         break;
     case CT_UDP_FINI:
-        if (pkt->pm.l4fin && us->fndir != dir) {
+        if (pkt->ctx.l4fin && us->fndir != dir) {
             nstate = CT_UDP_CW;
         }
         break;
@@ -466,7 +466,7 @@ dp_ct_icmp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
     ct_icmp_pinf_t *is = &tdat->pi.i;
     ct_icmp_pinf_t *xis = &xtdat->pi.i;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
-    struct icmphdr *i = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->pm.l4_off);
+    struct icmphdr *i = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
     __u32 nstate;
     __u16 seq;
 
@@ -484,10 +484,10 @@ dp_ct_icmp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
     xpkt_spin_lock(&atdat->lock);
 
     if (dir == CT_DIR_IN) {
-        tdat->pb.bytes += pkt->pm.l3_len;
+        tdat->pb.bytes += pkt->ctx.l3_len;
         tdat->pb.packets += 1;
     } else {
-        xtdat->pb.bytes += pkt->pm.l3_len;
+        xtdat->pb.bytes += pkt->ctx.l3_len;
         xtdat->pb.packets += 1;
     }
 
@@ -565,7 +565,7 @@ dp_ct_icmp6_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
     ct_icmp_pinf_t *is = &tdat->pi.i;
     ct_icmp_pinf_t *xis = &xtdat->pi.i;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
-    struct icmp6hdr *i = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->pm.l4_off);
+    struct icmp6hdr *i = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
     __u32 nstate;
     __u16 seq;
 
@@ -583,10 +583,10 @@ dp_ct_icmp6_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
     xpkt_spin_lock(&atdat->lock);
 
     if (dir == CT_DIR_IN) {
-        tdat->pb.bytes += pkt->pm.l3_len;
+        tdat->pb.bytes += pkt->ctx.l3_len;
         tdat->pb.packets += 1;
     } else {
-        xtdat->pb.bytes += pkt->pm.l3_len;
+        xtdat->pb.bytes += pkt->ctx.l3_len;
         xtdat->pb.packets += 1;
     }
 
@@ -709,7 +709,7 @@ dp_ct_est(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
     switch (pkt->l34.proto) {
     case IPPROTO_UDP:
         if (pkt->l2.ssnid) {
-            if (pkt->pm.dir == CT_DIR_IN) {
+            if (pkt->ctx.dir == CT_DIR_IN) {
                 adat->ctd.xi.osp = key->sport;
                 adat->ctd.xi.odp = key->dport;
                 key->sport = pkt->l2.ssnid;
@@ -772,7 +772,7 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
     key.sport = pkt->l34.source;
     key.dport = pkt->l34.dest;
     key.proto = pkt->l34.proto;
-    key.zone = pkt->pm.zone;
+    key.zone = pkt->ctx.zone;
     key.v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;
 
     if (key.proto != IPPROTO_TCP && key.proto != IPPROTO_UDP &&
@@ -780,7 +780,7 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
         return CT_SMR_INPROG;
     }
 
-    xi->nat_flags = pkt->pm.nf;
+    xi->nat_flags = pkt->ctx.nf;
     XADDR_COPY(xi->nat_xip, pkt->nat.nxip);
     XADDR_COPY(xi->nat_rip, pkt->nat.nrip);
     // XMAC_COPY(xi->nat_xmac, pkt->nm.nxmac);
@@ -799,11 +799,11 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
     // XMAC_SET_ZERO(xxi->nat_xmac);
     // XMAC_SET_ZERO(xxi->nat_rmac);
 
-    if (pkt->pm.nf & (F4_NAT_DST | F4_NAT_SRC)) {
+    if (pkt->ctx.nf & (F4_NAT_DST | F4_NAT_SRC)) {
         if (XADDR_IS_ZERO(xi->nat_xip)) {
-            if (pkt->pm.nf == F4_NAT_DST) {
+            if (pkt->ctx.nf == F4_NAT_DST) {
                 xi->nat_flags = F4_NAT_HDST;
-            } else if (pkt->pm.nf == F4_NAT_SRC) {
+            } else if (pkt->ctx.nf == F4_NAT_SRC) {
                 xi->nat_flags = F4_NAT_HSRC;
             }
         }
@@ -813,7 +813,7 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
 
     atdat = bpf_map_lookup_elem(&fsm_ct, &key);
     axtdat = bpf_map_lookup_elem(&fsm_ct, &xkey);
-    if (pkt->pm.igr && (atdat == NULL || axtdat == NULL)) {
+    if (pkt->ctx.igr && (atdat == NULL || axtdat == NULL)) {
         adat->ca.ftrap = 0;
         adat->ca.oaux = 0;
         adat->ca.cidx = dp_ct_get_newctr(&adat->ctd.nid);
@@ -842,7 +842,7 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
         adat->ctd.dir = CT_DIR_IN;
 
         /* FIXME This is duplicated data */
-        adat->ctd.rid = pkt->pm.rule_id;
+        adat->ctd.rid = pkt->ctx.rule_id;
         adat->ctd.aid = pkt->nat.sel_aid;
         adat->ctd.smr = CT_SMR_INIT;
         adat->ctd.pb.bytes = 0;
@@ -851,7 +851,7 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
         axdat->ca.ftrap = 0;
         axdat->ca.oaux = 0;
         axdat->ca.cidx = adat->ca.cidx + 1;
-        axdat->ca.record = pkt->pm.dp_rec;
+        axdat->ca.record = pkt->ctx.dp_rec;
         memset(&axdat->ctd.pi, 0, sizeof(ct_pinf_t));
         if (xxi->nat_flags) {
             axdat->ca.act_type = xxi->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
@@ -865,7 +865,7 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
             axdat->nat_act.xport = xxi->nat_xport;
             axdat->nat_act.rport = xxi->nat_rport;
             axdat->nat_act.doct = 0;
-            axdat->nat_act.rid = pkt->pm.rule_id;
+            axdat->nat_act.rid = pkt->ctx.rule_id;
             axdat->nat_act.aid = pkt->nat.sel_aid;
             axdat->nat_act.nv6 = key.v6 ? 1 : 0;
             axdat->nat_act.dsr = pkt->nat.dsr;
@@ -894,14 +894,14 @@ __attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
     if (atdat != NULL && axtdat != NULL) {
         atdat->lts = bpf_ktime_get_ns();
         axtdat->lts = atdat->lts;
-        pkt->pm.pipe_act = F4_PIPE_RDR;
+        pkt->ctx.act = F4_PIPE_RDR;
         if (atdat->ctd.dir == CT_DIR_IN) {
-            pkt->pm.dir = CT_DIR_IN;
-            pkt->pm.phit |= F4_DP_CTSI_HIT;
+            pkt->ctx.dir = CT_DIR_IN;
+            pkt->ctx.phit |= F4_DP_CTSI_HIT;
             smr = dp_ct_sm(skb, pkt, atdat, axtdat, CT_DIR_IN);
         } else {
-            pkt->pm.dir = CT_DIR_OUT;
-            pkt->pm.phit |= F4_DP_CTSO_HIT;
+            pkt->ctx.dir = CT_DIR_OUT;
+            pkt->ctx.phit |= F4_DP_CTSO_HIT;
             smr = dp_ct_sm(skb, pkt, axtdat, atdat, CT_DIR_OUT);
         }
 

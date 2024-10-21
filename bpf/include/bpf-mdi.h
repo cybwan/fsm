@@ -2,13 +2,13 @@
 #define __F4_BPF_MDI_H__
 
 #define F4_PIPE_FC_CAP(x)                                                      \
-    ((x)->pm.pipe_act & F4_PIPE_RDR && (x)->pm.phit & F4_DP_CTM_HIT &&         \
+    ((x)->ctx.act & F4_PIPE_RDR && (x)->ctx.phit & F4_DP_CTM_HIT &&            \
      (x)->l2.dl_type == htons(ETH_P_IP) && (x)->nat.xlate_proto == 0 &&        \
-     (x)->pm.dp_rec == 0 && (x)->l2.ssnid == 0 && (x)->pm.mirr == 0)
+     (x)->ctx.dp_rec == 0 && (x)->l2.ssnid == 0 && (x)->ctx.mirr == 0)
 
 #define F4_PIPE_RDR_MASK (F4_PIPE_RDR | F4_PIPE_RDR_PRIO | F4_PIPE_TRAP)
 
-struct dp_pi_mdi {
+struct xpkt_context {
     /* Pipeline Metadata */
     __u16 bd;
     __u16 py_bytes;
@@ -20,7 +20,7 @@ struct dp_pi_mdi {
 #define F4_PIPE_RDR_PRIO 0x20
 #define F4_PIPE_SET_CT 0x40
 #define F4_PIPE_F4M 0x80
-    __u8 pipe_act;
+    __u8 act;
     __u8 l3_off;
 #define F4_DP_CTM_HIT 0x1
 #define F4_DP_FC_HIT 0x2
@@ -184,9 +184,7 @@ struct xpkt {
     struct xpkt_l2_meta il2;
     struct xpkt_l34_meta il34;
     struct xpkt_nat_meta nat;
-
-    /* Pipeline Info*/
-    struct dp_pi_mdi pm;
+    struct xpkt_context ctx;
 } __attribute__((packed));
 
 #define ETH_TYPE_ETH2(x) ((x) >= htons(1536))

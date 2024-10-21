@@ -43,12 +43,12 @@ xpkt_decode_eth(struct decoder *coder, void *md, struct xpkt *pkt)
     if (coder->in_pkt) {
         pkt->il2.valid = 1;
         memcpy(pkt->il2.dl_dst, eth->h_dest, 2 * 6);
-        memcpy(pkt->pm.lkup_dmac, eth->h_dest, 6);
+        memcpy(pkt->ctx.lkup_dmac, eth->h_dest, 6);
         pkt->il2.dl_type = eth->h_proto;
     } else {
         pkt->l2.valid = 1;
         memcpy(pkt->l2.dl_dst, eth->h_dest, 2 * 6);
-        memcpy(pkt->pm.lkup_dmac, eth->h_dest, 6);
+        memcpy(pkt->ctx.lkup_dmac, eth->h_dest, 6);
         pkt->l2.dl_type = eth->h_proto;
     }
 
@@ -123,22 +123,22 @@ xpkt_decode_tcp(struct decoder *coder, void *md, struct xpkt *pkt)
 
     if (coder->in_pkt) {
         if (tcp_flags & (F4_TCP_FIN | F4_TCP_RST)) {
-            pkt->pm.il4fin = 1;
+            pkt->ctx.il4fin = 1;
         }
 
         pkt->il34.source = tcp->source;
         pkt->il34.dest = tcp->dest;
         pkt->il34.seq = tcp->seq;
-        pkt->pm.itcp_flags = tcp_flags;
+        pkt->ctx.itcp_flags = tcp_flags;
     } else {
         if (tcp_flags & (F4_TCP_FIN | F4_TCP_RST)) {
-            pkt->pm.l4fin = 1;
+            pkt->ctx.l4fin = 1;
         }
 
         pkt->l34.source = tcp->source;
         pkt->l34.dest = tcp->dest;
         pkt->l34.seq = tcp->seq;
-        pkt->pm.tcp_flags = tcp_flags;
+        pkt->ctx.tcp_flags = tcp_flags;
     }
 
     return DP_PRET_OK;
@@ -219,13 +219,13 @@ xpkt_decode_ipv4(struct decoder *coder, void *md, struct xpkt *pkt)
         return DP_PRET_FAIL;
     }
 
-    if (pkt->pm.igr) {
+    if (pkt->ctx.igr) {
         __u8 *hit;
         hit = bpf_map_lookup_elem(&fsm_igr_ipv4, &iph->daddr);
         if (hit != NULL) {
             bpf_tail_call(md, &fsm_progs, FSM_CNI_PASS_PROG_ID);
         }
-    } else if (pkt->pm.egr) {
+    } else if (pkt->ctx.egr) {
         __u8 *hit;
         hit = bpf_map_lookup_elem(&fsm_egr_ipv4, &iph->daddr);
         if (hit != NULL) {
@@ -233,8 +233,8 @@ xpkt_decode_ipv4(struct decoder *coder, void *md, struct xpkt *pkt)
         }
     }
 
-    pkt->pm.l3_len = ntohs(iph->tot_len);
-    pkt->pm.l3_plen = pkt->pm.l3_len - iphl;
+    pkt->ctx.l3_len = ntohs(iph->tot_len);
+    pkt->ctx.l3_plen = pkt->ctx.l3_len - iphl;
 
     pkt->l34.valid = 1;
     pkt->l34.tos = iph->tos & 0xfc;
@@ -243,12 +243,12 @@ xpkt_decode_ipv4(struct decoder *coder, void *md, struct xpkt *pkt)
     pkt->l34.daddr4 = iph->daddr;
 
     if (is_first_ip_fragment(iph)) {
-        pkt->pm.l4_off = XPKT_PTR_SUB(XPKT_PTR_ADD(iph, iphl), coder->start);
+        pkt->ctx.l4_off = XPKT_PTR_SUB(XPKT_PTR_ADD(iph, iphl), coder->start);
         coder->data_begin = XPKT_PTR_ADD(iph, iphl);
 
         if (is_ip_fragment(iph)) {
             pkt->l2.ssnid = iph->id;
-            pkt->pm.goct = 1;
+            pkt->ctx.goct = 1;
         }
 
         if (pkt->l34.proto == IPPROTO_TCP) {
@@ -284,8 +284,8 @@ xpkt_decode_ipv6(struct decoder *coder, void *md, struct xpkt *pkt)
         return DP_PRET_PASS;
     }
 
-    pkt->pm.l3_plen = ntohs(ip6->payload_len);
-    pkt->pm.l3_len = pkt->pm.l3_plen + sizeof(*ip6);
+    pkt->ctx.l3_plen = ntohs(ip6->payload_len);
+    pkt->ctx.l3_len = pkt->ctx.l3_plen + sizeof(*ip6);
 
     pkt->l34.valid = 1;
     pkt->l34.tos =
@@ -294,7 +294,7 @@ xpkt_decode_ipv6(struct decoder *coder, void *md, struct xpkt *pkt)
     memcpy(&pkt->l34.saddr, &ip6->saddr, sizeof(ip6->saddr));
     memcpy(&pkt->l34.daddr, &ip6->daddr, sizeof(ip6->daddr));
 
-    pkt->pm.l4_off =
+    pkt->ctx.l4_off =
         XPKT_PTR_SUB(XPKT_PTR_ADD(ip6, sizeof(*ip6)), coder->start);
     coder->data_begin = XPKT_PTR_ADD(ip6, sizeof(*ip6));
 
@@ -321,7 +321,7 @@ xpkt_decode(void *md, struct xpkt *pkt, int skip_ipv6)
     coder.data_begin = XPKT_PTR(coder.start);
     coder.data_end = XPKT_PTR(XPKT_DATA_END(md));
 
-    pkt->pm.py_bytes = XPKT_PTR_SUB(coder.data_end, coder.data_begin);
+    pkt->ctx.py_bytes = XPKT_PTR_SUB(coder.data_end, coder.data_begin);
 
     if ((ret = xpkt_decode_eth(&coder, md, pkt))) {
         goto handle_excp;
@@ -331,7 +331,7 @@ xpkt_decode(void *md, struct xpkt *pkt, int skip_ipv6)
         goto handle_excp;
     }
 
-    pkt->pm.l3_off = XPKT_PTR_SUB(coder.data_begin, coder.start);
+    pkt->ctx.l3_off = XPKT_PTR_SUB(coder.data_begin, coder.start);
 
     if (pkt->l2.dl_type == htons(ETH_P_ARP)) {
         ret = xpkt_decode_arp(&coder, md, pkt);
@@ -365,7 +365,7 @@ handle_excp:
 __attribute__((__always_inline__)) static inline int
 xpkt_encode_packet_always(skb_t *skb, struct xpkt *pkt)
 {
-    if (pkt->pm.nf & F4_NAT_SRC && pkt->nat.dsr == 0) {
+    if (pkt->ctx.nf & F4_NAT_SRC && pkt->nat.dsr == 0) {
         if (pkt->l2.dl_type == ntohs(ETH_P_IPV6) || pkt->nat.nv6) {
             // dp_sunp_tcall(skb, xf);
         } else {
@@ -373,7 +373,7 @@ xpkt_encode_packet_always(skb_t *skb, struct xpkt *pkt)
                 return TC_ACT_SHOT;
             }
         }
-    } else if (pkt->pm.nf & F4_NAT_DST && pkt->nat.dsr == 0) {
+    } else if (pkt->ctx.nf & F4_NAT_DST && pkt->nat.dsr == 0) {
         if (pkt->l2.dl_type == ntohs(ETH_P_IPV6)) {
             // dp_sunp_tcall(skb, xf);
         } else {

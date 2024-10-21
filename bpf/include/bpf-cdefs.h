@@ -13,29 +13,29 @@
 #define XPKT_META(md) (((struct __sk_buff *)md)->data_meta)
 #define XPKT_LEN(md) (((struct __sk_buff *)md)->len)
 
-#define F4_PPLN_RDR(F) (F->pm.pipe_act |= F4_PIPE_RDR);
-#define F4_PPLN_RDR_PRIO(F) (F->pm.pipe_act |= F4_PIPE_RDR_PRIO);
-#define F4_PPLN_REWIRE(F) (F->pm.pipe_act |= F4_PIPE_REWIRE);
-#define F4_PPLN_SETCT(F) (F->pm.pipe_act |= F4_PIPE_SET_CT);
+#define F4_PPLN_RDR(F) (F->ctx.act |= F4_PIPE_RDR);
+#define F4_PPLN_RDR_PRIO(F) (F->ctx.act |= F4_PIPE_RDR_PRIO);
+#define F4_PPLN_REWIRE(F) (F->ctx.act |= F4_PIPE_REWIRE);
+#define F4_PPLN_SETCT(F) (F->ctx.act |= F4_PIPE_SET_CT);
 
 #define DP_F4_IS_EGR(md) (0)
 
 #define F4_PPLN_PASSC(F, C)                                                    \
     do {                                                                       \
-        F->pm.pipe_act |= F4_PIPE_PASS;                                        \
-        F->pm.rcode |= C;                                                      \
+        F->ctx.act |= F4_PIPE_PASS;                                            \
+        F->ctx.rcode |= C;                                                     \
     } while (0)
 
 #define F4_PPLN_DROPC(F, C)                                                    \
     do {                                                                       \
-        F->pm.pipe_act |= F4_PIPE_DROP;                                        \
-        F->pm.rcode |= C;                                                      \
+        F->ctx.act |= F4_PIPE_DROP;                                            \
+        F->ctx.rcode |= C;                                                     \
     } while (0)
 
 #define F4_PPLN_TRAPC(F, C)                                                    \
     do {                                                                       \
-        F->pm.pipe_act |= F4_PIPE_TRAP;                                        \
-        F->pm.rcode = C;                                                       \
+        F->ctx.act |= F4_PIPE_TRAP;                                            \
+        F->ctx.rcode = C;                                                      \
     } while (0)
 
 __attribute__((__always_inline__)) static inline __u32
@@ -73,15 +73,15 @@ xpkt_skb_buf_delete_room(void *md, int delta, __u64 flags)
 __attribute__((__always_inline__)) static inline int
 xpkt_redirect_port(void *tbl, struct xpkt *pkt)
 {
-    return bpf_redirect_map(tbl, pkt->pm.oport, 0);
+    return bpf_redirect_map(tbl, pkt->ctx.oport, 0);
 }
 
 __attribute__((__always_inline__)) static inline int
 xpkt_csum_replace_tcp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-    int ip_csum_off = pkt->pm.l3_off + offsetof(struct iphdr, check);
-    int tcp_csum_off = pkt->pm.l4_off + offsetof(struct tcphdr, check);
-    int ip_src_off = pkt->pm.l3_off + offsetof(struct iphdr, saddr);
+    int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
+    int tcp_csum_off = pkt->ctx.l4_off + offsetof(struct tcphdr, check);
+    int ip_src_off = pkt->ctx.l3_off + offsetof(struct iphdr, saddr);
     __be32 old_sip = pkt->l34.saddr4;
 
     bpf_l4_csum_replace(md, tcp_csum_off, old_sip, xip,
@@ -97,9 +97,9 @@ xpkt_csum_replace_tcp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 __attribute__((__always_inline__)) static inline int
 xpkt_csum_replace_tcp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-    int ip_csum_off = pkt->pm.l3_off + offsetof(struct iphdr, check);
-    int tcp_csum_off = pkt->pm.l4_off + offsetof(struct tcphdr, check);
-    int ip_dst_off = pkt->pm.l3_off + offsetof(struct iphdr, daddr);
+    int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
+    int tcp_csum_off = pkt->ctx.l4_off + offsetof(struct tcphdr, check);
+    int ip_dst_off = pkt->ctx.l3_off + offsetof(struct iphdr, daddr);
     __be32 old_dip = pkt->l34.daddr4;
 
     bpf_l4_csum_replace(md, tcp_csum_off, old_dip, xip,
@@ -114,8 +114,8 @@ xpkt_csum_replace_tcp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 __attribute__((__always_inline__)) static inline int
 xpkt_csum_replace_tcp_src_port(void *md, struct xpkt *pkt, __be16 xport)
 {
-    int tcp_csum_off = pkt->pm.l4_off + offsetof(struct tcphdr, check);
-    int tcp_sport_off = pkt->pm.l4_off + offsetof(struct tcphdr, source);
+    int tcp_csum_off = pkt->ctx.l4_off + offsetof(struct tcphdr, check);
+    int tcp_sport_off = pkt->ctx.l4_off + offsetof(struct tcphdr, source);
     __be32 old_sport = pkt->l34.source;
 
     if (pkt->l34.frg || !xport)
@@ -131,8 +131,8 @@ xpkt_csum_replace_tcp_src_port(void *md, struct xpkt *pkt, __be16 xport)
 __attribute__((__always_inline__)) static inline int
 xpkt_csum_replace_tcp_dst_port(void *md, struct xpkt *pkt, __be16 xport)
 {
-    int tcp_csum_off = pkt->pm.l4_off + offsetof(struct tcphdr, check);
-    int tcp_dport_off = pkt->pm.l4_off + offsetof(struct tcphdr, dest);
+    int tcp_csum_off = pkt->ctx.l4_off + offsetof(struct tcphdr, check);
+    int tcp_dport_off = pkt->ctx.l4_off + offsetof(struct tcphdr, dest);
     __be32 old_dport = pkt->l34.dest;
 
     if (pkt->l34.frg)
@@ -148,9 +148,9 @@ xpkt_csum_replace_tcp_dst_port(void *md, struct xpkt *pkt, __be16 xport)
 __attribute__((__always_inline__)) static inline int
 xpkt_csum_replace_udp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-    int ip_csum_off = pkt->pm.l3_off + offsetof(struct iphdr, check);
-    int udp_csum_off = pkt->pm.l4_off + offsetof(struct udphdr, check);
-    int ip_src_off = pkt->pm.l3_off + offsetof(struct iphdr, saddr);
+    int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
+    int udp_csum_off = pkt->ctx.l4_off + offsetof(struct udphdr, check);
+    int ip_src_off = pkt->ctx.l3_off + offsetof(struct iphdr, saddr);
     __be32 old_sip = pkt->l34.saddr4;
 
     bpf_l4_csum_replace(md, udp_csum_off, old_sip, xip,
@@ -165,9 +165,9 @@ xpkt_csum_replace_udp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 __attribute__((__always_inline__)) static inline int
 xpkt_csum_replace_udp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-    int ip_csum_off = pkt->pm.l3_off + offsetof(struct iphdr, check);
-    int udp_csum_off = pkt->pm.l4_off + offsetof(struct udphdr, check);
-    int ip_dst_off = pkt->pm.l3_off + offsetof(struct iphdr, daddr);
+    int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
+    int udp_csum_off = pkt->ctx.l4_off + offsetof(struct udphdr, check);
+    int ip_dst_off = pkt->ctx.l3_off + offsetof(struct iphdr, daddr);
     __be32 old_dip = pkt->l34.daddr4;
 
     bpf_l4_csum_replace(md, udp_csum_off, old_dip, xip,
@@ -182,8 +182,8 @@ xpkt_csum_replace_udp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 __attribute__((__always_inline__)) static inline int
 xpkt_csum_replace_udp_src_port(void *md, struct xpkt *pkt, __be16 xport)
 {
-    int udp_csum_off = pkt->pm.l4_off + offsetof(struct udphdr, check);
-    int udp_sport_off = pkt->pm.l4_off + offsetof(struct udphdr, source);
+    int udp_csum_off = pkt->ctx.l4_off + offsetof(struct udphdr, check);
+    int udp_sport_off = pkt->ctx.l4_off + offsetof(struct udphdr, source);
     __be32 old_sport = pkt->l34.source;
 
     if (pkt->l34.frg || !xport)
@@ -199,8 +199,8 @@ xpkt_csum_replace_udp_src_port(void *md, struct xpkt *pkt, __be16 xport)
 __attribute__((__always_inline__)) static inline int
 xpkt_csum_replace_udp_dst_port(void *md, struct xpkt *pkt, __be16 xport)
 {
-    int udp_csum_off = pkt->pm.l4_off + offsetof(struct udphdr, check);
-    int udp_dport_off = pkt->pm.l4_off + offsetof(struct udphdr, dest);
+    int udp_csum_off = pkt->ctx.l4_off + offsetof(struct udphdr, check);
+    int udp_dport_off = pkt->ctx.l4_off + offsetof(struct udphdr, dest);
     __be32 old_dport = pkt->l34.dest;
 
     if (pkt->l34.frg)
@@ -216,8 +216,8 @@ xpkt_csum_replace_udp_dst_port(void *md, struct xpkt *pkt, __be16 xport)
 __attribute__((__always_inline__)) static inline int
 xpkt_csum_replace_icmp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-    int ip_csum_off = pkt->pm.l3_off + offsetof(struct iphdr, check);
-    int ip_src_off = pkt->pm.l3_off + offsetof(struct iphdr, saddr);
+    int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
+    int ip_src_off = pkt->ctx.l3_off + offsetof(struct iphdr, saddr);
     __be32 old_sip = pkt->l34.saddr4;
 
     bpf_l3_csum_replace(md, ip_csum_off, old_sip, xip, sizeof(xip));
@@ -230,8 +230,8 @@ xpkt_csum_replace_icmp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 __attribute__((__always_inline__)) static inline int
 xpkt_csum_replace_icmp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
-    int ip_csum_off = pkt->pm.l3_off + offsetof(struct iphdr, check);
-    int ip_dst_off = pkt->pm.l3_off + offsetof(struct iphdr, daddr);
+    int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
+    int ip_dst_off = pkt->ctx.l3_off + offsetof(struct iphdr, daddr);
     __be32 old_dip = pkt->l34.daddr4;
 
     bpf_l3_csum_replace(md, ip_csum_off, old_dip, xip, sizeof(xip));
@@ -249,7 +249,7 @@ xpkt_do_out(skb_t *skb, struct xpkt *pkt)
     struct ethhdr *eth;
     int vlan;
 
-    vlan = pkt->pm.bd;
+    vlan = pkt->ctx.bd;
 
     if (vlan == 0) {
         /* Strip existing vlan. Nothing to do if there was no vlan tag */

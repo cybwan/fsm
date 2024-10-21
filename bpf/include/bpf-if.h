@@ -33,32 +33,32 @@ xpkt_fib4_insert(skb_t *skb, struct xpkt *pkt, struct xpkt_fib4_ops *ops)
 __attribute__((__always_inline__)) static inline int
 dp_pipe_check_res(skb_t *skb, struct xpkt *pkt, void *fa)
 {
-    if (pkt->pm.pipe_act) {
+    if (pkt->ctx.act) {
 
-        if (pkt->pm.pipe_act & F4_PIPE_DROP) {
+        if (pkt->ctx.act & F4_PIPE_DROP) {
             return TC_ACT_SHOT;
         }
 
-        if (pkt->pm.pipe_act & F4_PIPE_RDR) {
+        if (pkt->ctx.act & F4_PIPE_RDR) {
             // XMAC_COPY(pkt->l2m.dl_src, pkt->nm.nxmac);
             // XMAC_COPY(pkt->l2m.dl_dst, pkt->nm.nrmac);
-            pkt->pm.oport = pkt->nat.nxifi;
+            pkt->ctx.oport = pkt->nat.nxifi;
         }
 
         if (xpkt_encode_packet_always(skb, pkt) != 0) {
             return TC_ACT_SHOT;
         }
 
-        if (pkt->pm.pipe_act & F4_PIPE_RDR_MASK) {
+        if (pkt->ctx.act & F4_PIPE_RDR_MASK) {
             // if (xpkt_encode_packet(skb, pkt) != 0) {
             //   return TC_ACT_SHOT;
             // }
-            // if (pkt->pm.f4) {
+            // if (pkt->ctx.f4) {
             //   if (dp_f4_packet(skb, pkt) != 0) {
             //     return TC_ACT_SHOT;
             //   }
             // }
-            // return bpf_redirect(pkt->pm.oport, BPF_F_INGRESS);
+            // return bpf_redirect(pkt->ctx.oport, BPF_F_INGRESS);
         }
     }
     return TC_ACT_OK; /* FIXME */
@@ -74,7 +74,7 @@ xpkt_conntrack_proc(skb_t *skb, struct xpkt *pkt)
     if (!fa)
         return TC_ACT_SHOT;
 
-    if (pkt->pm.igr && (pkt->pm.phit & F4_DP_CTM_HIT) == 0) {
+    if (pkt->ctx.igr && (pkt->ctx.phit & F4_DP_CTM_HIT) == 0) {
         xpkt_nat_proc(skb, pkt);
     }
 
@@ -116,7 +116,7 @@ xpkt_handshake_proc(skb_t *skb, struct xpkt *pkt)
     //  * it here and immediately get it out of way without
     //  * doing any further processing
     //  */
-    // if (pkt->pm.mirr != 0) {
+    // if (pkt->ctx.mirr != 0) {
     //   dp_do_mirr_lkup(skb, pkt);
     //   goto out;
     // }
@@ -126,7 +126,7 @@ xpkt_handshake_proc(skb_t *skb, struct xpkt *pkt)
     /* If there are pipeline errors at this stage,
      * we again skip any further processing
      */
-    if (pkt->pm.pipe_act || pkt->pm.tc == 0) {
+    if (pkt->ctx.act || pkt->ctx.tc == 0) {
         goto out;
     }
 
@@ -134,7 +134,7 @@ xpkt_handshake_proc(skb_t *skb, struct xpkt *pkt)
 
     /* fast-cache is used only when certain conditions are met */
     if (F4_PIPE_FC_CAP(pkt)) {
-        fa->zone = pkt->pm.zone;
+        fa->zone = pkt->ctx.zone;
         xpkt_fib4_insert(skb, pkt, fa);
     }
 

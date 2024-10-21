@@ -38,8 +38,8 @@ int sidecar_ingress(struct __sk_buff *skb)
     }
     memset(pkt, 0, sizeof *pkt);
 
-    pkt->pm.igr = 1;
-    pkt->pm.ifi = skb->ingress_ifindex;
+    pkt->ctx.igr = 1;
+    pkt->ctx.ifi = skb->ingress_ifindex;
 
     xpkt_decode(skb, pkt, 1);
 
@@ -67,8 +67,8 @@ int sidecar_egress(skb_t *skb)
     }
     memset(pkt, 0, sizeof *pkt);
 
-    pkt->pm.egr = 1;
-    pkt->pm.ifi = skb->ingress_ifindex;
+    pkt->ctx.egr = 1;
+    pkt->ctx.ifi = skb->ingress_ifindex;
 
     xpkt_decode(skb, pkt, 1);
 
@@ -94,11 +94,11 @@ int tc_hand_shake_func(struct __sk_buff *skb)
         return TC_ACT_SHOT;
     }
 
-    pkt->pm.phit |= F4_DP_FC_HIT;
-    pkt->pm.tc = 1;
+    pkt->ctx.phit |= F4_DP_FC_HIT;
+    pkt->ctx.tc = 1;
 
-    if (pkt->pm.pipe_act & F4_PIPE_PASS || pkt->pm.pipe_act & F4_PIPE_TRAP) {
-        pkt->pm.rcode |= F4_PIPE_RC_MPT_PASS;
+    if (pkt->ctx.act & F4_PIPE_PASS || pkt->ctx.act & F4_PIPE_TRAP) {
+        pkt->ctx.rcode |= F4_PIPE_RC_MPT_PASS;
         return TC_ACT_OK;
     }
 

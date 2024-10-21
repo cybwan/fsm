@@ -41,23 +41,23 @@ xpkt_fib4_find(skb_t *skb, struct xpkt *pkt)
     if (bpf_ktime_get_ns() - acts->its > FC_V4_DPTO) {
         bpf_map_update_elem(&fsm_fib4_key, &z, &key, BPF_ANY);
         bpf_map_delete_elem(&fsm_fib4, &key);
-        pkt->pm.rcode |= F4_PIPE_RC_FCTO;
+        pkt->ctx.rcode |= F4_PIPE_RC_FCTO;
         return 0;
     }
 
     if (acts->ca.ftrap) {
-        pkt->pm.rcode |= F4_PIPE_RC_FCBP;
+        pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
         return 0;
     }
 
-    pkt->pm.phit |= F4_DP_FC_HIT;
-    pkt->pm.zone = acts->zone;
+    pkt->ctx.phit |= F4_DP_FC_HIT;
+    pkt->ctx.zone = acts->zone;
 
     if (acts->ops[DP_SET_SNAT].ca.act_type == DP_SET_SNAT) {
         ta = &acts->ops[DP_SET_SNAT];
 
         if (ta->nat_act.fr == 1 || ta->nat_act.doct) {
-            pkt->pm.rcode |= F4_PIPE_RC_FCBP;
+            pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
             return 0;
         }
 
@@ -66,7 +66,7 @@ xpkt_fib4_find(skb_t *skb, struct xpkt *pkt)
         ta = &acts->ops[DP_SET_DNAT];
 
         if (ta->nat_act.fr == 1 || ta->nat_act.doct) {
-            pkt->pm.rcode |= F4_PIPE_RC_FCBP;
+            pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
             return 0;
         }
 
@@ -74,7 +74,7 @@ xpkt_fib4_find(skb_t *skb, struct xpkt *pkt)
     }
 
     /* Catch any conditions which need us to go to cp/ct */
-    if (pkt->pm.l4fin) {
+    if (pkt->ctx.l4fin) {
         acts->ca.ftrap = 1;
         goto del_out;
     }
@@ -83,7 +83,7 @@ xpkt_fib4_find(skb_t *skb, struct xpkt *pkt)
 
     XMAC_COPY(pkt->l2.dl_src, pkt->nat.nxmac);
     XMAC_COPY(pkt->l2.dl_dst, pkt->nat.nrmac);
-    pkt->pm.oport = pkt->nat.nxifi;
+    pkt->ctx.oport = pkt->nat.nxifi;
 
     xpkt_encode_packet_always(skb, pkt);
     // xpkt_encode_packet(skb, pkt);
@@ -94,7 +94,7 @@ xpkt_fib4_find(skb_t *skb, struct xpkt *pkt)
 
 del_out:
     bpf_map_delete_elem(&fsm_fib4, &key);
-    pkt->pm.rcode |= F4_PIPE_RC_FCBP;
+    pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
     return 0;
 }
 
@@ -103,10 +103,10 @@ dp_ing_fc_main(skb_t *skb, struct xpkt *pkt)
 {
     int z = 0;
     int oif;
-    if (pkt->pm.pipe_act == 0 && pkt->l2.dl_type == ntohs(ETH_P_IP)) {
+    if (pkt->ctx.act == 0 && pkt->l2.dl_type == ntohs(ETH_P_IP)) {
         if (xpkt_fib4_find(skb, pkt) == 1) {
-            if (pkt->pm.pipe_act == F4_PIPE_RDR) {
-                // oif = pkt->pm.oport;
+            if (pkt->ctx.act == F4_PIPE_RDR) {
+                // oif = pkt->ctx.oport;
                 // return bpf_redirect(oif, 0);
                 return TC_ACT_OK;
             }
@@ -137,7 +137,7 @@ dp_egr_main(skb_t *skb, struct xpkt *pkt)
         adat = bpf_map_lookup_elem(&fsm_snat_opt, &key);
 
         if (adat != NULL) {
-            if (pkt->pm.igr) {
+            if (pkt->ctx.igr) {
                 if (pkt->l34.proto == IPPROTO_TCP) {
                     xpkt_csum_replace_tcp_dst_ip(skb, pkt, adat->xaddr);
                     xpkt_csum_replace_tcp_dst_port(skb, pkt,
@@ -147,7 +147,7 @@ dp_egr_main(skb_t *skb, struct xpkt *pkt)
                     xpkt_csum_replace_udp_dst_port(skb, pkt,
                                                    htons(adat->xport));
                 }
-            } else if (pkt->pm.egr) {
+            } else if (pkt->ctx.egr) {
                 if (pkt->l34.proto == IPPROTO_TCP) {
                     xpkt_csum_replace_tcp_src_ip(skb, pkt, adat->xaddr);
                     xpkt_csum_replace_tcp_src_port(skb, pkt,
