@@ -59,7 +59,7 @@ bpf-clean:
 	@rm -f ${BIN_DIR}/${MESH_KERN_OUT}
 
 .PHONY: bpf
-bpf: bpf-clean bpf-build
+bpf: bpf-clean bpf-fmt bpf-build
 
 .PHONY: load
 load: debug-fs bpf-fs bpf-build

@@ -132,6 +132,35 @@ type bpfDpSnatOptTact struct {
 	_     [2]byte
 }
 
+type bpfNatKeyT struct {
+	Daddr [4]uint32
+	Dport uint16
+	Proto uint8
+	V6    uint8
+}
+
+type bpfNatOpsT struct {
+	Ito       uint64
+	Pto       uint64
+	Lock      struct{ Val uint32 }
+	NatType   uint8
+	LbAlgo    uint8
+	EpSel     uint8
+	EpCnt     uint8
+	Endpoints [16]struct {
+		NatFlags uint8
+		Nv6      uint8
+		NatXifi  uint16
+		NatXport uint16
+		NatRport uint16
+		NatXip   [4]uint32
+		NatRip   [4]uint32
+		NatXmac  [6]uint8
+		NatRmac  [6]uint8
+		Inactive uint8
+	}
+}
+
 type bpfXpkt struct {
 	Skb struct {
 		Data    uint32
@@ -242,7 +271,6 @@ type bpfXpktFib4Key struct {
 	Dport uint16
 	Ifi   uint16
 	Proto uint8
-	Pad   uint8
 }
 
 type bpfXpktFib4Ops struct {
@@ -271,35 +299,6 @@ type bpfXpktFib4Ops struct {
 			Fr    uint16
 		}
 		_ [60]byte
-	}
-}
-
-type bpfXpktNatKey struct {
-	Daddr [4]uint32
-	Dport uint16
-	Proto uint8
-	V6    uint8
-}
-
-type bpfXpktNatOps struct {
-	Ito       uint64
-	Pto       uint64
-	Lock      struct{ Val uint32 }
-	NatType   uint8
-	LbAlgo    uint8
-	EpSel     uint8
-	EpCnt     uint8
-	Endpoints [16]struct {
-		NatFlags uint8
-		Nv6      uint8
-		NatXifi  uint16
-		NatXport uint16
-		NatRport uint16
-		NatXip   [4]uint32
-		NatRip   [4]uint32
-		NatXmac  [6]uint8
-		NatRmac  [6]uint8
-		Inactive uint8
 	}
 }
 

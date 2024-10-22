@@ -27,7 +27,7 @@ xpkt_nat_endpoint(skb_t *skb, xpkt_t *pkt, nat_ops_t *ops)
     __u8 ep_sel = 0;
     nat_endpoint_t *ep;
 
-    if (ops->lb_algo == NAT_LB_HASH) {
+    if (ops->lb_algo == NAT_LB_ALGO_HASH) {
         bpf_set_hash_invalid(skb);
         sel = bpf_get_hash_recalc(skb) % ops->ep_cnt;
         if (sel >= 0 && sel < F4_MAX_ENDPOINTS) {
@@ -37,7 +37,7 @@ xpkt_nat_endpoint(skb_t *skb, xpkt_t *pkt, nat_ops_t *ops)
         }
     }
 
-    if (ops->lb_algo == NAT_LB_RDRB) {
+    if (ops->lb_algo == NAT_LB_ALGO_RDRB) {
     lb_rr:
         xpkt_spin_lock(&ops->lock);
         ep_sel = ops->ep_sel;

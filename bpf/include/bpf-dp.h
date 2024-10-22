@@ -190,8 +190,8 @@ struct xpkt_fib4_key {
     __u16 dport;
     __u16 ifi;
     __u8 proto;
-    __u8 pad;
-};
+} __attribute__((packed));
+typedef struct xpkt_fib4_key fib4_key_t;
 
 struct dp_nat_act {
     __u32 xip[4];
@@ -228,13 +228,11 @@ struct xpkt_nat_key {
     __u16 dport;
     __u8 proto;
     __u8 v6;
-};
+} __attribute__((packed));
 typedef struct xpkt_nat_key nat_key_t;
 
-#define NAT_LB_RDRB 0
-#define NAT_LB_HASH 1
-
-#define NAT_LB_PERSIST_TIMEOUT (10800000000000ULL)
+#define NAT_LB_ALGO_RDRB 0
+#define NAT_LB_ALGO_HASH 1
 
 struct xpkt_nat_ops {
     __u64 ito;
@@ -244,7 +242,7 @@ struct xpkt_nat_ops {
     __u8 lb_algo;
     __u8 ep_sel;
     __u8 ep_cnt;
-    struct xpkt_nat_endpoint endpoints[F4_MAX_ENDPOINTS];
+    nat_endpoint_t endpoints[F4_MAX_ENDPOINTS];
 };
 typedef struct xpkt_nat_ops nat_ops_t;
 

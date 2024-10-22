@@ -13,7 +13,6 @@ xpkt_fib4_init_key(xpkt_t *pkt, struct xpkt_fib4_key *key)
     key->dport = pkt->l34.dest;
     key->proto = pkt->l34.proto;
     key->ifi = 0;
-    key->pad = 0;
     return 0;
 }
 
