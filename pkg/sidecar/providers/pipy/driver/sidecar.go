@@ -116,6 +116,9 @@ func (sd PipySidecarDriver) Patch(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		// Add the Pipy sidecar
+		sidecar := getPipySidecarContainerSpec(injCtx, pod, configurator, cnPrefix, originalHealthProbes, podOS)
+		pod.Spec.Containers = append(pod.Spec.Containers, sidecar)
 	}
 
 	if originalHealthProbes.UsesTCP() {
@@ -138,10 +141,6 @@ func (sd PipySidecarDriver) Patch(ctx context.Context) error {
 		}
 		pod.Spec.Containers = append(pod.Spec.Containers, healthcheckContainer)
 	}
-
-	// Add the Pipy sidecar
-	sidecar := getPipySidecarContainerSpec(injCtx, pod, configurator, cnPrefix, originalHealthProbes, podOS)
-	pod.Spec.Containers = append(pod.Spec.Containers, sidecar)
 
 	return nil
 }
