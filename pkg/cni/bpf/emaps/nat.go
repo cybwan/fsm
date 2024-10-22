@@ -1,6 +1,8 @@
 package emaps
 
 import (
+	"encoding/json"
+	"fmt"
 	"path"
 	"unsafe"
 
@@ -16,9 +18,30 @@ func InitFsmNatMap() {
 	if mapErr != nil {
 		log.Fatal().Err(mapErr).Msgf("failed to load ebpf map: %s", pinnedFile)
 	}
+
+	defer natMap.Close()
+
 	natKey := gen.FsmNatKeyT{}
 	natOps := gen.FsmNatOpsT{}
 	if err := natMap.Update(unsafe.Pointer(&natKey), unsafe.Pointer(&natOps), ebpf.UpdateAny); err != nil {
 		log.Fatal().Err(err).Msgf("failed to update ebpf map: %s", bpf.FSM_MAP_NAME_NAT)
+	}
+}
+
+func ShowFsmNatMap() {
+	pinnedFile := path.Join(bpf.BPF_FS, bpf.FSM_PROG_NAME, bpf.FSM_MAP_NAME_NAT)
+	natMap, mapErr := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{})
+	if mapErr != nil {
+		log.Fatal().Err(mapErr).Msgf("failed to load ebpf map: %s", pinnedFile)
+	}
+	defer natMap.Close()
+
+	natKey := gen.FsmNatKeyT{}
+	natOps := gen.FsmNatOpsT{}
+	it := natMap.Iterate()
+	for it.Next(unsafe.Pointer(&natKey), unsafe.Pointer(&natOps)) {
+		keyBytes, _ := json.MarshalIndent(natKey, "", " ")
+		opsBytes, _ := json.MarshalIndent(natOps, "", " ")
+		fmt.Println(string(keyBytes), "=>", string(opsBytes))
 	}
 }

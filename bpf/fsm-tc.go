@@ -179,7 +179,13 @@ func main() {
 	if strings.EqualFold(action, `init-progs-map`) {
 		emaps.InitFsmProgsMap()
 	}
+	if strings.EqualFold(action, `show-progs-map`) {
+		emaps.ShowFsmProgsMap()
+	}
 	if strings.EqualFold(action, `init-nat-map`) {
 		emaps.InitFsmNatMap()
+	}
+	if strings.EqualFold(action, `show-nat-map`) {
+		emaps.ShowFsmNatMap()
 	}
 }

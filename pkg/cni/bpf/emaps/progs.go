@@ -1,6 +1,7 @@
 package emaps
 
 import (
+	"fmt"
 	"path"
 	"unsafe"
 
@@ -15,6 +16,8 @@ func InitFsmProgsMap() {
 	if mapErr != nil {
 		log.Fatal().Err(mapErr).Msgf("failed to load ebpf map: %s", pinnedFile)
 	}
+
+	defer progsMap.Close()
 
 	type ebpfProg struct {
 		progKey  uint32
@@ -50,5 +53,23 @@ func InitFsmProgsMap() {
 		if err := progsMap.Update(unsafe.Pointer(&prog.progKey), unsafe.Pointer(&progFD), ebpf.UpdateAny); err != nil {
 			log.Fatal().Err(err).Msgf("failed to update ebpf map: %s", bpf.FSM_MAP_NAME_PROGS)
 		}
+	}
+}
+
+func ShowFsmProgsMap() {
+	pinnedFile := path.Join(bpf.BPF_FS, bpf.FSM_PROG_NAME, bpf.FSM_MAP_NAME_PROGS)
+	progsMap, mapErr := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{})
+	if mapErr != nil {
+		log.Fatal().Err(mapErr).Msgf("failed to load ebpf map: %s", pinnedFile)
+	}
+
+	defer progsMap.Close()
+
+	var progKey uint32
+	var progFD int
+
+	it := progsMap.Iterate()
+	for it.Next(unsafe.Pointer(&progKey), unsafe.Pointer(&progFD)) {
+		fmt.Println(progKey, "=>", progFD)
 	}
 }
