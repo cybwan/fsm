@@ -5,7 +5,7 @@
 #include "bpf-dbg.h"
 
 INLINE(int)
-xpkt_fib4_init_key(struct xpkt *pkt, struct xpkt_fib4_key *key)
+xpkt_fib4_init_key(xpkt_t *pkt, struct xpkt_fib4_key *key)
 {
     key->daddr = pkt->l34.daddr4;
     key->saddr = pkt->l34.saddr4;
@@ -18,7 +18,7 @@ xpkt_fib4_init_key(struct xpkt *pkt, struct xpkt_fib4_key *key)
 }
 
 INLINE(int)
-xpkt_fib4_find(skb_t *skb, struct xpkt *pkt)
+xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
 {
     struct xpkt_fib4_key key;
     struct xpkt_fib4_ops *acts;
@@ -99,7 +99,7 @@ del_out:
 }
 
 INLINE(int)
-dp_ing_fc_main(skb_t *skb, struct xpkt *pkt)
+dp_ing_fc_main(skb_t *skb, xpkt_t *pkt)
 {
     int z = 0;
     int oif;
@@ -119,7 +119,7 @@ dp_ing_fc_main(skb_t *skb, struct xpkt *pkt)
 }
 
 INLINE(int)
-dp_egr_main(skb_t *skb, struct xpkt *pkt)
+dp_egr_main(skb_t *skb, xpkt_t *pkt)
 {
     if (pkt->l2.dl_type == ntohs(ETH_P_IP) &&
         (pkt->l34.proto == IPPROTO_TCP || pkt->l34.proto == IPPROTO_UDP)) {

@@ -7,7 +7,7 @@
 #include "bpf-lb.h"
 
 INLINE(int)
-dp_do_ctops(skb_t *skb, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
+dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, struct dp_ct_tact *act)
 {
     struct xpkt_fib4_ops *fa = fa_;
     if (!act) {
@@ -85,7 +85,7 @@ ct_trk:
 }
 
 INLINE(int)
-dp_do_ing_ct(skb_t *skb, struct xpkt *pkt, void *fa_)
+dp_do_ing_ct(skb_t *skb, xpkt_t *pkt, void *fa_)
 {
 
     struct dp_ct_key key;
@@ -103,7 +103,7 @@ dp_do_ing_ct(skb_t *skb, struct xpkt *pkt, void *fa_)
 }
 
 INLINE(int)
-dp_ing_l3(skb_t *skb, struct xpkt *pkt, void *fa)
+dp_ing_l3(skb_t *skb, xpkt_t *pkt, void *fa)
 {
     dp_do_ing_ct(skb, pkt, fa);
     return 0;

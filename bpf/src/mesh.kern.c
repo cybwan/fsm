@@ -30,7 +30,7 @@ SEC("classifier/sidecar/ingress")
 int sidecar_ingress(skb_t *skb)
 {
     int z = 0;
-    struct xpkt *pkt;
+    xpkt_t *pkt;
 
     pkt = bpf_map_lookup_elem(&fsm_xpkts, &z);
     if (!pkt) {
@@ -59,7 +59,7 @@ SEC("classifier/sidecar/egress")
 int sidecar_egress(skb_t *skb)
 {
     int z = 0;
-    struct xpkt *pkt;
+    xpkt_t *pkt;
 
     pkt = bpf_map_lookup_elem(&fsm_xpkts, &z);
     if (!pkt) {
@@ -87,7 +87,7 @@ SEC("classifier/handshake")
 int tc_hand_shake_func(skb_t *skb)
 {
     int z = 0;
-    struct xpkt *pkt;
+    xpkt_t *pkt;
 
     pkt = bpf_map_lookup_elem(&fsm_xpkts, &z);
     if (!pkt) {
@@ -109,7 +109,7 @@ SEC("classifier/conntrack")
 int tc_conn_track_func(skb_t *skb)
 {
     int z = 0;
-    struct xpkt *pkt;
+    xpkt_t *pkt;
 
     pkt = bpf_map_lookup_elem(&fsm_xpkts, &z);
     if (!pkt) {

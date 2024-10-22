@@ -4,7 +4,7 @@
 #include "bpf-macros.h"
 
 INLINE(int)
-xpkt_do_dnat(skb_t *skb, struct xpkt *pkt)
+xpkt_do_dnat(skb_t *skb, xpkt_t *pkt)
 {
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
 
@@ -54,7 +54,7 @@ xpkt_do_dnat(skb_t *skb, struct xpkt *pkt)
 }
 
 INLINE(int)
-xpkt_do_snat(skb_t *skb, struct xpkt *pkt)
+xpkt_do_snat(skb_t *skb, xpkt_t *pkt)
 {
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
 

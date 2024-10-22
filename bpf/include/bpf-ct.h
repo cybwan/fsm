@@ -49,9 +49,8 @@ dp_ct_get_newctr(__u32 *nid)
 }
 
 INLINE(int)
-dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key,
-                     nat_endpoint_t *xi, struct dp_ct_key *xkey,
-                     nat_endpoint_t *xxi)
+dp_ct_proto_xfk_init(xpkt_t *pkt, struct dp_ct_key *key, nat_endpoint_t *xi,
+                     struct dp_ct_key *xkey, nat_endpoint_t *xxi)
 {
     XADDR_COPY(xkey->daddr, key->saddr);
     XADDR_COPY(xkey->saddr, key->daddr);
@@ -140,7 +139,7 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key,
 }
 
 INLINE(int)
-dp_ct_tcp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
+dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
              struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
@@ -352,7 +351,7 @@ end:
 }
 
 INLINE(int)
-dp_ct_udp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
+dp_ct_udp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
              struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
@@ -424,7 +423,7 @@ dp_ct_udp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
 }
 
 INLINE(int)
-dp_ct_icmp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
+dp_ct_icmp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
               struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
@@ -518,7 +517,7 @@ end:
 }
 
 INLINE(int)
-dp_ct_icmp6_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
+dp_ct_icmp6_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
                struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
@@ -609,7 +608,7 @@ end:
 }
 
 INLINE(int)
-dp_ct_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
+dp_ct_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
          struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
     int sm_ret = 0;
@@ -643,7 +642,7 @@ dp_ct_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
     memcpy(&dst->nat_act, &src->nat_act, sizeof(struct dp_nat_act));
 
 INLINE(int)
-dp_ct_est(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
+dp_ct_est(xpkt_t *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
           struct dp_ct_tact *atdat, struct dp_ct_tact *axtdat)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
@@ -686,13 +685,13 @@ dp_ct_est(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
 }
 
 INLINE(int)
-dp_ct_del(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
+dp_ct_del(xpkt_t *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
           struct dp_ct_tact *atdat, struct dp_ct_tact *axtdat)
 {
     return 0;
 }
 
-INLINE(int) dp_ct_in(skb_t *skb, struct xpkt *pkt)
+INLINE(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
 {
     struct dp_ct_key key;
     struct dp_ct_key xkey;
