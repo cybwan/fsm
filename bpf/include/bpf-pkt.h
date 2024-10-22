@@ -388,6 +388,9 @@ xpkt_encode_packet_always(skb_t *skb, xpkt_t *pkt)
 }
 
 INLINE(int)
-xpkt_encode_packet(skb_t *skb, xpkt_t *pkt) { return xpkt_do_out(skb, pkt); }
+xpkt_encode_packet(skb_t *skb, xpkt_t *pkt)
+{
+    return xpkt_do_out(skb, pkt);
+}
 
 #endif

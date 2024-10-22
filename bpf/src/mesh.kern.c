@@ -120,7 +120,13 @@ int tc_conn_track_func(skb_t *skb)
 }
 
 SEC("classifier/pass")
-int tc_pass(skb_t *skb) { return TC_ACT_OK; }
+int tc_pass(skb_t *skb)
+{
+    return TC_ACT_OK;
+}
 
 SEC("classifier/drop")
-int tc_drop(skb_t *skb) { return TC_ACT_SHOT; }
+int tc_drop(skb_t *skb)
+{
+    return TC_ACT_SHOT;
+}
