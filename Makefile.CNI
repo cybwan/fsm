@@ -8,7 +8,7 @@ CLANG = clang
 BASE_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 INC_DIR = $(abspath ${BASE_DIR})/bpf/include
 SRC_DIR = $(abspath ${BASE_DIR})/bpf/src
-BIN_DIR = $(abspath ${BASE_DIR})/bpf
+BIN_DIR = $(abspath ${BASE_DIR})/bin
 BPF_DIR = $(abspath ${BASE_DIR})/bpf
 
 MESH_KERN_OUT = mesh.kern.o
@@ -41,6 +41,10 @@ go-generate: export BPF_SRC_DIR := $(SRC_DIR)
 go-generate:
 	@go generate ./...
 
+.PHONY: go-build-fsm-tc
+go-build-fsm-tc:
+	@go build -o ${BIN_DIR}/fsm-tc bpf/fsm-tc.go
+
 .PHONY: build
 build: bpf
 
@@ -63,7 +67,7 @@ bpf: bpf-clean bpf-fmt bpf-build
 
 .PHONY: load
 load: debug-fs bpf-fs bpf-build
-	@bpftool prog loadall bpf/mesh.kern.o /sys/fs/bpf/fsm pinmaps /sys/fs/bpf/fsm
+	@bpftool prog loadall ${BIN_DIR}/${MESH_KERN_OUT} /sys/fs/bpf/fsm pinmaps /sys/fs/bpf/fsm
 
 .PHONY: clean
 clean:
