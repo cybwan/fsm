@@ -13,7 +13,7 @@ import (
 	"github.com/cilium/ebpf"
 )
 
-type bpfDpCtCtrtact struct {
+type FsmDpCtCtrtact struct {
 	Ca struct {
 		ActType uint8
 		Ftrap   uint8
@@ -29,7 +29,7 @@ type bpfDpCtCtrtact struct {
 	Entries uint32
 }
 
-type bpfDpCtKey struct {
+type FsmDpCtKey struct {
 	Daddr [4]uint32
 	Saddr [4]uint32
 	Sport uint16
@@ -38,7 +38,7 @@ type bpfDpCtKey struct {
 	V6    uint8
 }
 
-type bpfDpCtTact struct {
+type FsmDpCtTact struct {
 	Ca struct {
 		ActType uint8
 		Ftrap   uint8
@@ -100,14 +100,14 @@ type bpfDpCtTact struct {
 	_ [60]byte
 }
 
-type bpfDpDnatOptKey struct {
+type FsmDpDnatOptKey struct {
 	Xaddr uint32
 	Xport uint16
 	Proto uint8
 	V6    uint8
 }
 
-type bpfDpDnatOptTact struct {
+type FsmDpDnatOptTact struct {
 	Daddr uint32
 	Saddr uint32
 	Dport uint16
@@ -116,7 +116,7 @@ type bpfDpDnatOptTact struct {
 	Ts    uint64
 }
 
-type bpfDpSnatOptKey struct {
+type FsmDpSnatOptKey struct {
 	Daddr uint32
 	Saddr uint32
 	Dport uint16
@@ -126,20 +126,24 @@ type bpfDpSnatOptKey struct {
 	_     [2]byte
 }
 
-type bpfDpSnatOptTact struct {
+type FsmDpSnatOptTact struct {
 	Xaddr uint32
 	Xport uint16
 	_     [2]byte
 }
 
-type bpfNatKeyT struct {
+type FsmFib4KeyT FsmXpktFib4Key
+
+type FsmFib4OpsT FsmXpktFib4Ops
+
+type FsmNatKeyT struct {
 	Daddr [4]uint32
 	Dport uint16
 	Proto uint8
 	V6    uint8
 }
 
-type bpfNatOpsT struct {
+type FsmNatOpsT struct {
 	Ito       uint64
 	Pto       uint64
 	Lock      struct{ Val uint32 }
@@ -161,7 +165,7 @@ type bpfNatOpsT struct {
 	}
 }
 
-type bpfXpkt struct {
+type FsmXpkt struct {
 	Skb struct {
 		Data    uint32
 		DataEnd uint32
@@ -264,7 +268,7 @@ type bpfXpkt struct {
 	}
 }
 
-type bpfXpktFib4Key struct {
+type FsmXpktFib4Key struct {
 	Daddr uint32
 	Saddr uint32
 	Sport uint16
@@ -273,7 +277,7 @@ type bpfXpktFib4Key struct {
 	Proto uint8
 }
 
-type bpfXpktFib4Ops struct {
+type FsmXpktFib4Ops struct {
 	Ca struct {
 		ActType uint8
 		Ftrap   uint8
@@ -302,28 +306,28 @@ type bpfXpktFib4Ops struct {
 	}
 }
 
-// loadBpf returns the embedded CollectionSpec for bpf.
-func loadBpf() (*ebpf.CollectionSpec, error) {
-	reader := bytes.NewReader(_BpfBytes)
+// LoadFsm returns the embedded CollectionSpec for Fsm.
+func LoadFsm() (*ebpf.CollectionSpec, error) {
+	reader := bytes.NewReader(_FsmBytes)
 	spec, err := ebpf.LoadCollectionSpecFromReader(reader)
 	if err != nil {
-		return nil, fmt.Errorf("can't load bpf: %w", err)
+		return nil, fmt.Errorf("can't load Fsm: %w", err)
 	}
 
 	return spec, err
 }
 
-// loadBpfObjects loads bpf and converts it into a struct.
+// LoadFsmObjects loads Fsm and converts it into a struct.
 //
 // The following types are suitable as obj argument:
 //
-//	*bpfObjects
-//	*bpfPrograms
-//	*bpfMaps
+//	*FsmObjects
+//	*FsmPrograms
+//	*FsmMaps
 //
 // See ebpf.CollectionSpec.LoadAndAssign documentation for details.
-func loadBpfObjects(obj interface{}, opts *ebpf.CollectionOptions) error {
-	spec, err := loadBpf()
+func LoadFsmObjects(obj interface{}, opts *ebpf.CollectionOptions) error {
+	spec, err := LoadFsm()
 	if err != nil {
 		return err
 	}
@@ -331,18 +335,18 @@ func loadBpfObjects(obj interface{}, opts *ebpf.CollectionOptions) error {
 	return spec.LoadAndAssign(obj, opts)
 }
 
-// bpfSpecs contains maps and programs before they are loaded into the kernel.
+// FsmSpecs contains maps and programs before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
-type bpfSpecs struct {
-	bpfProgramSpecs
-	bpfMapSpecs
+type FsmSpecs struct {
+	FsmProgramSpecs
+	FsmMapSpecs
 }
 
-// bpfSpecs contains programs before they are loaded into the kernel.
+// FsmSpecs contains programs before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
-type bpfProgramSpecs struct {
+type FsmProgramSpecs struct {
 	SidecarEgress   *ebpf.ProgramSpec `ebpf:"sidecar_egress"`
 	SidecarIngress  *ebpf.ProgramSpec `ebpf:"sidecar_ingress"`
 	TcConnTrackFunc *ebpf.ProgramSpec `ebpf:"tc_conn_track_func"`
@@ -351,10 +355,10 @@ type bpfProgramSpecs struct {
 	TcPass          *ebpf.ProgramSpec `ebpf:"tc_pass"`
 }
 
-// bpfMapSpecs contains maps before they are loaded into the kernel.
+// FsmMapSpecs contains maps before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
-type bpfMapSpecs struct {
+type FsmMapSpecs struct {
 	FsmCt      *ebpf.MapSpec `ebpf:"fsm_ct"`
 	FsmCtCtr   *ebpf.MapSpec `ebpf:"fsm_ct_ctr"`
 	FsmCtKey   *ebpf.MapSpec `ebpf:"fsm_ct_key"`
@@ -370,25 +374,25 @@ type bpfMapSpecs struct {
 	FsmXpkts   *ebpf.MapSpec `ebpf:"fsm_xpkts"`
 }
 
-// bpfObjects contains all objects after they have been loaded into the kernel.
+// FsmObjects contains all objects after they have been loaded into the kernel.
 //
-// It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
-type bpfObjects struct {
-	bpfPrograms
-	bpfMaps
+// It can be passed to LoadFsmObjects or ebpf.CollectionSpec.LoadAndAssign.
+type FsmObjects struct {
+	FsmPrograms
+	FsmMaps
 }
 
-func (o *bpfObjects) Close() error {
-	return _BpfClose(
-		&o.bpfPrograms,
-		&o.bpfMaps,
+func (o *FsmObjects) Close() error {
+	return _FsmClose(
+		&o.FsmPrograms,
+		&o.FsmMaps,
 	)
 }
 
-// bpfMaps contains all maps after they have been loaded into the kernel.
+// FsmMaps contains all maps after they have been loaded into the kernel.
 //
-// It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
-type bpfMaps struct {
+// It can be passed to LoadFsmObjects or ebpf.CollectionSpec.LoadAndAssign.
+type FsmMaps struct {
 	FsmCt      *ebpf.Map `ebpf:"fsm_ct"`
 	FsmCtCtr   *ebpf.Map `ebpf:"fsm_ct_ctr"`
 	FsmCtKey   *ebpf.Map `ebpf:"fsm_ct_key"`
@@ -404,8 +408,8 @@ type bpfMaps struct {
 	FsmXpkts   *ebpf.Map `ebpf:"fsm_xpkts"`
 }
 
-func (m *bpfMaps) Close() error {
-	return _BpfClose(
+func (m *FsmMaps) Close() error {
+	return _FsmClose(
 		m.FsmCt,
 		m.FsmCtCtr,
 		m.FsmCtKey,
@@ -422,10 +426,10 @@ func (m *bpfMaps) Close() error {
 	)
 }
 
-// bpfPrograms contains all programs after they have been loaded into the kernel.
+// FsmPrograms contains all programs after they have been loaded into the kernel.
 //
-// It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
-type bpfPrograms struct {
+// It can be passed to LoadFsmObjects or ebpf.CollectionSpec.LoadAndAssign.
+type FsmPrograms struct {
 	SidecarEgress   *ebpf.Program `ebpf:"sidecar_egress"`
 	SidecarIngress  *ebpf.Program `ebpf:"sidecar_ingress"`
 	TcConnTrackFunc *ebpf.Program `ebpf:"tc_conn_track_func"`
@@ -434,8 +438,8 @@ type bpfPrograms struct {
 	TcPass          *ebpf.Program `ebpf:"tc_pass"`
 }
 
-func (p *bpfPrograms) Close() error {
-	return _BpfClose(
+func (p *FsmPrograms) Close() error {
+	return _FsmClose(
 		p.SidecarEgress,
 		p.SidecarIngress,
 		p.TcConnTrackFunc,
@@ -445,7 +449,7 @@ func (p *bpfPrograms) Close() error {
 	)
 }
 
-func _BpfClose(closers ...io.Closer) error {
+func _FsmClose(closers ...io.Closer) error {
 	for _, closer := range closers {
 		if err := closer.Close(); err != nil {
 			return err
@@ -456,5 +460,5 @@ func _BpfClose(closers ...io.Closer) error {
 
 // Do not access this directly.
 //
-//go:embed bpf_bpfeb.o
-var _BpfBytes []byte
+//go:embed fsm_bpfeb.o
+var _FsmBytes []byte

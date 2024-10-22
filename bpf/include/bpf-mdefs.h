@@ -71,16 +71,16 @@ struct {
 #ifdef LEGACY_BPF_MAPS
 struct bpf_map_def SEC("maps") fsm_fib4 = {
     .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(struct xpkt_fib4_key),
-    .value_size = sizeof(struct xpkt_fib4_ops),
+    .key_size = sizeof(fib4_key_t),
+    .value_size = sizeof(fib4_ops_t),
     .max_entries = F4_FCV4_MAP_ENTRIES,
     .map_flags = BPF_F_NO_PREALLOC,
 };
 #else /* New BTF definitions */
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
-    __type(key, struct xpkt_fib4_key);
-    __type(value, struct xpkt_fib4_ops);
+    __type(key, fib4_key_t);
+    __type(value, fib4_ops_t);
     __uint(max_entries, F4_FCV4_MAP_ENTRIES);
     __uint(map_flags, BPF_F_NO_PREALLOC);
 } fsm_fib4 SEC(".maps");

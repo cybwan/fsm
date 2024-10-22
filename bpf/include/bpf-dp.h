@@ -152,7 +152,7 @@ struct dp_rdr_act {
 #define nat_xip4 nat_xip[0]
 #define nat_rip4 nat_rip[0]
 
-struct xpkt_nat_endpoint {
+typedef struct {
     __u8 nat_flags;
     __u8 nv6;
     __u16 nat_xifi;
@@ -163,8 +163,7 @@ struct xpkt_nat_endpoint {
     __u8 nat_xmac[6];
     __u8 nat_rmac[6];
     __u8 inactive;
-} __attribute__((packed));
-typedef struct xpkt_nat_endpoint nat_endpoint_t;
+} __attribute__((packed)) nat_endpoint_t;
 
 struct dp_pb_stats {
     __u64 bytes;
@@ -222,19 +221,19 @@ struct xpkt_fib4_ops {
     __u64 its;
     struct xpkt_fib4_op ops[F4_FCV4_MAP_ACTS];
 };
+typedef struct xpkt_fib4_ops fib4_ops_t;
 
-struct xpkt_nat_key {
+typedef struct {
     __u32 daddr[4];
     __u16 dport;
     __u8 proto;
     __u8 v6;
-} __attribute__((packed));
-typedef struct xpkt_nat_key nat_key_t;
+} __attribute__((packed)) nat_key_t;
 
 #define NAT_LB_ALGO_RDRB 0
 #define NAT_LB_ALGO_HASH 1
 
-struct xpkt_nat_ops {
+typedef struct {
     __u64 ito;
     __u64 pto;
     struct bpf_spin_lock lock;
@@ -243,8 +242,7 @@ struct xpkt_nat_ops {
     __u8 ep_sel;
     __u8 ep_cnt;
     nat_endpoint_t endpoints[F4_MAX_ENDPOINTS];
-};
-typedef struct xpkt_nat_ops nat_ops_t;
+} nat_ops_t;
 
 struct dp_ct_key {
     __u32 daddr[4];
