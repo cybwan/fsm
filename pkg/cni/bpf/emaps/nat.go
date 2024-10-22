@@ -18,7 +18,6 @@ func InitFsmNatMap() {
 	if mapErr != nil {
 		log.Fatal().Err(mapErr).Msgf("failed to load ebpf map: %s", pinnedFile)
 	}
-
 	defer natMap.Close()
 
 	natKey := gen.FsmNatKeyT{}

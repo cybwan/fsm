@@ -3,19 +3,27 @@ package bpf
 const (
 	BPF_FS = `/sys/fs/bpf`
 
-	FSM_PROG_NAME      = `fsm`
+	FSM_PROG_NAME = `fsm`
+)
+
+const (
 	FSM_MAP_NAME_PROGS = `fsm_progs`
 	FSM_MAP_NAME_NAT   = `fsm_nat`
 )
 
 const (
-	FSM_CNI_HANDSHAKE_PROG_ID = uint32(1)
-	FSM_CNI_CONNTRACK_PROG_ID = uint32(2)
-	FSM_CNI_PASS_PROG_ID      = uint32(3)
-	FSM_CNI_DROP_PROG_ID      = uint32(4)
+	FSM_CNI_HANDSHAKE_PROG_KEY = uint32(1)
+	FSM_CNI_CONNTRACK_PROG_KEY = uint32(2)
+	FSM_CNI_PASS_PROG_KEY      = uint32(3)
+	FSM_CNI_DROP_PROG_KEY      = uint32(4)
 )
 
 const (
+	FSM_CNI_SIDECAR_INGRESS_PROG_NAME = `classifier_sidecar_ingress`
+	FSM_CNI_SIDECAR_EGRESS_PROG_NAME  = `classifier_sidecar_egress`
+	FSM_CNI_GATEWAY_INGRESS_PROG_NAME = `classifier_gateway_ingress`
+	FSM_CNI_GATEWAY_EGRESS_PROG_NAME  = `classifier_gateway_egress`
+
 	FSM_CNI_HANDSHAKE_PROG_NAME = `classifier_handshake`
 	FSM_CNI_CONNTRACK_PROG_NAME = `classifier_conntrack`
 	FSM_CNI_PASS_PROG_NAME      = `classifier_pass`

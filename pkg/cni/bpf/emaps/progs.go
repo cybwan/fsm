@@ -16,7 +16,6 @@ func InitFsmProgsMap() {
 	if mapErr != nil {
 		log.Fatal().Err(mapErr).Msgf("failed to load ebpf map: %s", pinnedFile)
 	}
-
 	defer progsMap.Close()
 
 	type ebpfProg struct {
@@ -26,19 +25,19 @@ func InitFsmProgsMap() {
 
 	progs := []ebpfProg{
 		{
-			progKey:  bpf.FSM_CNI_HANDSHAKE_PROG_ID,
+			progKey:  bpf.FSM_CNI_HANDSHAKE_PROG_KEY,
 			progName: bpf.FSM_CNI_HANDSHAKE_PROG_NAME,
 		},
 		{
-			progKey:  bpf.FSM_CNI_CONNTRACK_PROG_ID,
+			progKey:  bpf.FSM_CNI_CONNTRACK_PROG_KEY,
 			progName: bpf.FSM_CNI_CONNTRACK_PROG_NAME,
 		},
 		{
-			progKey:  bpf.FSM_CNI_PASS_PROG_ID,
+			progKey:  bpf.FSM_CNI_PASS_PROG_KEY,
 			progName: bpf.FSM_CNI_PASS_PROG_NAME,
 		},
 		{
-			progKey:  bpf.FSM_CNI_DROP_PROG_ID,
+			progKey:  bpf.FSM_CNI_DROP_PROG_KEY,
 			progName: bpf.FSM_CNI_DROP_PROG_NAME,
 		},
 	}
@@ -49,6 +48,8 @@ func InitFsmProgsMap() {
 		if progErr != nil {
 			log.Fatal().Err(progErr).Msgf("failed to load ebpf prog: %s", pinnedFile)
 		}
+		defer pinnedProg.Close()
+
 		progFD := pinnedProg.FD()
 		if err := progsMap.Update(unsafe.Pointer(&prog.progKey), unsafe.Pointer(&progFD), ebpf.UpdateAny); err != nil {
 			log.Fatal().Err(err).Msgf("failed to update ebpf map: %s", bpf.FSM_MAP_NAME_PROGS)
@@ -62,7 +63,6 @@ func ShowFsmProgsMap() {
 	if mapErr != nil {
 		log.Fatal().Err(mapErr).Msgf("failed to load ebpf map: %s", pinnedFile)
 	}
-
 	defer progsMap.Close()
 
 	var progKey uint32
