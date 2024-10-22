@@ -10,7 +10,7 @@ jsconfig.json
 *.dll
 *.so
 *.dylib
-*.o
+bpf/*.o
 
 # Test binary, build with `go test -c`
 *.test
