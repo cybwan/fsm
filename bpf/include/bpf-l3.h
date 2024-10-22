@@ -6,7 +6,7 @@
 #include "bpf-ct.h"
 #include "bpf-lb.h"
 
-INLINE(int)
+INTERNAL(int)
 dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, struct dp_ct_tact *act)
 {
     struct xpkt_fib4_ops *fa = fa_;
@@ -84,7 +84,7 @@ ct_trk:
     return xpkt_tail_call(skb, pkt, fa_, FSM_CNI_CONNTRACK_PROG_ID);
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_do_ing_ct(skb_t *skb, xpkt_t *pkt, void *fa_)
 {
 
@@ -102,7 +102,7 @@ dp_do_ing_ct(skb_t *skb, xpkt_t *pkt, void *fa_)
     return dp_do_ctops(skb, pkt, fa_, act);
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_ing_l3(skb_t *skb, xpkt_t *pkt, void *fa)
 {
     dp_do_ing_ct(skb, pkt, fa);

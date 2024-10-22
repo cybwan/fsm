@@ -4,7 +4,7 @@
 #include "bpf-macros.h"
 #include "bpf-dbg.h"
 
-INLINE(int)
+INTERNAL(int)
 xpkt_nat_load(skb_t *skb, xpkt_t *pkt, struct dp_nat_act *na, int do_snat)
 {
     pkt->ctx.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
@@ -19,7 +19,7 @@ xpkt_nat_load(skb_t *skb, xpkt_t *pkt, struct dp_nat_act *na, int do_snat)
     return 0;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_nat_endpoint(skb_t *skb, xpkt_t *pkt, nat_ops_t *ops)
 {
     int sel = -1;
@@ -60,7 +60,7 @@ xpkt_nat_endpoint(skb_t *skb, xpkt_t *pkt, nat_ops_t *ops)
     return sel;
 }
 
-INLINE(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
+INTERNAL(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
 {
     nat_key_t key;
     nat_endpoint_t *ep;

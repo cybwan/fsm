@@ -4,7 +4,7 @@
 #include "bpf-macros.h"
 #include "bpf-dbg.h"
 
-INLINE(int)
+INTERNAL(int)
 xpkt_fib4_init_key(xpkt_t *pkt, struct xpkt_fib4_key *key)
 {
     key->daddr = pkt->l34.daddr4;
@@ -16,7 +16,7 @@ xpkt_fib4_init_key(xpkt_t *pkt, struct xpkt_fib4_key *key)
     return 0;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
 {
     struct xpkt_fib4_key key;
@@ -97,7 +97,7 @@ del_out:
     return 0;
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_ing_fc_main(skb_t *skb, xpkt_t *pkt)
 {
     int z = 0;
@@ -117,7 +117,7 @@ dp_ing_fc_main(skb_t *skb, xpkt_t *pkt)
     return TC_ACT_SHOT;
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_egr_main(skb_t *skb, xpkt_t *pkt)
 {
     if (pkt->l2.dl_type == ntohs(ETH_P_IP) &&

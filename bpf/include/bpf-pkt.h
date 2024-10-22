@@ -16,22 +16,22 @@
 #define IP_MF 0x2000     /* Flag: "More Fragments"	*/
 #define IP_OFFSET 0x1FFF /* "Fragment Offset" part	*/
 
-INLINE(int) is_ip_fragment(const struct iphdr *iph)
+INTERNAL(int) is_ip_fragment(const struct iphdr *iph)
 {
     return (iph->frag_off & htons(IP_MF | IP_OFFSET)) != 0;
 }
 
-INLINE(int) is_first_ip_fragment(const struct iphdr *iph)
+INTERNAL(int) is_first_ip_fragment(const struct iphdr *iph)
 {
     return (iph->frag_off & htons(IP_OFFSET)) == 0;
 }
 
-INLINE(int) is_ipv6_addr_multicast(const struct in6_addr *addr)
+INTERNAL(int) is_ipv6_addr_multicast(const struct in6_addr *addr)
 {
     return (addr->s6_addr32[0] & htonl(0xFF000000)) == htonl(0xFF000000);
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_decode_eth(struct decoder *coder, void *md, xpkt_t *pkt)
 {
     struct ethhdr *eth;
@@ -62,7 +62,7 @@ xpkt_decode_eth(struct decoder *coder, void *md, xpkt_t *pkt)
     return DP_PRET_OK;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_decode_vlan(struct decoder *coder, void *md, xpkt_t *pkt)
 {
     struct __sk_buff *b = md;
@@ -72,7 +72,7 @@ xpkt_decode_vlan(struct decoder *coder, void *md, xpkt_t *pkt)
     return DP_PRET_OK;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_decode_arp(struct decoder *coder, void *md, xpkt_t *pkt)
 {
     struct arp_ethhdr *arp = XPKT_PTR(coder->data_begin);
@@ -98,7 +98,7 @@ xpkt_decode_arp(struct decoder *coder, void *md, xpkt_t *pkt)
     return DP_PRET_TRAP;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_decode_tcp(struct decoder *coder, void *md, xpkt_t *pkt)
 {
     struct tcphdr *tcp = XPKT_PTR(coder->data_begin);
@@ -145,7 +145,7 @@ xpkt_decode_tcp(struct decoder *coder, void *md, xpkt_t *pkt)
     return DP_PRET_OK;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_decode_icmp(struct decoder *coder, void *md, xpkt_t *pkt)
 {
     struct icmphdr *icmp = XPKT_PTR(coder->data_begin);
@@ -166,7 +166,7 @@ xpkt_decode_icmp(struct decoder *coder, void *md, xpkt_t *pkt)
     return DP_PRET_OK;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_decode_udp(struct decoder *coder, void *md, xpkt_t *pkt)
 {
     struct udphdr *udp = XPKT_PTR(coder->data_begin);
@@ -181,7 +181,7 @@ xpkt_decode_udp(struct decoder *coder, void *md, xpkt_t *pkt)
     return DP_PRET_OK;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_decode_icmp6(struct decoder *coder, void *md, xpkt_t *pkt)
 {
     struct icmp6hdr *icmp6 = XPKT_PTR(coder->data_begin);
@@ -206,7 +206,7 @@ xpkt_decode_icmp6(struct decoder *coder, void *md, xpkt_t *pkt)
     return DP_PRET_OK;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_decode_ipv4(struct decoder *coder, void *md, xpkt_t *pkt)
 {
     struct iphdr *iph = XPKT_PTR(coder->data_begin);
@@ -271,7 +271,7 @@ xpkt_decode_ipv4(struct decoder *coder, void *md, xpkt_t *pkt)
     return DP_PRET_OK;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_decode_ipv6(struct decoder *coder, void *md, xpkt_t *pkt)
 {
     struct ipv6hdr *ip6 = XPKT_PTR(coder->data_begin);
@@ -309,7 +309,7 @@ xpkt_decode_ipv6(struct decoder *coder, void *md, xpkt_t *pkt)
     return DP_PRET_OK;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_decode(void *md, xpkt_t *pkt, int skip_ipv6)
 {
     int ret = 0;
@@ -363,7 +363,7 @@ handle_excp:
     return ret;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_encode_packet_always(skb_t *skb, xpkt_t *pkt)
 {
     if (pkt->ctx.nf & F4_NAT_SRC) {
@@ -387,7 +387,7 @@ xpkt_encode_packet_always(skb_t *skb, xpkt_t *pkt)
     return 0;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_encode_packet(skb_t *skb, xpkt_t *pkt)
 {
     return xpkt_do_out(skb, pkt);

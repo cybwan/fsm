@@ -3,7 +3,7 @@
 
 #include "bpf-macros.h"
 
-INLINE(int)
+INTERNAL(int)
 xpkt_do_dnat(skb_t *skb, xpkt_t *pkt)
 {
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
@@ -53,7 +53,7 @@ xpkt_do_dnat(skb_t *skb, xpkt_t *pkt)
     return 0;
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_do_snat(skb_t *skb, xpkt_t *pkt)
 {
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));

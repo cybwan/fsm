@@ -20,7 +20,7 @@
         }                                                                      \
     } while (0)
 
-INLINE(__u32)
+INTERNAL(__u32)
 dp_ct_get_newctr(__u32 *nid)
 {
     __u32 k = 0;
@@ -48,7 +48,7 @@ dp_ct_get_newctr(__u32 *nid)
     return v;
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_ct_proto_xfk_init(xpkt_t *pkt, struct dp_ct_key *key, nat_endpoint_t *xi,
                      struct dp_ct_key *xkey, nat_endpoint_t *xxi)
 {
@@ -138,7 +138,7 @@ dp_ct_proto_xfk_init(xpkt_t *pkt, struct dp_ct_key *key, nat_endpoint_t *xi,
     return 0;
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
              struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
@@ -350,7 +350,7 @@ end:
     return CT_SMR_INPROG;
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_ct_udp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
              struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
@@ -422,7 +422,7 @@ dp_ct_udp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
     return CT_SMR_INPROG;
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_ct_icmp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
               struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
@@ -516,7 +516,7 @@ end:
     return CT_SMR_INPROG;
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_ct_icmp6_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
                struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
@@ -607,7 +607,7 @@ end:
     return CT_SMR_INPROG;
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_ct_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
          struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
@@ -641,7 +641,7 @@ dp_ct_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
     dst->lts = src->lts;                                                       \
     memcpy(&dst->nat_act, &src->nat_act, sizeof(struct dp_nat_act));
 
-INLINE(int)
+INTERNAL(int)
 dp_ct_est(xpkt_t *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
           struct dp_ct_tact *atdat, struct dp_ct_tact *axtdat)
 {
@@ -684,14 +684,14 @@ dp_ct_est(xpkt_t *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
     return 0;
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_ct_del(xpkt_t *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
           struct dp_ct_tact *atdat, struct dp_ct_tact *axtdat)
 {
     return 0;
 }
 
-INLINE(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
+INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
 {
     struct dp_ct_key key;
     struct dp_ct_key xkey;

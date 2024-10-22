@@ -7,7 +7,7 @@
 #include "bpf-l3.h"
 #include "bpf-lb.h"
 
-INLINE(int)
+INTERNAL(int)
 xpkt_fib4_insert(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *ops)
 {
     struct xpkt_fib4_key *key;
@@ -31,7 +31,7 @@ xpkt_fib4_insert(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *ops)
     return 0;
 }
 
-INLINE(int)
+INTERNAL(int)
 dp_pipe_check_res(skb_t *skb, xpkt_t *pkt, void *fa)
 {
     if (pkt->ctx.act) {
@@ -65,7 +65,7 @@ dp_pipe_check_res(skb_t *skb, xpkt_t *pkt, void *fa)
     return TC_ACT_OK; /* FIXME */
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_conntrack_proc(skb_t *skb, xpkt_t *pkt)
 {
     int val = 0;
@@ -88,7 +88,7 @@ res_end:
     return dp_pipe_check_res(skb, pkt, fa);
 }
 
-INLINE(int)
+INTERNAL(int)
 xpkt_handshake_proc(skb_t *skb, xpkt_t *pkt)
 {
     struct xpkt_fib4_ops *fa = NULL;
