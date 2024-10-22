@@ -1,12 +1,13 @@
 #ifndef __F4_BPF_DEVIF_H__
 #define __F4_BPF_DEVIF_H__
 
+#include "bpf-macros.h"
 #include "bpf-dbg.h"
 #include "bpf-pkt.h"
 #include "bpf-l2.h"
 #include "bpf-lb.h"
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_fib4_insert(skb_t *skb, struct xpkt *pkt, struct xpkt_fib4_ops *ops)
 {
     struct xpkt_fib4_key *key;
@@ -30,7 +31,7 @@ xpkt_fib4_insert(skb_t *skb, struct xpkt *pkt, struct xpkt_fib4_ops *ops)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_pipe_check_res(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     if (pkt->ctx.act) {
@@ -64,7 +65,7 @@ dp_pipe_check_res(skb_t *skb, struct xpkt *pkt, void *fa)
     return TC_ACT_OK; /* FIXME */
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_conntrack_proc(skb_t *skb, struct xpkt *pkt)
 {
     int val = 0;
@@ -90,7 +91,7 @@ res_end:
     return dp_pipe_check_res(skb, pkt, fa);
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_handshake_proc(skb_t *skb, struct xpkt *pkt)
 {
     struct xpkt_fib4_ops *fa = NULL;

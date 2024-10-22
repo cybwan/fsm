@@ -182,6 +182,7 @@ struct xpkt {
     struct xpkt_nat_meta nat;
     struct xpkt_context ctx;
 } __attribute__((packed));
+typedef struct xpkt xpkt_t;
 
 #define ETH_TYPE_ETH2(x) ((x) >= htons(1536))
 

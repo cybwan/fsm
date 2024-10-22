@@ -231,6 +231,7 @@ struct xpkt_nat_key {
     __u8 proto;
     __u8 v6;
 };
+typedef struct xpkt_nat_key nat_key_t;
 
 #define NAT_LB_RDRB 0
 #define NAT_LB_HASH 1
@@ -247,6 +248,7 @@ struct xpkt_nat_ops {
     __u8 ep_cnt;
     struct xpkt_nat_endpoint endpoints[F4_MAX_ENDPOINTS];
 };
+typedef struct xpkt_nat_ops nat_ops_t;
 
 struct dp_ct_key {
     __u32 daddr[4];

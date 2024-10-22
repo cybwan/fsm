@@ -1,9 +1,10 @@
 #ifndef __F4_BPF_FC_H__
 #define __F4_BPF_FC_H__
 
+#include "bpf-macros.h"
 #include "bpf-dbg.h"
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_fib4_init_key(struct xpkt *pkt, struct xpkt_fib4_key *key)
 {
     key->daddr = pkt->l34.daddr4;
@@ -16,7 +17,7 @@ xpkt_fib4_init_key(struct xpkt *pkt, struct xpkt_fib4_key *key)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_fib4_find(skb_t *skb, struct xpkt *pkt)
 {
     struct xpkt_fib4_key key;
@@ -97,7 +98,7 @@ del_out:
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ing_fc_main(skb_t *skb, struct xpkt *pkt)
 {
     int z = 0;
@@ -117,7 +118,7 @@ dp_ing_fc_main(skb_t *skb, struct xpkt *pkt)
     return TC_ACT_SHOT;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_egr_main(skb_t *skb, struct xpkt *pkt)
 {
     if (pkt->l2.dl_type == ntohs(ETH_P_IP) &&

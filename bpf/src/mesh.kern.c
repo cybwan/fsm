@@ -10,6 +10,7 @@
 #include <linux/icmp.h>
 #include <linux/icmpv6.h>
 
+#include "bpf-macros.h"
 #include "bpf-utils.h"
 #include "bpf-config.h"
 #include "bpf-dp.h"

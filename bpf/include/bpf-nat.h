@@ -1,7 +1,9 @@
 #ifndef __F4_BPF_NAT_H__
 #define __F4_BPF_NAT_H__
 
-__attribute__((__always_inline__)) static inline int
+#include "bpf-macros.h"
+
+INLINE(int)
 xpkt_do_dnat(skb_t *skb, struct xpkt *pkt)
 {
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
@@ -51,7 +53,7 @@ xpkt_do_dnat(skb_t *skb, struct xpkt *pkt)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_do_snat(skb_t *skb, struct xpkt *pkt)
 {
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));

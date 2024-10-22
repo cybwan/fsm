@@ -3,6 +3,7 @@
 
 #include <linux/pkt_cls.h>
 #include <stdio.h>
+#include "bpf-macros.h"
 #include "bpf-dbg.h"
 
 #define XPKT_IFI(md) (((struct __sk_buff *)md)->ifindex)
@@ -38,38 +39,38 @@
         F->ctx.rcode = C;                                                      \
     } while (0)
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_skb_buf_add_l2(void *md, int delta)
 {
     return bpf_skb_change_head(md, delta, 0);
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_skb_buf_remove_l2(void *md, int delta)
 {
     return bpf_skb_adjust_room(md, -delta, BPF_ADJ_ROOM_MAC,
                                BPF_F_ADJ_ROOM_FIXED_GSO);
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_skb_buf_add_room(void *md, int delta, __u64 flags)
 {
     return bpf_skb_adjust_room(md, delta, BPF_ADJ_ROOM_MAC, flags);
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_skb_buf_delete_room(void *md, int delta, __u64 flags)
 {
     return bpf_skb_adjust_room(md, -delta, BPF_ADJ_ROOM_MAC, flags);
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_redirect_port(void *tbl, struct xpkt *pkt)
 {
     return bpf_redirect_map(tbl, pkt->ctx.oport, 0);
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_csum_replace_tcp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
     int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
@@ -87,7 +88,7 @@ xpkt_csum_replace_tcp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_csum_replace_tcp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
     int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
@@ -104,7 +105,7 @@ xpkt_csum_replace_tcp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_csum_replace_tcp_src_port(void *md, struct xpkt *pkt, __be16 xport)
 {
     int tcp_csum_off = pkt->ctx.l4_off + offsetof(struct tcphdr, check);
@@ -121,7 +122,7 @@ xpkt_csum_replace_tcp_src_port(void *md, struct xpkt *pkt, __be16 xport)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_csum_replace_tcp_dst_port(void *md, struct xpkt *pkt, __be16 xport)
 {
     int tcp_csum_off = pkt->ctx.l4_off + offsetof(struct tcphdr, check);
@@ -138,7 +139,7 @@ xpkt_csum_replace_tcp_dst_port(void *md, struct xpkt *pkt, __be16 xport)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_csum_replace_udp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
     int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
@@ -155,7 +156,7 @@ xpkt_csum_replace_udp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_csum_replace_udp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
     int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
@@ -172,7 +173,7 @@ xpkt_csum_replace_udp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_csum_replace_udp_src_port(void *md, struct xpkt *pkt, __be16 xport)
 {
     int udp_csum_off = pkt->ctx.l4_off + offsetof(struct udphdr, check);
@@ -189,7 +190,7 @@ xpkt_csum_replace_udp_src_port(void *md, struct xpkt *pkt, __be16 xport)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_csum_replace_udp_dst_port(void *md, struct xpkt *pkt, __be16 xport)
 {
     int udp_csum_off = pkt->ctx.l4_off + offsetof(struct udphdr, check);
@@ -206,7 +207,7 @@ xpkt_csum_replace_udp_dst_port(void *md, struct xpkt *pkt, __be16 xport)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_csum_replace_icmp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
     int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
@@ -220,7 +221,7 @@ xpkt_csum_replace_icmp_src_ip(void *md, struct xpkt *pkt, __be32 xip)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_csum_replace_icmp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
 {
     int ip_csum_off = pkt->ctx.l3_off + offsetof(struct iphdr, check);
@@ -234,7 +235,7 @@ xpkt_csum_replace_icmp_dst_ip(void *md, struct xpkt *pkt, __be32 xip)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_do_out(skb_t *skb, struct xpkt *pkt)
 {
     void *start = XPKT_PTR(XPKT_DATA(skb));
@@ -282,7 +283,7 @@ xpkt_do_out(skb_t *skb, struct xpkt *pkt)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_tail_call(skb_t *skb, struct xpkt *pkt, void *fa, __u32 idx)
 {
     int z = 0;
@@ -303,7 +304,7 @@ xpkt_tail_call(skb_t *skb, struct xpkt *pkt, void *fa, __u32 idx)
     return TC_ACT_OK;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_spin_lock(struct bpf_spin_lock *lock)
 {
 #ifndef F4_SPIN_LOCK_OFF
@@ -313,7 +314,7 @@ xpkt_spin_lock(struct bpf_spin_lock *lock)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_spin_unlock(struct bpf_spin_lock *lock)
 {
 #ifndef F4_SPIN_LOCK_OFF

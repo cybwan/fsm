@@ -1,11 +1,12 @@
 #ifndef __F4_BPF_L3_H__
 #define __F4_BPF_L3_H__
 
+#include "bpf-macros.h"
 #include "bpf-dbg.h"
 #include "bpf-ct.h"
 #include "bpf-lb.h"
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_do_ctops(skb_t *skb, struct xpkt *pkt, void *fa_, struct dp_ct_tact *act)
 {
     struct xpkt_fib4_ops *fa = fa_;
@@ -83,7 +84,7 @@ ct_trk:
     return xpkt_tail_call(skb, pkt, fa_, FSM_CNI_CONNTRACK_PROG_ID);
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_do_ing_ct(skb_t *skb, struct xpkt *pkt, void *fa_)
 {
 
@@ -101,7 +102,7 @@ dp_do_ing_ct(skb_t *skb, struct xpkt *pkt, void *fa_)
     return dp_do_ctops(skb, pkt, fa_, act);
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_l3_fwd(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     if (pkt->l2.dl_type == htons(ETH_P_IP)) {
@@ -122,7 +123,7 @@ dp_l3_fwd(skb_t *skb, struct xpkt *pkt, void *fa)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ing_l3(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     dp_do_ing_ct(skb, pkt, fa);

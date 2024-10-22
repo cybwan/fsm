@@ -1,6 +1,7 @@
 #ifndef __F4_BPF_CT_H__
 #define __F4_BPF_CT_H__
 
+#include "bpf-macros.h"
 #include "bpf-dbg.h"
 #include "bpf-dp.h"
 #include "bpf-mdi.h"
@@ -19,7 +20,7 @@
         }                                                                      \
     } while (0)
 
-__attribute__((__always_inline__)) static inline __u32
+INLINE(__u32)
 dp_ct_get_newctr(__u32 *nid)
 {
     __u32 k = 0;
@@ -47,7 +48,7 @@ dp_ct_get_newctr(__u32 *nid)
     return v;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key,
                      nat_endpoint_t *xi, struct dp_ct_key *xkey,
                      nat_endpoint_t *xxi)
@@ -138,7 +139,7 @@ dp_ct_proto_xfk_init(struct xpkt *pkt, struct dp_ct_key *key,
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ct_tcp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
              struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
@@ -350,7 +351,7 @@ end:
     return CT_SMR_INPROG;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ct_udp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
              struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
@@ -422,7 +423,7 @@ dp_ct_udp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
     return CT_SMR_INPROG;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ct_icmp_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
               struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
@@ -516,7 +517,7 @@ end:
     return CT_SMR_INPROG;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ct_icmp6_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
                struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
@@ -607,7 +608,7 @@ end:
     return CT_SMR_INPROG;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ct_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
          struct dp_ct_tact *axtdat, ct_dir_t dir)
 {
@@ -641,7 +642,7 @@ dp_ct_sm(skb_t *skb, struct xpkt *pkt, struct dp_ct_tact *atdat,
     dst->lts = src->lts;                                                       \
     memcpy(&dst->nat_act, &src->nat_act, sizeof(struct dp_nat_act));
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ct_est(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
           struct dp_ct_tact *atdat, struct dp_ct_tact *axtdat)
 {
@@ -684,15 +685,14 @@ dp_ct_est(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ct_del(struct xpkt *pkt, struct dp_ct_key *key, struct dp_ct_key *xkey,
           struct dp_ct_tact *atdat, struct dp_ct_tact *axtdat)
 {
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int dp_ct_in(skb_t *skb,
-                                                              struct xpkt *pkt)
+INLINE(int) dp_ct_in(skb_t *skb, struct xpkt *pkt)
 {
     struct dp_ct_key key;
     struct dp_ct_key xkey;

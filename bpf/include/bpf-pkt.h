@@ -5,6 +5,7 @@
  */
 
 #include <linux/if_packet.h>
+#include "bpf-macros.h"
 #include "bpf-dbg.h"
 #include "bpf-cdefs.h"
 #include "bpf-nat.h"
@@ -15,22 +16,22 @@
 #define IP_MF 0x2000     /* Flag: "More Fragments"	*/
 #define IP_OFFSET 0x1FFF /* "Fragment Offset" part	*/
 
-static __always_inline int is_ip_fragment(const struct iphdr *iph)
+INLINE(int) is_ip_fragment(const struct iphdr *iph)
 {
     return (iph->frag_off & htons(IP_MF | IP_OFFSET)) != 0;
 }
 
-static __always_inline int is_first_ip_fragment(const struct iphdr *iph)
+INLINE(int) is_first_ip_fragment(const struct iphdr *iph)
 {
     return (iph->frag_off & htons(IP_OFFSET)) == 0;
 }
 
-static inline int is_ipv6_addr_multicast(const struct in6_addr *addr)
+INLINE(int) is_ipv6_addr_multicast(const struct in6_addr *addr)
 {
     return (addr->s6_addr32[0] & htonl(0xFF000000)) == htonl(0xFF000000);
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_decode_eth(struct decoder *coder, void *md, struct xpkt *pkt)
 {
     struct ethhdr *eth;
@@ -61,7 +62,7 @@ xpkt_decode_eth(struct decoder *coder, void *md, struct xpkt *pkt)
     return DP_PRET_OK;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_decode_vlan(struct decoder *coder, void *md, struct xpkt *pkt)
 {
     struct __sk_buff *b = md;
@@ -71,7 +72,7 @@ xpkt_decode_vlan(struct decoder *coder, void *md, struct xpkt *pkt)
     return DP_PRET_OK;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_decode_arp(struct decoder *coder, void *md, struct xpkt *pkt)
 {
     struct arp_ethhdr *arp = XPKT_PTR(coder->data_begin);
@@ -97,7 +98,7 @@ xpkt_decode_arp(struct decoder *coder, void *md, struct xpkt *pkt)
     return DP_PRET_TRAP;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_decode_tcp(struct decoder *coder, void *md, struct xpkt *pkt)
 {
     struct tcphdr *tcp = XPKT_PTR(coder->data_begin);
@@ -144,7 +145,7 @@ xpkt_decode_tcp(struct decoder *coder, void *md, struct xpkt *pkt)
     return DP_PRET_OK;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_decode_icmp(struct decoder *coder, void *md, struct xpkt *pkt)
 {
     struct icmphdr *icmp = XPKT_PTR(coder->data_begin);
@@ -165,7 +166,7 @@ xpkt_decode_icmp(struct decoder *coder, void *md, struct xpkt *pkt)
     return DP_PRET_OK;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_decode_udp(struct decoder *coder, void *md, struct xpkt *pkt)
 {
     struct udphdr *udp = XPKT_PTR(coder->data_begin);
@@ -180,7 +181,7 @@ xpkt_decode_udp(struct decoder *coder, void *md, struct xpkt *pkt)
     return DP_PRET_OK;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_decode_icmp6(struct decoder *coder, void *md, struct xpkt *pkt)
 {
     struct icmp6hdr *icmp6 = XPKT_PTR(coder->data_begin);
@@ -205,7 +206,7 @@ xpkt_decode_icmp6(struct decoder *coder, void *md, struct xpkt *pkt)
     return DP_PRET_OK;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_decode_ipv4(struct decoder *coder, void *md, struct xpkt *pkt)
 {
     struct iphdr *iph = XPKT_PTR(coder->data_begin);
@@ -270,7 +271,7 @@ xpkt_decode_ipv4(struct decoder *coder, void *md, struct xpkt *pkt)
     return DP_PRET_OK;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_decode_ipv6(struct decoder *coder, void *md, struct xpkt *pkt)
 {
     struct ipv6hdr *ip6 = XPKT_PTR(coder->data_begin);
@@ -308,7 +309,7 @@ xpkt_decode_ipv6(struct decoder *coder, void *md, struct xpkt *pkt)
     return DP_PRET_OK;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_decode(void *md, struct xpkt *pkt, int skip_ipv6)
 {
     int ret = 0;
@@ -362,7 +363,7 @@ handle_excp:
     return ret;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_encode_packet_always(skb_t *skb, struct xpkt *pkt)
 {
     if (pkt->ctx.nf & F4_NAT_SRC) {
@@ -386,7 +387,7 @@ xpkt_encode_packet_always(skb_t *skb, struct xpkt *pkt)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 xpkt_encode_packet(skb_t *skb, struct xpkt *pkt)
 {
     return xpkt_do_out(skb, pkt);

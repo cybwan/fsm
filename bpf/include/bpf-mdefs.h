@@ -89,14 +89,14 @@ struct {
 #ifdef LEGACY_BPF_MAPS
 struct bpf_map_def SEC("maps") fsm_nat = {
     .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(struct xpkt_nat_key),
+    .key_size = sizeof(nat_key_t),
     .value_size = sizeof(struct xpkt_nat_ops),
     .max_entries = F4_NATV4_MAP_ENTRIES,
 };
 #else /* New BTF definitions */
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
-    __type(key, struct xpkt_nat_key);
+    __type(key, nat_key_t);
     __type(value, struct xpkt_nat_ops);
     __uint(max_entries, F4_NATV4_MAP_ENTRIES);
 } fsm_nat SEC(".maps");

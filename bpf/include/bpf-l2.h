@@ -1,10 +1,11 @@
 #ifndef __F4_BPF_L2_H__
 #define __F4_BPF_L2_H__
 
+#include "bpf-macros.h"
 #include "bpf-dbg.h"
 #include "bpf-l3.h"
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_eg_l2(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     // /* Any processing based on results from L3 */
@@ -22,14 +23,14 @@ dp_eg_l2(skb_t *skb, struct xpkt *pkt, void *fa)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ing_fwd(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     dp_ing_l3(skb, pkt, fa);
     return dp_eg_l2(skb, pkt, fa);
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ing_l2_top(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     // dp_do_smac_lkup(skb, pkt, fa);
@@ -38,7 +39,7 @@ dp_ing_l2_top(skb_t *skb, struct xpkt *pkt, void *fa)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
+INLINE(int)
 dp_ing_l2(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     // dp_ing_l2_top(skb, pkt, fa);

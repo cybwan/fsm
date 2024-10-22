@@ -1,10 +1,11 @@
 #ifndef __F4_BPF_LB_H__
 #define __F4_BPF_LB_H__
 
+#include "bpf-macros.h"
 #include "bpf-dbg.h"
 
-__attribute__((__always_inline__)) static inline int
-xpkt_nat_load(skb_t *skb, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
+INLINE(int)
+xpkt_nat_load(skb_t *skb, xpkt_t *pkt, struct dp_nat_act *na, int do_snat)
 {
     pkt->ctx.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
     XADDR_COPY(pkt->nat.nxip, na->xip);
@@ -18,13 +19,13 @@ xpkt_nat_load(skb_t *skb, struct xpkt *pkt, struct dp_nat_act *na, int do_snat)
     return 0;
 }
 
-__attribute__((__always_inline__)) static inline int
-xpkt_nat_endpoint(skb_t *skb, struct xpkt *pkt, struct xpkt_nat_ops *ops)
+INLINE(int)
+xpkt_nat_endpoint(skb_t *skb, xpkt_t *pkt, nat_ops_t *ops)
 {
     int sel = -1;
     __u8 ep_idx = 0;
     __u8 ep_sel = 0;
-    struct xpkt_nat_endpoint *ep;
+    nat_endpoint_t *ep;
 
     if (ops->lb_algo == NAT_LB_HASH) {
         bpf_set_hash_invalid(skb);
@@ -59,12 +60,11 @@ xpkt_nat_endpoint(skb_t *skb, struct xpkt *pkt, struct xpkt_nat_ops *ops)
     return sel;
 }
 
-__attribute__((__always_inline__)) static inline int
-xpkt_nat_proc(skb_t *skb, struct xpkt *pkt)
+INLINE(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
 {
-    struct xpkt_nat_key key;
-    struct xpkt_nat_endpoint *ep;
-    struct xpkt_nat_ops *ops;
+    nat_key_t key;
+    nat_endpoint_t *ep;
+    nat_ops_t *ops;
     int ep_sel;
 
     memset(&key, 0, sizeof(key));
