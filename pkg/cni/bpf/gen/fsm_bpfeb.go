@@ -151,7 +151,7 @@ type FsmNatOpsT struct {
 	LbAlgo    uint8
 	EpSel     uint8
 	EpCnt     uint8
-	Endpoints [16]struct {
+	Endpoints [1]struct {
 		NatFlags uint8
 		Nv6      uint8
 		NatXifi  uint16
@@ -163,6 +163,7 @@ type FsmNatOpsT struct {
 		NatRmac  [6]uint8
 		Inactive uint8
 	}
+	_ [3]byte
 }
 
 type FsmXpkt struct {
