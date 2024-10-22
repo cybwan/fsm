@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/florianl/go-tc"
 	"github.com/florianl/go-tc/core"
+	"github.com/spf13/pflag"
 	"golang.org/x/sys/unix"
 
 	"github.com/flomesh-io/fsm/pkg/cni/bpf/emaps"
@@ -15,7 +17,8 @@ import (
 )
 
 var (
-	log = logger.New("test")
+	log   = logger.New("fsm-ebpf-cli")
+	flags = pflag.NewFlagSet(`fsm`, pflag.ExitOnError)
 )
 
 func uint32Ptr(v uint32) *uint32 {
@@ -131,7 +134,7 @@ func attachTC(dev string) error {
 	return nil
 }
 
-func main() {
+func attach() {
 	nspath := `/run/netns/h1`
 	netns, err := ns.GetNS(`/run/netns/h1`)
 	if err != nil {
@@ -146,7 +149,24 @@ func main() {
 	if err != nil {
 		log.Error().Err(err).Msgf("failed for %s: %v", nspath, err)
 	}
+}
 
-	emaps.InitFsmProgsMap()
-	emaps.InitFsmNatMap()
+var (
+	action string
+)
+
+func init() {
+	flags.StringVar(&action, "action", "", "action")
+}
+
+func main() {
+	if strings.EqualFold(action, `attach`) {
+		attach()
+	}
+	if strings.EqualFold(action, `init-progs-map`) {
+		emaps.InitFsmProgsMap()
+	}
+	if strings.EqualFold(action, `init-nat-map`) {
+		emaps.InitFsmNatMap()
+	}
 }
