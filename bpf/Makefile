@@ -49,8 +49,16 @@ test-tc-show:
 
 .PHONY: pipy-demo
 pipy-demo:
-	pipy -e "pipy().listen(8080).serveHTTP(new Message('hi, it works.\n'))"
+	@pipy -e "pipy().listen(8080).serveHTTP(new Message('hi, it works in sys.\n'))"
+
+.PHONY: h1-curl-1
+h1-curl-1:
+	@sudo ip netns exec h1 curl 10.0.0.1:8080
+
+.PHONY: h1-pipy-demo
+h1-pipy-demo:
+	@sudo ip netns exec h1 pipy -e "pipy().listen(8080).serveHTTP(new Message('hi, it works in h1.\n'))"
 
 .PHONY: curl-1
 curl-1:
-	@sudo ip netns exec h1 curl 10.0.0.1:8080
+	@curl 10.0.0.2:8080
