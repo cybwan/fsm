@@ -69,3 +69,10 @@ load: debug-fs bpf-fs bpf-build
 clean:
 	@rm -rf /sys/fs/bpf/fsm
 
+.PHONY: test
+test:
+	@make -f Makefile.CNI clean bpf load
+	@make -f bpf/Makefile test-tc-detach
+	@bpf/tc-attach
+	@make -f bpf/Makefile test-tc-show
+	@make -f bpf/Makefile curl-1

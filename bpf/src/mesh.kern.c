@@ -28,7 +28,7 @@
 char __LICENSE[] SEC("license") = "GPL";
 
 SEC("classifier/sidecar/ingress")
-int sidecar_ingress(struct __sk_buff *skb)
+int sidecar_ingress(skb_t *skb)
 {
     int z = 0;
     struct xpkt *pkt;
@@ -85,7 +85,7 @@ int sidecar_egress(skb_t *skb)
 }
 
 SEC("classifier/handshake")
-int tc_hand_shake_func(struct __sk_buff *skb)
+int tc_hand_shake_func(skb_t *skb)
 {
     int z = 0;
     struct xpkt *pkt;
@@ -107,7 +107,7 @@ int tc_hand_shake_func(struct __sk_buff *skb)
 }
 
 SEC("classifier/conntrack")
-int tc_conn_track_func(struct __sk_buff *skb)
+int tc_conn_track_func(skb_t *skb)
 {
     int z = 0;
     struct xpkt *pkt;
@@ -121,7 +121,7 @@ int tc_conn_track_func(struct __sk_buff *skb)
 }
 
 SEC("classifier/pass")
-int tc_pass(struct __sk_buff *skb) { return TC_ACT_OK; }
+int tc_pass(skb_t *skb) { return TC_ACT_OK; }
 
 SEC("classifier/drop")
-int tc_drop(struct __sk_buff *skb) { return TC_ACT_SHOT; }
+int tc_drop(skb_t *skb) { return TC_ACT_SHOT; }

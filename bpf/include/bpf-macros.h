@@ -3,4 +3,6 @@
 
 #define INLINE(type) __attribute__((__always_inline__)) static inline type
 
+typedef struct __sk_buff skb_t;
+
 #endif
