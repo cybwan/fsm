@@ -8,6 +8,7 @@ import (
 	"github.com/florianl/go-tc/core"
 	"golang.org/x/sys/unix"
 
+	"github.com/flomesh-io/fsm/pkg/cni/bpf/emaps"
 	"github.com/flomesh-io/fsm/pkg/cni/ns"
 	"github.com/flomesh-io/fsm/pkg/cni/server/helpers"
 	"github.com/flomesh-io/fsm/pkg/logger"
@@ -25,7 +26,7 @@ func stringPtr(v string) *string {
 	return &v
 }
 
-func attachTC(netns, dev string) error {
+func attachTC(dev string) error {
 	iface, err := net.InterfaceByName(dev)
 	if err != nil {
 		log.Error().Msgf("get iface error: %v", err)
@@ -139,10 +140,13 @@ func main() {
 	}
 
 	err = netns.Do(func(_ ns.NetNS) error {
-		return attachTC(netns.Path(), `eth0`)
+		return attachTC(`eth0`)
 	})
 
 	if err != nil {
 		log.Error().Err(err).Msgf("failed for %s: %v", nspath, err)
 	}
+
+	emaps.InitFsmProgsMap()
+	emaps.InitFsmNatMap()
 }

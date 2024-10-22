@@ -10,7 +10,7 @@ import (
 )
 
 func InitFsmProgsMap() {
-	pinnedFile := path.Join(bpf.BPF_FS, bpf.FSM_PROG_NAME, bpf.FSM_PROGS_MAP_NAME)
+	pinnedFile := path.Join(bpf.BPF_FS, bpf.FSM_PROG_NAME, bpf.FSM_MAP_NAME_PROGS)
 	progsMap, mapErr := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{})
 	if mapErr != nil {
 		log.Fatal().Err(mapErr).Msgf("failed to load ebpf map: %s", pinnedFile)
@@ -48,7 +48,7 @@ func InitFsmProgsMap() {
 		}
 		progFD := pinnedProg.FD()
 		if err := progsMap.Update(unsafe.Pointer(&prog.progKey), unsafe.Pointer(&progFD), ebpf.UpdateAny); err != nil {
-			log.Fatal().Err(err).Msgf("failed to update ebpf map: %s", bpf.FSM_PROGS_MAP_NAME)
+			log.Fatal().Err(err).Msgf("failed to update ebpf map: %s", bpf.FSM_MAP_NAME_PROGS)
 		}
 	}
 }

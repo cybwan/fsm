@@ -4,7 +4,8 @@ const (
 	BPF_FS = `/sys/fs/bpf`
 
 	FSM_PROG_NAME      = `fsm`
-	FSM_PROGS_MAP_NAME = `fsm_progs`
+	FSM_MAP_NAME_PROGS = `fsm_progs`
+	FSM_MAP_NAME_NAT   = `fsm_nat`
 )
 
 const (
