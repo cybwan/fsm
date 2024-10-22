@@ -10,7 +10,7 @@ make -f Makefile.CNI test
 
 make -f Makefile.CNI clean bpf load
 make -f bpf/Makefile test-tc-detach
-bpf/tc-attach
+bpf/fsm-tc -action=attach
 make -f bpf/Makefile test-tc-show
 make -f bpf/Makefile curl-1
 

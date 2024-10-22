@@ -1,8 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/florianl/go-tc"
@@ -159,7 +161,18 @@ func init() {
 	flags.StringVar(&action, "action", "", "action")
 }
 
+func parseFlags() error {
+	if err := flags.Parse(os.Args); err != nil {
+		return err
+	}
+	_ = flag.CommandLine.Parse([]string{})
+	return nil
+}
+
 func main() {
+	if err := parseFlags(); err != nil {
+		log.Fatal().Err(err).Msg("Error parsing cmd line arguments")
+	}
 	if strings.EqualFold(action, `attach`) {
 		attach()
 	}
