@@ -4,7 +4,7 @@
 #include "bpf-macros.h"
 #include "bpf-dbg.h"
 #include "bpf-pkt.h"
-#include "bpf-l2.h"
+#include "bpf-l3.h"
 #include "bpf-lb.h"
 
 INLINE(int)
@@ -66,7 +66,7 @@ dp_pipe_check_res(skb_t *skb, struct xpkt *pkt, void *fa)
 }
 
 INLINE(int)
-xpkt_conntrack_proc(skb_t *skb, struct xpkt *pkt)
+xpkt_conntrack_proc(skb_t *skb, xpkt_t *pkt)
 {
     int val = 0;
     struct xpkt_fib4_ops *fa = NULL;
@@ -83,9 +83,6 @@ xpkt_conntrack_proc(skb_t *skb, struct xpkt *pkt)
     if (val < 0) {
         return TC_ACT_OK;
     }
-
-    dp_l3_fwd(skb, pkt, fa);
-    dp_eg_l2(skb, pkt, fa);
 
 res_end:
     return dp_pipe_check_res(skb, pkt, fa);
@@ -130,7 +127,7 @@ xpkt_handshake_proc(skb_t *skb, struct xpkt *pkt)
         goto out;
     }
 
-    dp_ing_l2(skb, pkt, fa);
+    dp_ing_l3(skb, pkt, fa);
 
     /* fast-cache is used only when certain conditions are met */
     if (F4_PIPE_FC_CAP(pkt)) {

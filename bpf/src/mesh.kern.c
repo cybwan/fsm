@@ -18,7 +18,6 @@
 #include "bpf-mdefs.h"
 #include "bpf-cdefs.h"
 #include "bpf-if.h"
-#include "bpf-l2.h"
 #include "bpf-l3.h"
 #include "bpf-fib.h"
 #include "bpf-lb.h"

@@ -103,31 +103,9 @@ dp_do_ing_ct(skb_t *skb, struct xpkt *pkt, void *fa_)
 }
 
 INLINE(int)
-dp_l3_fwd(skb_t *skb, struct xpkt *pkt, void *fa)
-{
-    if (pkt->l2.dl_type == htons(ETH_P_IP)) {
-        if (pkt->ctx.nf && pkt->nat.nv6 != 0) {
-            pkt->nat.xlate_proto = 1;
-            // dp_do_ipv6_fwd(skb, pkt, fa);
-        } else {
-            // dp_do_ipv4_fwd(skb, pkt, fa);
-        }
-    } else if (pkt->l2.dl_type == htons(ETH_P_IPV6)) {
-        if (pkt->ctx.nf && pkt->nat.nv6 == 0) {
-            pkt->nat.xlate_proto = 1;
-            // dp_do_ipv4_fwd(skb, pkt, fa);
-        } else {
-            // dp_do_ipv6_fwd(skb, pkt, fa);
-        }
-    }
-    return 0;
-}
-
-INLINE(int)
 dp_ing_l3(skb_t *skb, struct xpkt *pkt, void *fa)
 {
     dp_do_ing_ct(skb, pkt, fa);
-    // dp_l3_fwd(skb, pkt, fa);
     return 0;
 }
 
