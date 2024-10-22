@@ -42,6 +42,7 @@ func ShowFsmNatMap() {
 	for it.Next(unsafe.Pointer(&natKey), unsafe.Pointer(&natOps)) {
 		keyBytes, _ := json.MarshalIndent(natKey, "", " ")
 		opsBytes, _ := json.MarshalIndent(natOps, "", " ")
-		fmt.Printf(`{"key":%s,"value":%s}\n`, string(keyBytes), string(opsBytes))
+		fmt.Printf(`{"key":%s,"value":%s}`, string(keyBytes), string(opsBytes))
+		fmt.Println()
 	}
 }
