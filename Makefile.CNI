@@ -81,4 +81,4 @@ test:
 	@bin/fsm-tc --action=init-nat-map
 	@bin/fsm-tc --action=attach
 	@make -f bpf/Makefile test-tc-show
-	@make -f bpf/Makefile h1-curl-1
+	@make -f bpf/Makefile h1-curl-demo
