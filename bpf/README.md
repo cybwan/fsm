@@ -14,7 +14,7 @@ make -f Makefile.CNI clean bpf load
 make -f bpf/Makefile test-tc-detach
 bin/fsm-tc --action=attach
 make -f bpf/Makefile test-tc-show
-make -f bpf/Makefile h1-curl-1
+make -f bpf/Makefile h1-curl-demo
 tc_egress 
 tc_ingress
 
