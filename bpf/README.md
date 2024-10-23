@@ -33,4 +33,10 @@ make -f bpf/Makefile h1-pipy-demo
 make -f bpf/Makefile curl-1
 tc_ingress
 tc_egress
+
+SidecarAdminPort = 15000
+SidecarOutboundListenerPort = 15001
+SidecarInboundListenerPort = 15003
+SidecarPrometheusInboundListenerPort = 15010
+FSMDNSProxyPort = 15053
 ```
