@@ -52,7 +52,7 @@ fgw-inbound:
 	@pipy -e "pipy().listen(15003).serveHTTP(new Message('hi, it works as fgw inbound listener.\n'))"
 
 .PHONY: fgw-outbound
-fgw-inbound:
+fgw-outbound:
 	@pipy -e "pipy().listen(15001).serveHTTP(new Message('hi, it works as fgw outbound listener.\n'))"
 
 .PHONY: pipy-demo

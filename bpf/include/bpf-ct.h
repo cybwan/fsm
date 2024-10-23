@@ -180,7 +180,7 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
     rtd = &ts->tcp_cts[dir == CT_DIR_IN ? CT_DIR_OUT : CT_DIR_IN];
 
     if (tcp_flags & F4_TCP_RST) {
-        nstate = CT_TCP_CW;
+        nstate = CT_TCP_CLOSE_WAIT;
         goto end;
     }
 
@@ -200,7 +200,7 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
             td->init_acks++;
             if (td->init_acks >= CT_TCP_INIT_ACK_THRESHOLD &&
                 rtd->init_acks >= CT_TCP_INIT_ACK_THRESHOLD) {
-                nstate = CT_TCP_EST;
+                nstate = CT_TCP_ESTABLISHED;
                 break;
             }
             nstate = CT_TCP_ERR;
@@ -219,13 +219,13 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
         }
 
         td->seq = seq;
-        nstate = CT_TCP_SS;
+        nstate = CT_TCP_SYN_SEND;
         break;
-    case CT_TCP_SS:
+    case CT_TCP_SYN_SEND:
         if (dir != CT_DIR_OUT) {
             if ((tcp_flags & F4_TCP_SYN) == F4_TCP_SYN) {
                 td->seq = seq;
-                nstate = CT_TCP_SS;
+                nstate = CT_TCP_SYN_SEND;
             } else {
                 nstate = CT_TCP_ERR;
             }
@@ -244,10 +244,10 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
         }
 
         td->seq = seq;
-        nstate = CT_TCP_SA;
+        nstate = CT_TCP_SYN_ACK;
         break;
 
-    case CT_TCP_SA:
+    case CT_TCP_SYN_ACK:
         if (dir != CT_DIR_IN) {
             if ((tcp_flags & (F4_TCP_SYN | F4_TCP_ACK)) !=
                 (F4_TCP_SYN | F4_TCP_ACK)) {
@@ -260,13 +260,13 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
                 goto end;
             }
 
-            nstate = CT_TCP_SA;
+            nstate = CT_TCP_SYN_ACK;
             goto end;
         }
 
         if ((tcp_flags & F4_TCP_SYN) == F4_TCP_SYN) {
             td->seq = seq;
-            nstate = CT_TCP_SS;
+            nstate = CT_TCP_SYN_SEND;
             goto end;
         }
 
@@ -281,16 +281,16 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
         }
 
         td->seq = seq;
-        nstate = CT_TCP_EST;
+        nstate = CT_TCP_ESTABLISHED;
         break;
 
-    case CT_TCP_EST:
+    case CT_TCP_ESTABLISHED:
         if (tcp_flags & F4_TCP_FIN) {
             ts->fndir = dir;
             nstate = CT_TCP_FINI;
             td->seq = seq;
         } else {
-            nstate = CT_TCP_EST;
+            nstate = CT_TCP_ESTABLISHED;
         }
         break;
 
@@ -318,7 +318,7 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, struct dp_ct_tact *atdat,
     case CT_TCP_FINI3:
         if (ts->fndir == dir) {
             if (tcp_flags & F4_TCP_ACK) {
-                nstate = CT_TCP_CW;
+                nstate = CT_TCP_CLOSE_WAIT;
             }
         }
         break;
@@ -337,9 +337,9 @@ end:
 
     xpkt_spin_unlock(&atdat->lock);
 
-    if (nstate == CT_TCP_EST) {
+    if (nstate == CT_TCP_ESTABLISHED) {
         return CT_SMR_EST;
-    } else if (nstate & CT_TCP_CW) {
+    } else if (nstate & CT_TCP_CLOSE_WAIT) {
         return CT_SMR_CTD;
     } else if (nstate & CT_TCP_ERR) {
         return CT_SMR_ERR;

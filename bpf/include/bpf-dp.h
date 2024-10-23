@@ -63,18 +63,19 @@ struct dp_cmn_act {
     __u16 record;
 };
 
-#define CT_TCP_FIN_MASK (CT_TCP_FINI | CT_TCP_FINI2 | CT_TCP_FINI3 | CT_TCP_CW)
-#define CT_TCP_SYNC_MASK (CT_TCP_SS | CT_TCP_SA)
+#define CT_TCP_FIN_MASK                                                        \
+    (CT_TCP_FINI | CT_TCP_FINI2 | CT_TCP_FINI3 | CT_TCP_CLOSE_WAIT)
+#define CT_TCP_SYNC_MASK (CT_TCP_SYN_SEND | CT_TCP_SYN_ACK)
 
 typedef enum {
     CT_TCP_CLOSED = 0x0,
-    CT_TCP_SS = 0x1,
-    CT_TCP_SA = 0x2,
-    CT_TCP_EST = 0x4,
+    CT_TCP_SYN_SEND = 0x1,
+    CT_TCP_SYN_ACK = 0x2,
+    CT_TCP_ESTABLISHED = 0x4,
     CT_TCP_FINI = 0x10,
     CT_TCP_FINI2 = 0x20,
     CT_TCP_FINI3 = 0x40,
-    CT_TCP_CW = 0x80,
+    CT_TCP_CLOSE_WAIT = 0x80,
     CT_TCP_ERR = 0x100
 } ct_tcp_state_t;
 

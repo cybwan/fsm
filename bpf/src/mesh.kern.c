@@ -45,14 +45,23 @@ int sidecar_ingress(skb_t *skb)
 
     if (F4_DEBUG_IGR(pkt)) {
         FSM_DBG("[DBG] tc_igr ========\n");
-        FSM_DBG("[DBG] tc_igr pkt->l34 saddr4 %pI4 sport %d\n",
-                &pkt->l34.saddr4, ntohs(pkt->l34.source));
-        FSM_DBG("[DBG] tc_igr pkt->l34 daddr4 %pI4 dport %d\n",
-                &pkt->l34.daddr4, ntohs(pkt->l34.dest));
+        // FSM_DBG("[DBG] tc_igr pkt->l34 saddr4 %pI4 sport %d\n",
+        //         &pkt->l34.saddr4, ntohs(pkt->l34.source));
+        // FSM_DBG("[DBG] tc_igr pkt->l34 daddr4 %pI4 dport %d\n",
+        //         &pkt->l34.daddr4, ntohs(pkt->l34.dest));
+        void *dend = XPKT_PTR(XPKT_DATA_END(skb));
+        struct tcphdr *t = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
+        if ((void *)(t + 1) > dend) {
+            return -1;
+        }
+        FSM_DBG("[DBG] tc_igr syn: %d ack: %d fin: %d\n", t->syn, t->ack,
+                t->fin);
+        FSM_DBG("[DBG] tc_igr seq: %u ack_seq: %u\n", ntohl(t->seq),
+                ntohl(t->ack_seq));
     }
 
-    // return dp_ing_fc_main(skb, pkt);
-    return TC_ACT_OK;
+    return dp_ing_fc_main(skb, pkt);
+    // return TC_ACT_OK;
 }
 
 SEC("classifier/sidecar/egress")
@@ -74,17 +83,26 @@ int sidecar_egress(skb_t *skb)
 
     if (F4_DEBUG_EGR(pkt)) {
         FSM_DBG("[DBG] tc_egr ========\n");
-        FSM_DBG("[DBG] tc_egr pkt->l34 saddr4 %pI4 sport %d\n",
-                &pkt->l34.saddr4, ntohs(pkt->l34.source));
-        FSM_DBG("[DBG] tc_egr pkt->l34 daddr4 %pI4 dport %d\n",
-                &pkt->l34.daddr4, ntohs(pkt->l34.dest));
+        // FSM_DBG("[DBG] tc_egr pkt->l34 saddr4 %pI4 sport %d\n",
+        //         &pkt->l34.saddr4, ntohs(pkt->l34.source));
+        // FSM_DBG("[DBG] tc_egr pkt->l34 daddr4 %pI4 dport %d\n",
+        //         &pkt->l34.daddr4, ntohs(pkt->l34.dest));
+        void *dend = XPKT_PTR(XPKT_DATA_END(skb));
+        struct tcphdr *t = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
+        if ((void *)(t + 1) > dend) {
+            return -1;
+        }
+        FSM_DBG("[DBG] tc_egr syn: %d ack: %d fin: %d\n", t->syn, t->ack,
+                t->fin);
+        FSM_DBG("[DBG] tc_egr seq: %u ack_seq: %u\n", ntohl(t->seq),
+                ntohl(t->ack_seq));
     }
-    // return dp_ing_fc_main(skb, pkt);
-    return TC_ACT_OK;
+    return dp_ing_fc_main(skb, pkt);
+    // return TC_ACT_OK;
 }
 
 SEC("classifier/handshake")
-int tc_hand_shake_func(skb_t *skb)
+int sidecar_hand_shake(skb_t *skb)
 {
     int z = 0;
     xpkt_t *pkt;
@@ -106,7 +124,7 @@ int tc_hand_shake_func(skb_t *skb)
 }
 
 SEC("classifier/conntrack")
-int tc_conn_track_func(skb_t *skb)
+int sidecar_conn_track(skb_t *skb)
 {
     int z = 0;
     xpkt_t *pkt;
@@ -120,13 +138,13 @@ int tc_conn_track_func(skb_t *skb)
 }
 
 SEC("classifier/pass")
-int tc_pass(skb_t *skb)
+int sidecar_pass(skb_t *skb)
 {
     return TC_ACT_OK;
 }
 
 SEC("classifier/drop")
-int tc_drop(skb_t *skb)
+int sidecar_drop(skb_t *skb)
 {
     return TC_ACT_SHOT;
 }
