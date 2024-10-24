@@ -728,7 +728,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
 
     caop = bpf_map_lookup_elem(&fsm_ct, &ckey);
     raop = bpf_map_lookup_elem(&fsm_ct, &rkey);
-    if (pkt->ctx.igr && (caop == NULL || raop == NULL)) {
+    if (caop == NULL || raop == NULL) {
+        FSM_DBG("[CTRK] AAAAA 1\n");
         cuop->ca.ftrap = 0;
         cuop->ca.oaux = 0;
         cuop->ca.cidx = dp_ct_get_newctr(&cuop->attr.nid);
@@ -799,6 +800,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     }
 
     if (caop != NULL && raop != NULL) {
+        FSM_DBG("[CTRK] AAAAA 2\n");
         caop->lts = bpf_ktime_get_ns();
         raop->lts = caop->lts;
         pkt->ctx.act = F4_PIPE_RDR;
@@ -828,17 +830,15 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         } else if (smr == CT_SMR_ERR || smr == CT_SMR_CTD) {
             bpf_map_delete_elem(&fsm_ct, &rkey);
             bpf_map_delete_elem(&fsm_ct, &ckey);
-            // F4_DBG_PRINTK("[CTRK] bpf_map_delete_elem");
+
+            if (F4_DEBUG_PKT(pkt)) {
+                FSM_DBG("[DBG] [CTRK] bpf_map_delete_elem by igr\n");
+            }
 
             if (caop->attr.dir == CT_DIR_IN) {
                 dp_ct_del(pkt, &ckey, &rkey, caop, raop);
             } else {
                 dp_ct_del(pkt, &rkey, &ckey, raop, caop);
-            }
-
-            if (cep->nat_flags) {
-                // dp_do_dec_nat_sess(skb, xf, caop->attr.rid,
-                // caop->attr.aid);
             }
         }
     }
