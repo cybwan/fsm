@@ -23,20 +23,20 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
     } else if (act->act_type == NF_DO_NOOP) {
         struct dp_rdr_act *ar = &act->port_act;
         if (pkt->ctx.l4fin) {
-            ar->fr = 1;
+            ar->fin = 1;
         }
 
-        if (ar->fr == 1) {
+        if (ar->fin == 1) {
             goto ct_trk;
         }
 
     } else if (act->act_type == NF_DO_RDRT) {
         struct dp_rdr_act *ar = &act->port_act;
         if (pkt->ctx.l4fin) {
-            ar->fr = 1;
+            ar->fin = 1;
         }
 
-        if (ar->fr == 1) {
+        if (ar->fin == 1) {
             goto ct_trk;
         }
 
@@ -52,12 +52,12 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
         na = &act->nat_act;
 
         if (pkt->ctx.l4fin) {
-            na->fr = 1;
+            na->fin = 1;
         }
 
         xpkt_nat_load(skb, pkt, na, act->act_type == NF_DO_SNAT ? 1 : 0);
 
-        if (na->fr == 1 || na->doct || pkt->ctx.goct) {
+        if (na->fin == 1 || na->doct || pkt->ctx.goct) {
             goto ct_trk;
         }
 

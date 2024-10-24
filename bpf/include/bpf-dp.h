@@ -109,7 +109,7 @@ typedef struct {
 
 struct dp_rdr_act {
     __u16 oport;
-    __u16 fr;
+    __u16 fin;
 };
 
 #define nat_xip4 nat_xip[0]
@@ -146,7 +146,7 @@ struct dp_nat_act {
     __u16 xifi;
     __u8 xmac[6];
     __u8 rmac[6];
-    __u8 fr;
+    __u8 fin;
     __u8 doct;
     __u32 rid;
     __u32 aid;
