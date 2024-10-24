@@ -671,17 +671,14 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     nat_endpoint_t *cep;
     nat_endpoint_t *rep;
     int smr = CT_SMR_ERR;
-    int k;
+    int cidx = 0, ridx = 1;
 
     if (F4_DEBUG_PKT(pkt)) {
         FSM_DBG("[DBG] dp_ct_in\n");
     }
 
-    k = 0;
-    cop = bpf_map_lookup_elem(&fsm_ct_ops, &k);
-
-    k = 1;
-    rop = bpf_map_lookup_elem(&fsm_ct_ops, &k);
+    cop = bpf_map_lookup_elem(&fsm_ct_ops, &cidx);
+    rop = bpf_map_lookup_elem(&fsm_ct_ops, &ridx);
 
     if (cop == NULL || rop == NULL) {
         return smr;
