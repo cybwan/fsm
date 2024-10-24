@@ -92,7 +92,7 @@ typedef struct {
     ct_tcp_state_t state;
     ct_dir_t fndir;
     ct_tcp_pinfd_t tcp_cts[CT_DIR_MAX];
-} ct_tcp_pinf_t;
+} ct_tcp_sm_t;
 
 #define CT_UDP_FIN_MASK (CT_UDP_FINI)
 
@@ -110,7 +110,7 @@ typedef struct {
     __u16 pkts_seen;
     __u16 rpkts_seen;
     ct_dir_t fndir;
-} ct_udp_pinf_t;
+} ct_udp_sm_t;
 
 typedef enum {
     CT_ICMP_CLOSED = 0x0,
@@ -127,7 +127,7 @@ typedef struct {
     __u8 state;
     __u8 errs;
     __u16 lseq;
-} ct_icmp_pinf_t;
+} ct_icmp_sm_t;
 
 typedef struct {
     ct_state_t state;
@@ -135,9 +135,9 @@ typedef struct {
 
 typedef struct {
     union {
-        ct_tcp_pinf_t t;
-        ct_udp_pinf_t u;
-        ct_icmp_pinf_t i;
+        ct_tcp_sm_t t;
+        ct_udp_sm_t u;
+        ct_icmp_sm_t i;
     };
     __u16 frag;
     __u16 npmhh;
@@ -257,7 +257,7 @@ typedef struct {
                            *  DP_SET_SESS_FWD_ACT
                            */
     struct bpf_spin_lock lock;
-    ct_attr_t ctd;
+    ct_attr_t attr;
     __u64 ito; /* Inactive timeout */
     __u64 lts; /* Last used timestamp */
     union {

@@ -12,8 +12,8 @@
         case DP_SET_NOP:                                                       \
         case DP_SET_SNAT:                                                      \
         case DP_SET_DNAT:                                                      \
-            (a)->ctd.pi.t.tcp_cts[CT_DIR_IN].pseq = (x)->l34.seq;              \
-            (a)->ctd.pi.t.tcp_cts[CT_DIR_IN].pack = (x)->l34.ack;              \
+            (a)->attr.pi.t.tcp_cts[CT_DIR_IN].pseq = (x)->l34.seq;             \
+            (a)->attr.pi.t.tcp_cts[CT_DIR_IN].pack = (x)->l34.ack;             \
             break;                                                             \
         default:                                                               \
             break;                                                             \
@@ -142,10 +142,10 @@ INTERNAL(int)
 dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
              ct_dir_t dir)
 {
-    ct_attr_t *tdat = &atdat->ctd;
-    ct_attr_t *xtdat = &axtdat->ctd;
-    ct_tcp_pinf_t *ts = &tdat->pi.t;
-    ct_tcp_pinf_t *rts = &xtdat->pi.t;
+    ct_attr_t *tdat = &atdat->attr;
+    ct_attr_t *xtdat = &axtdat->attr;
+    ct_tcp_sm_t *ts = &tdat->pi.t;
+    ct_tcp_sm_t *rts = &xtdat->pi.t;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
     struct tcphdr *t = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
     __u8 tcp_flags = pkt->ctx.tcp_flags;
@@ -350,10 +350,10 @@ INTERNAL(int)
 dp_ct_udp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
              ct_dir_t dir)
 {
-    ct_attr_t *tdat = &atdat->ctd;
-    ct_attr_t *xtdat = &axtdat->ctd;
-    ct_udp_pinf_t *us = &tdat->pi.u;
-    ct_udp_pinf_t *xus = &xtdat->pi.u;
+    ct_attr_t *tdat = &atdat->attr;
+    ct_attr_t *xtdat = &axtdat->attr;
+    ct_udp_sm_t *us = &tdat->pi.u;
+    ct_udp_sm_t *xus = &xtdat->pi.u;
     __u32 nstate = us->state;
 
     xpkt_spin_lock(&atdat->lock);
@@ -412,10 +412,10 @@ INTERNAL(int)
 dp_ct_icmp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
               ct_dir_t dir)
 {
-    ct_attr_t *tdat = &atdat->ctd;
-    ct_attr_t *xtdat = &axtdat->ctd;
-    ct_icmp_pinf_t *is = &tdat->pi.i;
-    ct_icmp_pinf_t *xis = &xtdat->pi.i;
+    ct_attr_t *tdat = &atdat->attr;
+    ct_attr_t *xtdat = &axtdat->attr;
+    ct_icmp_sm_t *is = &tdat->pi.i;
+    ct_icmp_sm_t *xis = &xtdat->pi.i;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
     struct icmphdr *i = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
     __u32 nstate;
@@ -498,10 +498,10 @@ INTERNAL(int)
 dp_ct_icmp6_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
                ct_dir_t dir)
 {
-    ct_attr_t *tdat = &atdat->ctd;
-    ct_attr_t *xtdat = &axtdat->ctd;
-    ct_icmp_pinf_t *is = &tdat->pi.i;
-    ct_icmp_pinf_t *xis = &xtdat->pi.i;
+    ct_attr_t *tdat = &atdat->attr;
+    ct_attr_t *xtdat = &axtdat->attr;
+    ct_icmp_sm_t *is = &tdat->pi.i;
+    ct_icmp_sm_t *xis = &xtdat->pi.i;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
     struct icmp6hdr *i = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
     __u32 nstate;
@@ -605,7 +605,7 @@ dp_ct_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat, ct_dir_t dir)
 
 #define CP_CT_NAT_TACTS(dst, src)                                              \
     memcpy(&dst->ca, &src->ca, sizeof(struct dp_cmn_act));                     \
-    memcpy(&dst->ctd, &src->ctd, sizeof(ct_attr_t));                           \
+    memcpy(&dst->attr, &src->attr, sizeof(ct_attr_t));                         \
     dst->ito = src->ito;                                                       \
     dst->lts = src->lts;                                                       \
     memcpy(&dst->nat_act, &src->nat_act, sizeof(struct dp_nat_act));
@@ -614,7 +614,7 @@ INTERNAL(int)
 dp_ct_est(xpkt_t *pkt, ct_key_t *ckey, ct_key_t *rkey, ct_op_t *atdat,
           ct_op_t *axtdat)
 {
-    ct_attr_t *tdat = &atdat->ctd;
+    ct_attr_t *tdat = &atdat->attr;
     ct_op_t *cop, *rop;
     int i, j, k;
 
@@ -637,12 +637,12 @@ dp_ct_est(xpkt_t *pkt, ct_key_t *ckey, ct_key_t *rkey, ct_op_t *atdat,
             if (pkt->ctx.dir == CT_DIR_IN) {
                 ckey->sport = pkt->l2.ssnid;
                 ckey->dport = pkt->l2.ssnid;
-                cop->ctd.pi.frag = 1;
+                cop->attr.pi.frag = 1;
                 bpf_map_update_elem(&fsm_ct, ckey, cop, BPF_ANY);
             } else {
                 rkey->sport = pkt->l2.ssnid;
                 rkey->dport = pkt->l2.ssnid;
-                rop->ctd.pi.frag = 1;
+                rop->attr.pi.frag = 1;
                 bpf_map_update_elem(&fsm_ct, rkey, rop, BPF_ANY);
             }
         }
@@ -687,8 +687,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         return smr;
     }
 
-    cep = &cop->ctd.ep;
-    rep = &rop->ctd.ep;
+    cep = &cop->attr.ep;
+    rep = &rop->attr.ep;
 
     /* CT Key */
     XADDR_COPY(ckey.daddr, pkt->l34.daddr);
@@ -738,8 +738,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     if (pkt->ctx.igr && (atdat == NULL || axtdat == NULL)) {
         cop->ca.ftrap = 0;
         cop->ca.oaux = 0;
-        cop->ca.cidx = dp_ct_get_newctr(&cop->ctd.nid);
-        memset(&cop->ctd.pi, 0, sizeof(ct_pinf_t));
+        cop->ca.cidx = dp_ct_get_newctr(&cop->attr.nid);
+        memset(&cop->attr.pi, 0, sizeof(ct_pinf_t));
         if (cep->nat_flags) {
             cop->ca.act_type = cep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
                                    ? DP_SET_DNAT
@@ -759,18 +759,18 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             cop->ito = 0;
             cop->ca.act_type = DP_SET_DO_CT;
         }
-        cop->ctd.dir = CT_DIR_IN;
+        cop->attr.dir = CT_DIR_IN;
 
         /* FIXME This is duplicated data */
-        cop->ctd.rid = pkt->ctx.rule_id;
-        cop->ctd.aid = pkt->nat.ep_sel;
-        cop->ctd.smr = CT_SMR_INIT;
+        cop->attr.rid = pkt->ctx.rule_id;
+        cop->attr.aid = pkt->nat.ep_sel;
+        cop->attr.smr = CT_SMR_INIT;
 
         rop->ca.ftrap = 0;
         rop->ca.oaux = 0;
         rop->ca.cidx = cop->ca.cidx + 1;
         rop->ca.record = pkt->ctx.dp_rec;
-        memset(&rop->ctd.pi, 0, sizeof(ct_pinf_t));
+        memset(&rop->attr.pi, 0, sizeof(ct_pinf_t));
         if (rep->nat_flags) {
             rop->ca.act_type = rep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
                                    ? DP_SET_DNAT
@@ -792,11 +792,11 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             rop->ca.act_type = DP_SET_DO_CT;
         }
         rop->lts = cop->lts;
-        rop->ctd.dir = CT_DIR_OUT;
-        rop->ctd.smr = CT_SMR_INIT;
-        rop->ctd.rid = cop->ctd.rid;
-        rop->ctd.aid = cop->ctd.aid;
-        rop->ctd.nid = cop->ctd.nid;
+        rop->attr.dir = CT_DIR_OUT;
+        rop->attr.smr = CT_SMR_INIT;
+        rop->attr.rid = cop->attr.rid;
+        rop->attr.aid = cop->attr.aid;
+        rop->attr.nid = cop->attr.nid;
 
         bpf_map_update_elem(&fsm_ct, &rkey, rop, BPF_ANY);
         bpf_map_update_elem(&fsm_ct, &ckey, cop, BPF_ANY);
@@ -809,7 +809,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         atdat->lts = bpf_ktime_get_ns();
         axtdat->lts = atdat->lts;
         pkt->ctx.act = F4_PIPE_RDR;
-        if (atdat->ctd.dir == CT_DIR_IN) {
+        if (atdat->attr.dir == CT_DIR_IN) {
             pkt->ctx.dir = CT_DIR_IN;
             pkt->ctx.phit |= F4_DP_CTSI_HIT;
             smr = dp_ct_sm(skb, pkt, atdat, axtdat, CT_DIR_IN);
@@ -823,7 +823,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             if (cep->nat_flags) {
                 atdat->nat_act.doct = 0;
                 axtdat->nat_act.doct = 0;
-                if (atdat->ctd.dir == CT_DIR_IN) {
+                if (atdat->attr.dir == CT_DIR_IN) {
                     dp_ct_est(pkt, &ckey, &rkey, atdat, axtdat);
                 } else {
                     dp_ct_est(pkt, &rkey, &ckey, axtdat, atdat);
@@ -837,14 +837,15 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             bpf_map_delete_elem(&fsm_ct, &ckey);
             // F4_DBG_PRINTK("[CTRK] bpf_map_delete_elem");
 
-            if (atdat->ctd.dir == CT_DIR_IN) {
+            if (atdat->attr.dir == CT_DIR_IN) {
                 dp_ct_del(pkt, &ckey, &rkey, atdat, axtdat);
             } else {
                 dp_ct_del(pkt, &rkey, &ckey, axtdat, atdat);
             }
 
             if (cep->nat_flags) {
-                // dp_do_dec_nat_sess(skb, xf, atdat->ctd.rid, atdat->ctd.aid);
+                // dp_do_dec_nat_sess(skb, xf, atdat->attr.rid,
+                // atdat->attr.aid);
             }
         }
     }
