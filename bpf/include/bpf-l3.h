@@ -18,8 +18,6 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
 
     act->lts = bpf_ktime_get_ns();
 
-    fa->ca.fwrid = act->ca.fwrid;
-
     if (act->ca.act_type == DP_SET_DO_CT) {
         goto ct_trk;
     } else if (act->ca.act_type == DP_SET_NOP) {
