@@ -45,11 +45,6 @@ xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
         return 0;
     }
 
-    if (acts->ca.ftrap) {
-        pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
-        return 0;
-    }
-
     pkt->ctx.phit |= F4_DP_FC_HIT;
 
     if (acts->ops[DP_SET_SNAT].ca.act_type == DP_SET_SNAT) {
@@ -74,7 +69,6 @@ xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
 
     /* Catch any conditions which need us to go to cp/ct */
     if (pkt->ctx.l4fin) {
-        acts->ca.ftrap = 1;
         goto del_out;
     }
 

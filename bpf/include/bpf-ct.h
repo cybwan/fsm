@@ -730,7 +730,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     raop = bpf_map_lookup_elem(&fsm_ct, &rkey);
     if (caop == NULL || raop == NULL) {
         FSM_DBG("[CTRK] AAAAA 1\n");
-        cuop->ca.ftrap = 0;
         cuop->ca.oaux = 0;
         cuop->ca.cidx = dp_ct_get_newctr(&cuop->attr.nid);
         memset(&cuop->attr.sm, 0, sizeof(ct_sm_t));
@@ -760,7 +759,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         cuop->attr.aid = pkt->nat.ep_sel;
         cuop->attr.smr = CT_SMR_INIT;
 
-        ruop->ca.ftrap = 0;
         ruop->ca.oaux = 0;
         ruop->ca.cidx = cuop->ca.cidx + 1;
         ruop->ca.record = pkt->ctx.dp_rec;
