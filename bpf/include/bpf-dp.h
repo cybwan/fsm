@@ -56,7 +56,6 @@ typedef enum {
 struct dp_cmn_act {
     __u8 act_type;
     __u16 oaux;
-    __u32 cidx;
     __u32 fwrid;
     __u16 mark;
     __u16 record;

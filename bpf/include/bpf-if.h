@@ -99,7 +99,6 @@ xpkt_handshake_proc(skb_t *skb, xpkt_t *pkt)
         return 0;
 
     /* No nonsense no loop */
-    fa->ca.cidx = 0;
     fa->its = bpf_ktime_get_ns();
 #pragma clang loop unroll(full)
     for (z = 0; z < F4_FCV4_MAP_ACTS; z++) {

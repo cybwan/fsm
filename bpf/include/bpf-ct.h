@@ -731,7 +731,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     if (caop == NULL || raop == NULL) {
         FSM_DBG("[CTRK] AAAAA 1\n");
         cuop->ca.oaux = 0;
-        cuop->ca.cidx = dp_ct_get_newctr(&cuop->attr.nid);
         memset(&cuop->attr.sm, 0, sizeof(ct_sm_t));
         if (cep->nat_flags) {
             cuop->ca.act_type = cep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
@@ -760,7 +759,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         cuop->attr.smr = CT_SMR_INIT;
 
         ruop->ca.oaux = 0;
-        ruop->ca.cidx = cuop->ca.cidx + 1;
         ruop->ca.record = pkt->ctx.dp_rec;
         memset(&ruop->attr.sm, 0, sizeof(ct_sm_t));
         if (rep->nat_flags) {
