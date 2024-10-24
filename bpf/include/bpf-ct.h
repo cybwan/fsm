@@ -49,8 +49,8 @@ dp_ct_get_newctr(__u32 *nid)
 }
 
 INTERNAL(int)
-dp_ct_proto_xfk_init(xpkt_t *pkt, struct xpkt_ct_key *ckey, nat_endpoint_t *cep,
-                     struct xpkt_ct_key *rkey, nat_endpoint_t *rep)
+dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_endpoint_t *cep,
+                     ct_key_t *rkey, nat_endpoint_t *rep)
 {
     XADDR_COPY(rkey->daddr, ckey->saddr);
     XADDR_COPY(rkey->saddr, ckey->daddr);
@@ -139,8 +139,8 @@ dp_ct_proto_xfk_init(xpkt_t *pkt, struct xpkt_ct_key *ckey, nat_endpoint_t *cep,
 }
 
 INTERNAL(int)
-dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, struct xpkt_ct_op *atdat,
-             struct xpkt_ct_op *axtdat, ct_dir_t dir)
+dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
+             ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
     struct dp_ct_dat *xtdat = &axtdat->ctd;
@@ -347,8 +347,8 @@ end:
 }
 
 INTERNAL(int)
-dp_ct_udp_sm(skb_t *skb, xpkt_t *pkt, struct xpkt_ct_op *atdat,
-             struct xpkt_ct_op *axtdat, ct_dir_t dir)
+dp_ct_udp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
+             ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
     struct dp_ct_dat *xtdat = &axtdat->ctd;
@@ -409,8 +409,8 @@ dp_ct_udp_sm(skb_t *skb, xpkt_t *pkt, struct xpkt_ct_op *atdat,
 }
 
 INTERNAL(int)
-dp_ct_icmp_sm(skb_t *skb, xpkt_t *pkt, struct xpkt_ct_op *atdat,
-              struct xpkt_ct_op *axtdat, ct_dir_t dir)
+dp_ct_icmp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
+              ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
     struct dp_ct_dat *xtdat = &axtdat->ctd;
@@ -495,8 +495,8 @@ end:
 }
 
 INTERNAL(int)
-dp_ct_icmp6_sm(skb_t *skb, xpkt_t *pkt, struct xpkt_ct_op *atdat,
-               struct xpkt_ct_op *axtdat, ct_dir_t dir)
+dp_ct_icmp6_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
+               ct_dir_t dir)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
     struct dp_ct_dat *xtdat = &axtdat->ctd;
@@ -578,8 +578,7 @@ end:
 }
 
 INTERNAL(int)
-dp_ct_sm(skb_t *skb, xpkt_t *pkt, struct xpkt_ct_op *atdat,
-         struct xpkt_ct_op *axtdat, ct_dir_t dir)
+dp_ct_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat, ct_dir_t dir)
 {
     int sm_ret = 0;
 
@@ -612,11 +611,11 @@ dp_ct_sm(skb_t *skb, xpkt_t *pkt, struct xpkt_ct_op *atdat,
     memcpy(&dst->nat_act, &src->nat_act, sizeof(struct dp_nat_act));
 
 INTERNAL(int)
-dp_ct_est(xpkt_t *pkt, struct xpkt_ct_key *ckey, struct xpkt_ct_key *rkey,
-          struct xpkt_ct_op *atdat, struct xpkt_ct_op *axtdat)
+dp_ct_est(xpkt_t *pkt, ct_key_t *ckey, ct_key_t *rkey, ct_op_t *atdat,
+          ct_op_t *axtdat)
 {
     struct dp_ct_dat *tdat = &atdat->ctd;
-    struct xpkt_ct_op *cop, *rop;
+    ct_op_t *cop, *rop;
     int i, j, k;
 
     k = 0;
@@ -655,20 +654,20 @@ dp_ct_est(xpkt_t *pkt, struct xpkt_ct_key *ckey, struct xpkt_ct_key *rkey,
 }
 
 INTERNAL(int)
-dp_ct_del(xpkt_t *pkt, struct xpkt_ct_key *ckey, struct xpkt_ct_key *rkey,
-          struct xpkt_ct_op *atdat, struct xpkt_ct_op *axtdat)
+dp_ct_del(xpkt_t *pkt, ct_key_t *ckey, ct_key_t *rkey, ct_op_t *atdat,
+          ct_op_t *axtdat)
 {
     return 0;
 }
 
 INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
 {
-    struct xpkt_ct_key ckey;
-    struct xpkt_ct_key rkey;
-    struct xpkt_ct_op *cop;
-    struct xpkt_ct_op *rop;
-    struct xpkt_ct_op *atdat;
-    struct xpkt_ct_op *axtdat;
+    ct_key_t ckey;
+    ct_key_t rkey;
+    ct_op_t *cop;
+    ct_op_t *rop;
+    ct_op_t *atdat;
+    ct_op_t *axtdat;
     nat_endpoint_t *cep;
     nat_endpoint_t *rep;
     int smr = CT_SMR_ERR;

@@ -238,16 +238,16 @@ typedef struct {
     nat_endpoint_t endpoints[F4_MAX_ENDPOINTS];
 } nat_ops_t;
 
-struct xpkt_ct_key {
+typedef struct {
     __u32 daddr[4];
     __u32 saddr[4];
     __u16 sport;
     __u16 dport;
     __u8 proto;
     __u8 v6;
-} __attribute__((packed));
+} __attribute__((packed)) ct_key_t;
 
-struct xpkt_ct_op {
+typedef struct {
     struct dp_cmn_act ca; /* Possible actions :
                            *  DP_SET_DROP
                            *  DP_SET_TOCP
@@ -264,7 +264,7 @@ struct xpkt_ct_op {
         struct dp_rdr_act port_act;
         struct dp_nat_act nat_act;
     };
-};
+} ct_op_t;
 
 struct dp_ct_ctrtact {
     struct dp_cmn_act ca; /* Possible actions :
