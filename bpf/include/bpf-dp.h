@@ -173,7 +173,7 @@ struct dp_ct_dat {
     ct_pinf_t pi;
     ct_dir_t dir;
     ct_smr_t smr;
-    nat_endpoint_t xi;
+    nat_endpoint_t ep;
 };
 
 struct xpkt_fib4_key {
