@@ -260,16 +260,6 @@ typedef struct {
     };
 } ct_op_t;
 
-struct dp_ct_ctrtact {
-    struct dp_cmn_act ca; /* Possible actions :
-                           * None (just place holder)
-                           */
-    struct bpf_spin_lock lock;
-    __u32 start;
-    __u32 counter;
-    __u32 entries;
-};
-
 struct dp_dnat_opt_key {
     __u32 xaddr;
     __u16 xport;

@@ -119,22 +119,6 @@ struct {
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") fsm_ct_ctr = {
-    .type = BPF_MAP_TYPE_ARRAY,
-    .key_size = sizeof(__u32),
-    .value_size = sizeof(struct dp_ct_ctrtact),
-    .max_entries = 1,
-};
-#else /* New BTF definitions */
-struct {
-    __uint(type, BPF_MAP_TYPE_ARRAY);
-    __type(key, __u32);
-    __type(value, struct dp_ct_ctrtact);
-    __uint(max_entries, 1);
-} fsm_ct_ctr SEC(".maps");
-#endif
-
-#ifdef LEGACY_BPF_MAPS
 struct bpf_map_def SEC("maps") fsm_ct = {
     .type = BPF_MAP_TYPE_HASH,
     .key_size = sizeof(ct_key_t),

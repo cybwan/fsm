@@ -20,34 +20,6 @@
         }                                                                      \
     } while (0)
 
-INTERNAL(__u32)
-dp_ct_get_newctr(__u32 *nid)
-{
-    __u32 k = 0;
-    __u32 v = 0;
-    struct dp_ct_ctrtact *ctr;
-
-    ctr = bpf_map_lookup_elem(&fsm_ct_ctr, &k);
-
-    if (ctr == NULL) {
-        return 0;
-    }
-
-    *nid = ctr->start;
-    /* FIXME - We can potentially do a percpu array and do away
-     *         with the locking here
-     */
-    xpkt_spin_lock(&ctr->lock);
-    v = ctr->counter;
-    ctr->counter += 2;
-    if (ctr->counter >= ctr->entries) {
-        ctr->counter = ctr->start;
-    }
-    xpkt_spin_unlock(&ctr->lock);
-
-    return v;
-}
-
 INTERNAL(int)
 dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_endpoint_t *cep,
                      ct_key_t *rkey, nat_endpoint_t *rep)
