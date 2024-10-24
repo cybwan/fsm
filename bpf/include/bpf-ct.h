@@ -9,7 +9,7 @@
 #define dp_run_ctact_helper(x, a)                                              \
     do {                                                                       \
         switch ((a)->act_type) {                                               \
-        case NF_DO_NOP:                                                        \
+        case NF_DO_NOOP:                                                       \
         case NF_DO_SNAT:                                                       \
         case NF_DO_DNAT:                                                       \
             (a)->attr.sm.t.dirs[CT_DIR_IN].pseq = (x)->l34.seq;                \
@@ -719,7 +719,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             cuop->ito = pkt->nat.ito;
         } else {
             cuop->ito = 0;
-            cuop->act_type = NF_DO_CT;
+            cuop->act_type = NF_DO_CNTK;
         }
         cuop->attr.dir = CT_DIR_IN;
 
@@ -747,7 +747,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             ruop->ito = pkt->nat.ito;
         } else {
             ruop->ito = 0;
-            ruop->act_type = NF_DO_CT;
+            ruop->act_type = NF_DO_CNTK;
         }
         ruop->lts = cuop->lts;
         ruop->attr.dir = CT_DIR_OUT;
@@ -788,8 +788,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
                     dp_ct_est(pkt, &rkey, &ckey, raop, caop);
                 }
             } else {
-                caop->act_type = NF_DO_NOP;
-                raop->act_type = NF_DO_NOP;
+                caop->act_type = NF_DO_NOOP;
+                raop->act_type = NF_DO_NOOP;
             }
         } else if (smr == CT_SMR_ERR || smr == CT_SMR_CTD) {
             bpf_map_delete_elem(&fsm_ct, &rkey);

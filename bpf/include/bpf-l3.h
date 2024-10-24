@@ -18,9 +18,9 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
 
     act->lts = bpf_ktime_get_ns();
 
-    if (act->act_type == NF_DO_CT) {
+    if (act->act_type == NF_DO_CNTK) {
         goto ct_trk;
-    } else if (act->act_type == NF_DO_NOP) {
+    } else if (act->act_type == NF_DO_NOOP) {
         struct dp_rdr_act *ar = &act->port_act;
         if (pkt->ctx.l4fin) {
             ar->fr = 1;
@@ -30,7 +30,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
             goto ct_trk;
         }
 
-    } else if (act->act_type == NF_DO_RDR) {
+    } else if (act->act_type == NF_DO_RDRT) {
         struct dp_rdr_act *ar = &act->port_act;
         if (pkt->ctx.l4fin) {
             ar->fr = 1;

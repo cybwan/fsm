@@ -5,9 +5,9 @@ enum {
     NF_DO_DROP = 0,
     NF_DO_SNAT = 1,
     NF_DO_DNAT = 2,
-    NF_DO_RDR = 3,
-    NF_DO_CT = 4,
-    NF_DO_NOP = 5
+    NF_DO_RDRT = 3,
+    NF_DO_CNTK = 4,
+    NF_DO_NOOP = 5
 };
 
 /* Connection tracking related defines */
@@ -221,8 +221,8 @@ typedef struct {
     __u8 act_type; /* Possible actions :
                     *  NF_DO_DROP
                     *  DP_SET_TOCP
-                    *  NF_DO_NOP
-                    *  NF_DO_RDR
+                    *  NF_DO_NOOP
+                    *  NF_DO_RDRT
                     *  DP_SET_RT_NHNUM
                     *  DP_SET_SESS_FWD_ACT
                     */
