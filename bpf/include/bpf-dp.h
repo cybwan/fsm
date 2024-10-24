@@ -143,7 +143,7 @@ typedef struct {
     __u16 npmhh;
     __u32 pmhh[4];
     ct_l3inf_t l3i;
-} ct_pinf_t;
+} ct_sm_t;
 
 struct dp_rdr_act {
     __u16 oport;
@@ -241,8 +241,8 @@ typedef struct {
     __u16 rid;
     __u16 aid;
     __u32 nid;
-    ct_pinf_t pi;
     ct_dir_t dir;
+    ct_sm_t sm;
     ct_smr_t smr;
     nat_endpoint_t ep;
 } ct_attr_t;

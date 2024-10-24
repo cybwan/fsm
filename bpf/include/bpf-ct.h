@@ -12,8 +12,8 @@
         case DP_SET_NOP:                                                       \
         case DP_SET_SNAT:                                                      \
         case DP_SET_DNAT:                                                      \
-            (a)->attr.pi.t.tcp_cts[CT_DIR_IN].pseq = (x)->l34.seq;             \
-            (a)->attr.pi.t.tcp_cts[CT_DIR_IN].pack = (x)->l34.ack;             \
+            (a)->attr.sm.t.tcp_cts[CT_DIR_IN].pseq = (x)->l34.seq;             \
+            (a)->attr.sm.t.tcp_cts[CT_DIR_IN].pack = (x)->l34.ack;             \
             break;                                                             \
         default:                                                               \
             break;                                                             \
@@ -144,8 +144,8 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
 {
     ct_attr_t *tdat = &atdat->attr;
     ct_attr_t *xtdat = &axtdat->attr;
-    ct_tcp_sm_t *ts = &tdat->pi.t;
-    ct_tcp_sm_t *rts = &xtdat->pi.t;
+    ct_tcp_sm_t *ts = &tdat->sm.t;
+    ct_tcp_sm_t *rts = &xtdat->sm.t;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
     struct tcphdr *t = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
     __u8 tcp_flags = pkt->ctx.tcp_flags;
@@ -166,11 +166,11 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
     xpkt_spin_lock(&atdat->lock);
 
     if (dir == CT_DIR_IN) {
-        tdat->pi.t.tcp_cts[0].pseq = t->seq;
-        tdat->pi.t.tcp_cts[0].pack = t->ack_seq;
+        tdat->sm.t.tcp_cts[0].pseq = t->seq;
+        tdat->sm.t.tcp_cts[0].pack = t->ack_seq;
     } else {
-        xtdat->pi.t.tcp_cts[0].pseq = t->seq;
-        xtdat->pi.t.tcp_cts[0].pack = t->ack_seq;
+        xtdat->sm.t.tcp_cts[0].pseq = t->seq;
+        xtdat->sm.t.tcp_cts[0].pack = t->ack_seq;
     }
 
     rtd = &ts->tcp_cts[dir == CT_DIR_IN ? CT_DIR_OUT : CT_DIR_IN];
@@ -328,7 +328,7 @@ end:
     rts->state = nstate;
 
     if (nstate != CT_TCP_ERR && dir == CT_DIR_OUT) {
-        xtdat->pi.t.tcp_cts[0].seq = seq;
+        xtdat->sm.t.tcp_cts[0].seq = seq;
     }
 
     xpkt_spin_unlock(&atdat->lock);
@@ -352,8 +352,8 @@ dp_ct_udp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
 {
     ct_attr_t *tdat = &atdat->attr;
     ct_attr_t *xtdat = &axtdat->attr;
-    ct_udp_sm_t *us = &tdat->pi.u;
-    ct_udp_sm_t *xus = &xtdat->pi.u;
+    ct_udp_sm_t *us = &tdat->sm.u;
+    ct_udp_sm_t *xus = &xtdat->sm.u;
     __u32 nstate = us->state;
 
     xpkt_spin_lock(&atdat->lock);
@@ -414,8 +414,8 @@ dp_ct_icmp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
 {
     ct_attr_t *tdat = &atdat->attr;
     ct_attr_t *xtdat = &axtdat->attr;
-    ct_icmp_sm_t *is = &tdat->pi.i;
-    ct_icmp_sm_t *xis = &xtdat->pi.i;
+    ct_icmp_sm_t *is = &tdat->sm.i;
+    ct_icmp_sm_t *xis = &xtdat->sm.i;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
     struct icmphdr *i = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
     __u32 nstate;
@@ -500,8 +500,8 @@ dp_ct_icmp6_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
 {
     ct_attr_t *tdat = &atdat->attr;
     ct_attr_t *xtdat = &axtdat->attr;
-    ct_icmp_sm_t *is = &tdat->pi.i;
-    ct_icmp_sm_t *xis = &xtdat->pi.i;
+    ct_icmp_sm_t *is = &tdat->sm.i;
+    ct_icmp_sm_t *xis = &xtdat->sm.i;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
     struct icmp6hdr *i = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
     __u32 nstate;
@@ -637,12 +637,12 @@ dp_ct_est(xpkt_t *pkt, ct_key_t *ckey, ct_key_t *rkey, ct_op_t *atdat,
             if (pkt->ctx.dir == CT_DIR_IN) {
                 ckey->sport = pkt->l2.ssnid;
                 ckey->dport = pkt->l2.ssnid;
-                cop->attr.pi.frag = 1;
+                cop->attr.sm.frag = 1;
                 bpf_map_update_elem(&fsm_ct, ckey, cop, BPF_ANY);
             } else {
                 rkey->sport = pkt->l2.ssnid;
                 rkey->dport = pkt->l2.ssnid;
-                rop->attr.pi.frag = 1;
+                rop->attr.sm.frag = 1;
                 bpf_map_update_elem(&fsm_ct, rkey, rop, BPF_ANY);
             }
         }
@@ -739,7 +739,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         cop->ca.ftrap = 0;
         cop->ca.oaux = 0;
         cop->ca.cidx = dp_ct_get_newctr(&cop->attr.nid);
-        memset(&cop->attr.pi, 0, sizeof(ct_pinf_t));
+        memset(&cop->attr.sm, 0, sizeof(ct_sm_t));
         if (cep->nat_flags) {
             cop->ca.act_type = cep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
                                    ? DP_SET_DNAT
@@ -770,7 +770,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         rop->ca.oaux = 0;
         rop->ca.cidx = cop->ca.cidx + 1;
         rop->ca.record = pkt->ctx.dp_rec;
-        memset(&rop->attr.pi, 0, sizeof(ct_pinf_t));
+        memset(&rop->attr.sm, 0, sizeof(ct_sm_t));
         if (rep->nat_flags) {
             rop->ca.act_type = rep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
                                    ? DP_SET_DNAT
