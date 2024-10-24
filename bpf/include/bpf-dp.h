@@ -5,29 +5,9 @@ enum {
     DP_SET_DROP = 0,
     DP_SET_SNAT = 1,
     DP_SET_DNAT = 2,
-    DP_SET_NEIGH_L2 = 3,
-    DP_SET_ADD_L2VLAN = 4,
-    DP_SET_RM_L2VLAN = 5,
-    DP_SET_TOCP = 6,
-    DP_SET_RM_VXLAN = 7,
-    DP_SET_NEIGH_VXLAN = 8,
-    DP_SET_RT_TUN_NH = 9,
-    DP_SET_L3RT_TUN_NH = 10,
-    DP_SET_IFI = 11,
-    DP_SET_NOP = 12,
-    DP_SET_L3_EN = 13,
-    DP_SET_RT_NHNUM = 14,
-    DP_SET_SESS_FWD_ACT = 15,
-    DP_SET_RDR_PORT = 16,
-    DP_SET_POLICER = 17,
-    DP_SET_DO_POLICER = 18,
-    DP_SET_FCACT = 19,
-    DP_SET_DO_CT = 20,
-    DP_SET_RM_GTP = 21,
-    DP_SET_ADD_GTP = 22,
-    DP_SET_NEIGH_IPIP = 23,
-    DP_SET_RM_IPIP = 24,
-    DP_SET_NACT_SESS = 25
+    DP_SET_NOP = 3,
+    DP_SET_RDR_PORT = 4,
+    DP_SET_DO_CT = 5
 };
 
 /* Connection tracking related defines */

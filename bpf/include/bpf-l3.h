@@ -62,8 +62,6 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
         }
 
         F4_PPLN_RDR(pkt);
-    } else if (act->act_type == DP_SET_TOCP) {
-        F4_PPLN_PASSC(pkt, F4_PIPE_RC_ACL_TRAP);
     } else {
         /* Same for DP_SET_DROP */
         F4_PPLN_DROPC(pkt, F4_PIPE_RC_ACT_DROP);
