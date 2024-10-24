@@ -158,7 +158,7 @@ struct xpkt_fib4_op {
     union {
         struct dp_rdr_act port_act;
         struct dp_nat_act nat_act; /* NF_DO_SNAT, NF_DO_DNAT */
-    };
+    } act;
 };
 
 struct xpkt_fib4_ops {
@@ -220,9 +220,9 @@ typedef struct {
     __u64 ito; /* Inactive timeout */
     __u64 lts; /* Last used timestamp */
     union {
-        struct dp_rdr_act port_act;
+        struct dp_rdr_act rdr_act;
         struct dp_nat_act nat_act;
-    };
+    } act;
 } ct_op_t;
 
 struct dp_dnat_opt_key {
