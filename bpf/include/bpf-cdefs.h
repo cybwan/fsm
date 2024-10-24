@@ -110,14 +110,14 @@ xpkt_csum_replace_tcp_src_port(void *md, xpkt_t *pkt, __be16 xport)
 {
     int tcp_csum_off = pkt->ctx.l4_off + offsetof(struct tcphdr, check);
     int tcp_sport_off = pkt->ctx.l4_off + offsetof(struct tcphdr, source);
-    __be32 old_sport = pkt->l34.source;
+    __be32 old_sport = pkt->l34.sport;
 
     if (pkt->l34.frg || !xport)
         return 0;
 
     bpf_l4_csum_replace(md, tcp_csum_off, old_sport, xport, sizeof(xport));
     bpf_skb_store_bytes(md, tcp_sport_off, &xport, sizeof(xport), 0);
-    pkt->l34.source = xport;
+    pkt->l34.sport = xport;
 
     return 0;
 }
@@ -127,14 +127,14 @@ xpkt_csum_replace_tcp_dst_port(void *md, xpkt_t *pkt, __be16 xport)
 {
     int tcp_csum_off = pkt->ctx.l4_off + offsetof(struct tcphdr, check);
     int tcp_dport_off = pkt->ctx.l4_off + offsetof(struct tcphdr, dest);
-    __be32 old_dport = pkt->l34.dest;
+    __be32 old_dport = pkt->l34.dport;
 
     if (pkt->l34.frg)
         return 0;
 
     bpf_l4_csum_replace(md, tcp_csum_off, old_dport, xport, sizeof(xport));
     bpf_skb_store_bytes(md, tcp_dport_off, &xport, sizeof(xport), 0);
-    pkt->l34.dest = xport;
+    pkt->l34.dport = xport;
 
     return 0;
 }
@@ -178,14 +178,14 @@ xpkt_csum_replace_udp_src_port(void *md, xpkt_t *pkt, __be16 xport)
 {
     int udp_csum_off = pkt->ctx.l4_off + offsetof(struct udphdr, check);
     int udp_sport_off = pkt->ctx.l4_off + offsetof(struct udphdr, source);
-    __be32 old_sport = pkt->l34.source;
+    __be32 old_sport = pkt->l34.sport;
 
     if (pkt->l34.frg || !xport)
         return 0;
 
     bpf_l4_csum_replace(md, udp_csum_off, old_sport, xport, sizeof(xport));
     bpf_skb_store_bytes(md, udp_sport_off, &xport, sizeof(xport), 0);
-    pkt->l34.source = xport;
+    pkt->l34.sport = xport;
 
     return 0;
 }
@@ -195,14 +195,14 @@ xpkt_csum_replace_udp_dst_port(void *md, xpkt_t *pkt, __be16 xport)
 {
     int udp_csum_off = pkt->ctx.l4_off + offsetof(struct udphdr, check);
     int udp_dport_off = pkt->ctx.l4_off + offsetof(struct udphdr, dest);
-    __be32 old_dport = pkt->l34.dest;
+    __be32 old_dport = pkt->l34.dport;
 
     if (pkt->l34.frg)
         return 0;
 
     bpf_l4_csum_replace(md, udp_csum_off, old_dport, xport, sizeof(xport));
     bpf_skb_store_bytes(md, udp_dport_off, &xport, sizeof(xport), 0);
-    pkt->l34.dest = xport;
+    pkt->l34.dport = xport;
 
     return 0;
 }

@@ -308,8 +308,8 @@ struct dp_snat_opt_tact {
 struct dp_t4 {
     __be32 saddr;
     __be32 daddr;
-    __be16 source;
-    __be16 dest;
+    __be16 sport;
+    __be16 dport;
 } __attribute__((aligned(4)));
 
 struct dp_t2_addr {
@@ -318,8 +318,8 @@ struct dp_t2_addr {
 } __attribute__((aligned(4)));
 
 struct dp_t2_port {
-    __be16 source;
-    __be16 dest;
+    __be16 sport;
+    __be16 dport;
 } __attribute__((aligned(4)));
 
 #ifndef memcpy

@@ -93,8 +93,8 @@ dp_do_ing_ct(skb_t *skb, xpkt_t *pkt, void *fa_)
 
     XADDR_COPY(key.daddr, pkt->l34.daddr);
     XADDR_COPY(key.saddr, pkt->l34.saddr);
-    key.sport = pkt->l34.source;
-    key.dport = pkt->l34.dest;
+    key.sport = pkt->l34.sport;
+    key.dport = pkt->l34.dport;
     key.proto = pkt->l34.proto;
     key.v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;
 

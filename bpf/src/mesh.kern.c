@@ -46,9 +46,9 @@ int sidecar_ingress(skb_t *skb)
     if (F4_DEBUG_IGR(pkt)) {
         FSM_DBG("[DBG] tc_igr ========\n");
         // FSM_DBG("[DBG] tc_igr pkt->l34 saddr4 %pI4 sport %d\n",
-        //         &pkt->l34.saddr4, ntohs(pkt->l34.source));
+        //         &pkt->l34.saddr4, ntohs(pkt->l34.sport));
         // FSM_DBG("[DBG] tc_igr pkt->l34 daddr4 %pI4 dport %d\n",
-        //         &pkt->l34.daddr4, ntohs(pkt->l34.dest));
+        //         &pkt->l34.daddr4, ntohs(pkt->l34.dport));
         void *dend = XPKT_PTR(XPKT_DATA_END(skb));
         struct tcphdr *t = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
         if ((void *)(t + 1) > dend) {
@@ -84,9 +84,9 @@ int sidecar_egress(skb_t *skb)
     if (F4_DEBUG_EGR(pkt)) {
         FSM_DBG("[DBG] tc_egr ========\n");
         // FSM_DBG("[DBG] tc_egr pkt->l34 saddr4 %pI4 sport %d\n",
-        //         &pkt->l34.saddr4, ntohs(pkt->l34.source));
+        //         &pkt->l34.saddr4, ntohs(pkt->l34.sport));
         // FSM_DBG("[DBG] tc_egr pkt->l34 daddr4 %pI4 dport %d\n",
-        //         &pkt->l34.daddr4, ntohs(pkt->l34.dest));
+        //         &pkt->l34.daddr4, ntohs(pkt->l34.dport));
         void *dend = XPKT_PTR(XPKT_DATA_END(skb));
         struct tcphdr *t = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
         if ((void *)(t + 1) > dend) {

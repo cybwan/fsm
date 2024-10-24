@@ -22,12 +22,12 @@
 #define F4_DEBUG_IGR(x)                                                        \
     (x->ctx.igr == 1 && x->l2.dl_type == ntohs(ETH_P_IP) &&                    \
      x->l34.proto == IPPROTO_TCP && x->l34.saddr4 == DST_ADDR &&               \
-     x->l34.daddr4 == SRC_ADDR && x->l34.source == htons(DST_PORT))
+     x->l34.daddr4 == SRC_ADDR && x->l34.sport == htons(DST_PORT))
 
 #define F4_DEBUG_EGR(x)                                                        \
     (x->ctx.egr == 1 && x->l2.dl_type == ntohs(ETH_P_IP) &&                    \
      x->l34.proto == IPPROTO_TCP && x->l34.saddr4 == SRC_ADDR &&               \
-     x->l34.daddr4 == DST_ADDR && x->l34.dest == htons(DST_PORT))
+     x->l34.daddr4 == DST_ADDR && x->l34.dport == htons(DST_PORT))
 
 #define F4_DEBUG_PKT(x) (F4_DEBUG_IGR(x) || F4_DEBUG_EGR(x))
 

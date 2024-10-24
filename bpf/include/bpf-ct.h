@@ -690,8 +690,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     /* CT Key */
     XADDR_COPY(ckey.daddr, pkt->l34.daddr);
     XADDR_COPY(ckey.saddr, pkt->l34.saddr);
-    ckey.sport = pkt->l34.source;
-    ckey.dport = pkt->l34.dest;
+    ckey.sport = pkt->l34.sport;
+    ckey.dport = pkt->l34.dport;
     ckey.proto = pkt->l34.proto;
     ckey.v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;
 

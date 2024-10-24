@@ -142,8 +142,8 @@ struct xpkt_l34_meta {
     __u8 valid;
     __u8 frg;
 
-    __u16 source;
-    __u16 dest;
+    __u16 sport;
+    __u16 dport;
 
     __u32 seq;
     __u32 ack;

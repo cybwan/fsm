@@ -127,8 +127,8 @@ xpkt_decode_tcp(struct decoder *coder, void *md, xpkt_t *pkt)
             pkt->ctx.il4fin = 1;
         }
 
-        pkt->il34.source = tcp->source;
-        pkt->il34.dest = tcp->dest;
+        pkt->il34.sport = tcp->source;
+        pkt->il34.dport = tcp->dest;
         pkt->il34.seq = tcp->seq;
         pkt->ctx.itcp_flags = tcp_flags;
     } else {
@@ -136,8 +136,8 @@ xpkt_decode_tcp(struct decoder *coder, void *md, xpkt_t *pkt)
             pkt->ctx.l4fin = 1;
         }
 
-        pkt->l34.source = tcp->source;
-        pkt->l34.dest = tcp->dest;
+        pkt->l34.sport = tcp->source;
+        pkt->l34.dport = tcp->dest;
         pkt->l34.seq = tcp->seq;
         pkt->ctx.tcp_flags = tcp_flags;
     }
@@ -156,11 +156,11 @@ xpkt_decode_icmp(struct decoder *coder, void *md, xpkt_t *pkt)
 
     if ((icmp->type == ICMP_ECHOREPLY || icmp->type == ICMP_ECHO)) {
         if (coder->in_pkt) {
-            pkt->il34.source = icmp->un.echo.id;
-            pkt->il34.dest = icmp->un.echo.id;
+            pkt->il34.sport = icmp->un.echo.id;
+            pkt->il34.dport = icmp->un.echo.id;
         } else {
-            pkt->l34.source = icmp->un.echo.id;
-            pkt->l34.dest = icmp->un.echo.id;
+            pkt->l34.sport = icmp->un.echo.id;
+            pkt->l34.dport = icmp->un.echo.id;
         }
     }
     return DP_PRET_OK;
@@ -175,8 +175,8 @@ xpkt_decode_udp(struct decoder *coder, void *md, xpkt_t *pkt)
         return DP_PRET_OK;
     }
 
-    pkt->l34.source = udp->source;
-    pkt->l34.dest = udp->dest;
+    pkt->l34.sport = udp->source;
+    pkt->l34.dport = udp->dest;
 
     return DP_PRET_OK;
 }
@@ -193,11 +193,11 @@ xpkt_decode_icmp6(struct decoder *coder, void *md, xpkt_t *pkt)
     if ((icmp6->icmp6_type == ICMPV6_ECHO_REPLY ||
          icmp6->icmp6_type == ICMPV6_ECHO_REQUEST)) {
         if (coder->in_pkt) {
-            pkt->il34.source = icmp6->icmp6_dataun.u_echo.identifier;
-            pkt->il34.dest = icmp6->icmp6_dataun.u_echo.identifier;
+            pkt->il34.sport = icmp6->icmp6_dataun.u_echo.identifier;
+            pkt->il34.dport = icmp6->icmp6_dataun.u_echo.identifier;
         } else {
-            pkt->l34.source = icmp6->icmp6_dataun.u_echo.identifier;
-            pkt->l34.dest = icmp6->icmp6_dataun.u_echo.identifier;
+            pkt->l34.sport = icmp6->icmp6_dataun.u_echo.identifier;
+            pkt->l34.dport = icmp6->icmp6_dataun.u_echo.identifier;
         }
     } else if (icmp6->icmp6_type >= 133 && icmp6->icmp6_type <= 137) {
         return DP_PRET_PASS;
@@ -261,8 +261,8 @@ xpkt_decode_ipv4(struct decoder *coder, void *md, xpkt_t *pkt)
         }
     } else {
         if (is_ip_fragment(iph)) {
-            pkt->l34.source = iph->id;
-            pkt->l34.dest = iph->id;
+            pkt->l34.sport = iph->id;
+            pkt->l34.dport = iph->id;
             pkt->l2.ssnid = iph->id;
             pkt->l34.frg = 1;
         }

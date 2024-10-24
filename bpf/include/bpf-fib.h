@@ -9,8 +9,8 @@ xpkt_fib4_init_key(xpkt_t *pkt, struct xpkt_fib4_key *key)
 {
     key->daddr = pkt->l34.daddr4;
     key->saddr = pkt->l34.saddr4;
-    key->sport = pkt->l34.source;
-    key->dport = pkt->l34.dest;
+    key->sport = pkt->l34.sport;
+    key->dport = pkt->l34.dport;
     key->proto = pkt->l34.proto;
     key->ifi = 0;
     return 0;
@@ -130,8 +130,8 @@ dp_egr_main(skb_t *skb, xpkt_t *pkt)
         key.proto = pkt->l34.proto;
         key.saddr = pkt->l34.saddr4;
         key.daddr = pkt->l34.daddr4;
-        key.sport = ntohs(pkt->l34.source);
-        key.dport = ntohs(pkt->l34.dest);
+        key.sport = ntohs(pkt->l34.sport);
+        key.dport = ntohs(pkt->l34.dport);
 
         adat = bpf_map_lookup_elem(&fsm_snat_opt, &key);
 

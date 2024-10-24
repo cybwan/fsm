@@ -70,7 +70,7 @@ INTERNAL(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
     memset(&key, 0, sizeof(key));
     XADDR_COPY(key.daddr, pkt->l34.daddr);
     if (pkt->l34.proto != IPPROTO_ICMP) {
-        key.dport = pkt->l34.dest;
+        key.dport = pkt->l34.dport;
     } else {
         key.dport = 0;
     }
@@ -109,7 +109,7 @@ INTERNAL(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
             if (ep->nat_xport) {
                 pkt->nat.nxport = ep->nat_xport;
             } else {
-                pkt->nat.nxport = pkt->l34.source;
+                pkt->nat.nxport = pkt->l34.sport;
             }
 
             pkt->nat.nv6 = ep->nv6 ? 1 : 0;
@@ -138,12 +138,12 @@ INTERNAL(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
         okey.v6 = 0;
         okey.proto = pkt->l34.proto;
         okey.xaddr = pkt->l34.saddr4;
-        okey.xport = ntohs(pkt->l34.source);
+        okey.xport = ntohs(pkt->l34.sport);
 
         oact.daddr = pkt->l34.daddr4;
         oact.saddr = pkt->l34.saddr4;
-        oact.dport = ntohs(pkt->l34.dest);
-        oact.sport = ntohs(pkt->l34.source);
+        oact.dport = ntohs(pkt->l34.dport);
+        oact.sport = ntohs(pkt->l34.sport);
         oact.ts = bpf_ktime_get_ns();
 
         bpf_map_update_elem(&fsm_dnat_opt, &okey, &oact, BPF_ANY);
