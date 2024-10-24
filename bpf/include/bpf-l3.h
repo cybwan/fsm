@@ -29,7 +29,6 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
         if (ar->fin == 1) {
             goto ct_trk;
         }
-
     } else if (act->act_type == NF_DO_RDRT) {
         struct dp_rdr_act *ar = &act->act.rdr_act;
         if (pkt->ctx.l4fin) {
