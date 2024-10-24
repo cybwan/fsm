@@ -33,10 +33,6 @@ typedef enum {
     CT_SMR_INIT = 200,
 } ct_smr_t;
 
-struct dp_cmn_act {
-    __u8 act_type;
-};
-
 #define CT_TCP_FIN_MASK                                                        \
     (CT_TCP_FINI | CT_TCP_FINI2 | CT_TCP_FINI3 | CT_TCP_CLOSE_WAIT)
 #define CT_TCP_SYNC_MASK (CT_TCP_SYN_SEND | CT_TCP_SYN_ACK)
