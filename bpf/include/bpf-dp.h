@@ -56,12 +56,12 @@ typedef struct {
     __u32 seq;
     __be32 pack;
     __be32 pseq;
-} ct_tcp_pinfd_t;
+} ct_tcp_sm_dir_t;
 
 typedef struct {
     ct_tcp_state_t state;
     ct_dir_t fndir;
-    ct_tcp_pinfd_t tcp_cts[CT_DIR_MAX];
+    ct_tcp_sm_dir_t dirs[CT_DIR_MAX];
 } ct_tcp_sm_t;
 
 #define CT_UDP_FIN_MASK (CT_UDP_FINI)

@@ -12,8 +12,8 @@
         case DP_SET_NOP:                                                       \
         case DP_SET_SNAT:                                                      \
         case DP_SET_DNAT:                                                      \
-            (a)->attr.sm.t.tcp_cts[CT_DIR_IN].pseq = (x)->l34.seq;             \
-            (a)->attr.sm.t.tcp_cts[CT_DIR_IN].pack = (x)->l34.ack;             \
+            (a)->attr.sm.t.dirs[CT_DIR_IN].pseq = (x)->l34.seq;                \
+            (a)->attr.sm.t.dirs[CT_DIR_IN].pack = (x)->l34.ack;                \
             break;                                                             \
         default:                                                               \
             break;                                                             \
@@ -121,8 +121,8 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *caop, ct_op_t *raop,
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
     struct tcphdr *t = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
     __u8 tcp_flags = pkt->ctx.tcp_flags;
-    ct_tcp_pinfd_t *td = &ts->tcp_cts[dir];
-    ct_tcp_pinfd_t *rtd;
+    ct_tcp_sm_dir_t *td = &ts->dirs[dir];
+    ct_tcp_sm_dir_t *rtd;
     __u32 seq;
     __u32 ack;
     __u32 nstate = 0;
@@ -138,14 +138,14 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *caop, ct_op_t *raop,
     xpkt_spin_lock(&caop->lock);
 
     if (dir == CT_DIR_IN) {
-        tdat->sm.t.tcp_cts[0].pseq = t->seq;
-        tdat->sm.t.tcp_cts[0].pack = t->ack_seq;
+        tdat->sm.t.dirs[0].pseq = t->seq;
+        tdat->sm.t.dirs[0].pack = t->ack_seq;
     } else {
-        xtdat->sm.t.tcp_cts[0].pseq = t->seq;
-        xtdat->sm.t.tcp_cts[0].pack = t->ack_seq;
+        xtdat->sm.t.dirs[0].pseq = t->seq;
+        xtdat->sm.t.dirs[0].pack = t->ack_seq;
     }
 
-    rtd = &ts->tcp_cts[dir == CT_DIR_IN ? CT_DIR_OUT : CT_DIR_IN];
+    rtd = &ts->dirs[dir == CT_DIR_IN ? CT_DIR_OUT : CT_DIR_IN];
 
     if (tcp_flags & F4_TCP_RST) {
         nstate = CT_TCP_CLOSE_WAIT;
@@ -300,7 +300,7 @@ end:
     rts->state = nstate;
 
     if (nstate != CT_TCP_ERR && dir == CT_DIR_OUT) {
-        xtdat->sm.t.tcp_cts[0].seq = seq;
+        xtdat->sm.t.dirs[0].seq = seq;
     }
 
     xpkt_spin_unlock(&caop->lock);
