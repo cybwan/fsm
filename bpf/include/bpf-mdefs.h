@@ -103,7 +103,7 @@ struct {
 #endif
 
 #ifdef LEGACY_BPF_MAPS
-struct bpf_map_def SEC("maps") fsm_ct_key = {
+struct bpf_map_def SEC("maps") fsm_ct_ops = {
     .type = BPF_MAP_TYPE_PERCPU_ARRAY,
     .key_size = sizeof(__u32),
     .value_size = sizeof(ct_op_t),
@@ -115,7 +115,7 @@ struct {
     __type(key, __u32);
     __type(value, ct_op_t);
     __uint(max_entries, 2);
-} fsm_ct_key SEC(".maps");
+} fsm_ct_ops SEC(".maps");
 #endif
 
 #ifdef LEGACY_BPF_MAPS

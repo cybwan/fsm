@@ -619,10 +619,10 @@ dp_ct_est(xpkt_t *pkt, ct_key_t *ckey, ct_key_t *rkey, ct_op_t *atdat,
     int i, j, k;
 
     k = 0;
-    cop = bpf_map_lookup_elem(&fsm_ct_key, &k);
+    cop = bpf_map_lookup_elem(&fsm_ct_ops, &k);
 
     k = 1;
-    rop = bpf_map_lookup_elem(&fsm_ct_key, &k);
+    rop = bpf_map_lookup_elem(&fsm_ct_ops, &k);
 
     if (cop == NULL || rop == NULL || tdat->ep.nv6) {
         return 0;
@@ -678,10 +678,10 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     }
 
     k = 0;
-    cop = bpf_map_lookup_elem(&fsm_ct_key, &k);
+    cop = bpf_map_lookup_elem(&fsm_ct_ops, &k);
 
     k = 1;
-    rop = bpf_map_lookup_elem(&fsm_ct_key, &k);
+    rop = bpf_map_lookup_elem(&fsm_ct_ops, &k);
 
     if (cop == NULL || rop == NULL) {
         return smr;
