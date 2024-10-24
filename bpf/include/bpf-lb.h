@@ -90,9 +90,9 @@ INTERNAL(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
         return 0;
     }
 
-    if (ops->nat_type == DP_SET_SNAT || ops->nat_type == DP_SET_DNAT) {
+    if (ops->nat_type == NF_DO_SNAT || ops->nat_type == NF_DO_DNAT) {
         ep_sel = xpkt_nat_endpoint(skb, pkt, ops);
-        pkt->ctx.nf = ops->nat_type == DP_SET_SNAT ? F4_NAT_SRC : F4_NAT_DST;
+        pkt->ctx.nf = ops->nat_type == NF_DO_SNAT ? F4_NAT_SRC : F4_NAT_DST;
 
         /* FIXME - Do not select inactive end-points
          * Need multi-passes for selection

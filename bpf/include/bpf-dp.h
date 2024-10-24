@@ -2,12 +2,12 @@
 #define __F4_BPF_DP_H__
 
 enum {
-    DP_SET_DROP = 0,
-    DP_SET_SNAT = 1,
-    DP_SET_DNAT = 2,
-    DP_SET_NOP = 3,
-    DP_SET_RDR_PORT = 4,
-    DP_SET_DO_CT = 5
+    NF_DO_DROP = 0,
+    NF_DO_SNAT = 1,
+    NF_DO_DNAT = 2,
+    NF_DO_RDR = 3,
+    NF_DO_CT = 4,
+    NF_DO_NOP = 5
 };
 
 /* Connection tracking related defines */
@@ -166,7 +166,7 @@ struct xpkt_fib4_op {
     __u8 act_type; /* Possible actions : See below */
     union {
         struct dp_rdr_act port_act;
-        struct dp_nat_act nat_act; /* DP_SET_SNAT, DP_SET_DNAT */
+        struct dp_nat_act nat_act; /* NF_DO_SNAT, NF_DO_DNAT */
     };
 };
 
@@ -219,10 +219,10 @@ typedef struct {
 
 typedef struct {
     __u8 act_type; /* Possible actions :
-                    *  DP_SET_DROP
+                    *  NF_DO_DROP
                     *  DP_SET_TOCP
-                    *  DP_SET_NOP
-                    *  DP_SET_RDR_PORT
+                    *  NF_DO_NOP
+                    *  NF_DO_RDR
                     *  DP_SET_RT_NHNUM
                     *  DP_SET_SESS_FWD_ACT
                     */

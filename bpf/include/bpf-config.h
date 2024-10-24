@@ -16,7 +16,7 @@
 // #define F4_MAX_ENDPOINTS (16)
 #define F4_MAX_ENDPOINTS (1)
 
-#define F4_FCV4_MAP_ACTS (DP_SET_DNAT + 1)
+#define F4_FCV4_MAP_ACTS (NF_DO_DNAT + 1)
 
 /* Hard-timeout of 40s for fc dp entry */
 #define FC_V4_DPTO (60000000000)

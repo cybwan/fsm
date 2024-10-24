@@ -9,9 +9,9 @@
 #define dp_run_ctact_helper(x, a)                                              \
     do {                                                                       \
         switch ((a)->act_type) {                                               \
-        case DP_SET_NOP:                                                       \
-        case DP_SET_SNAT:                                                      \
-        case DP_SET_DNAT:                                                      \
+        case NF_DO_NOP:                                                        \
+        case NF_DO_SNAT:                                                       \
+        case NF_DO_DNAT:                                                       \
             (a)->attr.sm.t.dirs[CT_DIR_IN].pseq = (x)->l34.seq;                \
             (a)->attr.sm.t.dirs[CT_DIR_IN].pack = (x)->l34.ack;                \
             break;                                                             \
@@ -704,8 +704,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         memset(&cuop->attr.sm, 0, sizeof(ct_sm_t));
         if (cep->nat_flags) {
             cuop->act_type = cep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
-                                 ? DP_SET_DNAT
-                                 : DP_SET_SNAT;
+                                 ? NF_DO_DNAT
+                                 : NF_DO_SNAT;
             XADDR_COPY(cuop->nat_act.xip, cep->nat_xip);
             XADDR_COPY(cuop->nat_act.rip, cep->nat_rip);
             // XMAC_COPY(cuop->nat_act.xmac,  cep->nat_xmac);
@@ -719,7 +719,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             cuop->ito = pkt->nat.ito;
         } else {
             cuop->ito = 0;
-            cuop->act_type = DP_SET_DO_CT;
+            cuop->act_type = NF_DO_CT;
         }
         cuop->attr.dir = CT_DIR_IN;
 
@@ -731,8 +731,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         memset(&ruop->attr.sm, 0, sizeof(ct_sm_t));
         if (rep->nat_flags) {
             ruop->act_type = rep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
-                                 ? DP_SET_DNAT
-                                 : DP_SET_SNAT;
+                                 ? NF_DO_DNAT
+                                 : NF_DO_SNAT;
             XADDR_COPY(ruop->nat_act.xip, rep->nat_xip);
             XADDR_COPY(ruop->nat_act.rip, rep->nat_rip);
             // XMAC_COPY(ruop->nat_act.xmac, rep->nat_xmac);
@@ -747,7 +747,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             ruop->ito = pkt->nat.ito;
         } else {
             ruop->ito = 0;
-            ruop->act_type = DP_SET_DO_CT;
+            ruop->act_type = NF_DO_CT;
         }
         ruop->lts = cuop->lts;
         ruop->attr.dir = CT_DIR_OUT;
@@ -788,8 +788,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
                     dp_ct_est(pkt, &rkey, &ckey, raop, caop);
                 }
             } else {
-                caop->act_type = DP_SET_NOP;
-                raop->act_type = DP_SET_NOP;
+                caop->act_type = NF_DO_NOP;
+                raop->act_type = NF_DO_NOP;
             }
         } else if (smr == CT_SMR_ERR || smr == CT_SMR_CTD) {
             bpf_map_delete_elem(&fsm_ct, &rkey);
