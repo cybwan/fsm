@@ -13,11 +13,6 @@ xpkt_fib4_insert(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *ops)
     struct xpkt_fib4_key *key;
     int z = 0;
 
-    int oifi = pkt->nat.nxifi;
-    if (oifi) {
-        ops->ca.oaux = oifi;
-    }
-
     key = bpf_map_lookup_elem(&fsm_fib4_key, &z);
     if (key == NULL) {
         return -1;

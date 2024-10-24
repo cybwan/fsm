@@ -55,7 +55,6 @@ typedef enum {
 
 struct dp_cmn_act {
     __u8 act_type;
-    __u16 oaux;
 };
 
 #define CT_TCP_FIN_MASK                                                        \

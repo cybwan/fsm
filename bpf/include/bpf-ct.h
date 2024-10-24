@@ -730,7 +730,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     raop = bpf_map_lookup_elem(&fsm_ct, &rkey);
     if (caop == NULL || raop == NULL) {
         FSM_DBG("[CTRK] AAAAA 1\n");
-        cuop->ca.oaux = 0;
         memset(&cuop->attr.sm, 0, sizeof(ct_sm_t));
         if (cep->nat_flags) {
             cuop->ca.act_type = cep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
@@ -758,7 +757,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         cuop->attr.aid = pkt->nat.ep_sel;
         cuop->attr.smr = CT_SMR_INIT;
 
-        ruop->ca.oaux = 0;
         memset(&ruop->attr.sm, 0, sizeof(ct_sm_t));
         if (rep->nat_flags) {
             ruop->ca.act_type = rep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
