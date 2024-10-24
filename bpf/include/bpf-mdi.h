@@ -88,7 +88,6 @@ struct xpkt_context {
 #define F4_NAT_HDST 0x04
 #define F4_NAT_HSRC 0x08
     __u8 nf;
-    __u16 rule_id;
     __s16 l3_adj;
 
     __u8 il3_off;

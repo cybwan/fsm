@@ -148,7 +148,6 @@ struct dp_nat_act {
     __u8 rmac[6];
     __u8 fin;
     __u8 doct;
-    __u32 rid;
     __u32 aid;
     __u8 nv6;
     __u8 nmh;
@@ -200,12 +199,10 @@ typedef struct {
 } __attribute__((packed)) ct_key_t;
 
 typedef struct {
-    __u16 rid;
-    __u16 aid;
-    __u32 nid;
     ct_dir_t dir;
     ct_sm_t sm;
     ct_smr_t smr;
+    __u16 ep_sel;
     nat_endpoint_t ep;
 } ct_attr_t;
 

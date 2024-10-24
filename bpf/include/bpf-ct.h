@@ -721,8 +721,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         cuop->attr.dir = CT_DIR_IN;
 
         /* FIXME This is duplicated data */
-        cuop->attr.rid = pkt->ctx.rule_id;
-        cuop->attr.aid = pkt->nat.ep_sel;
+        cuop->attr.ep_sel = pkt->nat.ep_sel;
         cuop->attr.smr = CT_SMR_INIT;
 
         memset(&ruop->attr.sm, 0, sizeof(ct_sm_t));
@@ -738,7 +737,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             ruop->nat_act.xport = rep->nat_xport;
             ruop->nat_act.rport = rep->nat_rport;
             ruop->nat_act.doct = 0;
-            ruop->nat_act.rid = pkt->ctx.rule_id;
             ruop->nat_act.aid = pkt->nat.ep_sel;
             ruop->nat_act.nv6 = ckey.v6 ? 1 : 0;
             ruop->ito = pkt->nat.ito;
@@ -749,9 +747,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         ruop->lts = cuop->lts;
         ruop->attr.dir = CT_DIR_OUT;
         ruop->attr.smr = CT_SMR_INIT;
-        ruop->attr.rid = cuop->attr.rid;
-        ruop->attr.aid = cuop->attr.aid;
-        ruop->attr.nid = cuop->attr.nid;
+        ruop->attr.ep_sel = cuop->attr.ep_sel;
 
         bpf_map_update_elem(&fsm_ct, &rkey, ruop, BPF_ANY);
         bpf_map_update_elem(&fsm_ct, &ckey, cuop, BPF_ANY);
