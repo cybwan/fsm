@@ -142,8 +142,8 @@ INTERNAL(int)
 dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
              ct_dir_t dir)
 {
-    struct dp_ct_dat *tdat = &atdat->ctd;
-    struct dp_ct_dat *xtdat = &axtdat->ctd;
+    ct_attr_t *tdat = &atdat->ctd;
+    ct_attr_t *xtdat = &axtdat->ctd;
     ct_tcp_pinf_t *ts = &tdat->pi.t;
     ct_tcp_pinf_t *rts = &xtdat->pi.t;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
@@ -350,8 +350,8 @@ INTERNAL(int)
 dp_ct_udp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
              ct_dir_t dir)
 {
-    struct dp_ct_dat *tdat = &atdat->ctd;
-    struct dp_ct_dat *xtdat = &axtdat->ctd;
+    ct_attr_t *tdat = &atdat->ctd;
+    ct_attr_t *xtdat = &axtdat->ctd;
     ct_udp_pinf_t *us = &tdat->pi.u;
     ct_udp_pinf_t *xus = &xtdat->pi.u;
     __u32 nstate = us->state;
@@ -412,8 +412,8 @@ INTERNAL(int)
 dp_ct_icmp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
               ct_dir_t dir)
 {
-    struct dp_ct_dat *tdat = &atdat->ctd;
-    struct dp_ct_dat *xtdat = &axtdat->ctd;
+    ct_attr_t *tdat = &atdat->ctd;
+    ct_attr_t *xtdat = &axtdat->ctd;
     ct_icmp_pinf_t *is = &tdat->pi.i;
     ct_icmp_pinf_t *xis = &xtdat->pi.i;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
@@ -498,8 +498,8 @@ INTERNAL(int)
 dp_ct_icmp6_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat,
                ct_dir_t dir)
 {
-    struct dp_ct_dat *tdat = &atdat->ctd;
-    struct dp_ct_dat *xtdat = &axtdat->ctd;
+    ct_attr_t *tdat = &atdat->ctd;
+    ct_attr_t *xtdat = &axtdat->ctd;
     ct_icmp_pinf_t *is = &tdat->pi.i;
     ct_icmp_pinf_t *xis = &xtdat->pi.i;
     void *dend = XPKT_PTR(XPKT_DATA_END(skb));
@@ -605,7 +605,7 @@ dp_ct_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *atdat, ct_op_t *axtdat, ct_dir_t dir)
 
 #define CP_CT_NAT_TACTS(dst, src)                                              \
     memcpy(&dst->ca, &src->ca, sizeof(struct dp_cmn_act));                     \
-    memcpy(&dst->ctd, &src->ctd, sizeof(struct dp_ct_dat));                    \
+    memcpy(&dst->ctd, &src->ctd, sizeof(ct_attr_t));                           \
     dst->ito = src->ito;                                                       \
     dst->lts = src->lts;                                                       \
     memcpy(&dst->nat_act, &src->nat_act, sizeof(struct dp_nat_act));
@@ -614,7 +614,7 @@ INTERNAL(int)
 dp_ct_est(xpkt_t *pkt, ct_key_t *ckey, ct_key_t *rkey, ct_op_t *atdat,
           ct_op_t *axtdat)
 {
-    struct dp_ct_dat *tdat = &atdat->ctd;
+    ct_attr_t *tdat = &atdat->ctd;
     ct_op_t *cop, *rop;
     int i, j, k;
 

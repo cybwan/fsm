@@ -166,16 +166,6 @@ typedef struct {
     __u8 inactive;
 } __attribute__((packed)) nat_endpoint_t;
 
-struct dp_ct_dat {
-    __u16 rid;
-    __u16 aid;
-    __u32 nid;
-    ct_pinf_t pi;
-    ct_dir_t dir;
-    ct_smr_t smr;
-    nat_endpoint_t ep;
-};
-
 struct xpkt_fib4_key {
     __u32 daddr;
     __u32 saddr;
@@ -248,6 +238,16 @@ typedef struct {
 } __attribute__((packed)) ct_key_t;
 
 typedef struct {
+    __u16 rid;
+    __u16 aid;
+    __u32 nid;
+    ct_pinf_t pi;
+    ct_dir_t dir;
+    ct_smr_t smr;
+    nat_endpoint_t ep;
+} ct_attr_t;
+
+typedef struct {
     struct dp_cmn_act ca; /* Possible actions :
                            *  DP_SET_DROP
                            *  DP_SET_TOCP
@@ -257,7 +257,7 @@ typedef struct {
                            *  DP_SET_SESS_FWD_ACT
                            */
     struct bpf_spin_lock lock;
-    struct dp_ct_dat ctd;
+    ct_attr_t ctd;
     __u64 ito; /* Inactive timeout */
     __u64 lts; /* Last used timestamp */
     union {
