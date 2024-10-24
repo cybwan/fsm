@@ -4,7 +4,7 @@
 #define F4_PIPE_FC_CAP(x)                                                      \
     ((x)->ctx.act & F4_PIPE_RDR && (x)->ctx.phit & F4_DP_CTM_HIT &&            \
      (x)->l2.dl_type == htons(ETH_P_IP) && (x)->nat.xlate_proto == 0 &&        \
-     (x)->ctx.dp_rec == 0 && (x)->l2.ssnid == 0 && (x)->ctx.mirr == 0)
+     (x)->l2.ssnid == 0 && (x)->ctx.mirr == 0)
 
 #define F4_PIPE_RDR_MASK (F4_PIPE_RDR | F4_PIPE_RDR_PRIO | F4_PIPE_TRAP)
 
@@ -104,7 +104,6 @@ struct xpkt_context {
     __u16 l3_plen;
     __u16 il3_len;
     __u16 il3_plen;
-    __u16 dp_rec;
     __u16 tun_off;
     __u16 fw_mid;
     __u16 fw_lid;
