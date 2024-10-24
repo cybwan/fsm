@@ -97,7 +97,7 @@ xpkt_handshake_proc(skb_t *skb, xpkt_t *pkt)
     fa->its = bpf_ktime_get_ns();
 #pragma clang loop unroll(full)
     for (z = 0; z < F4_FCV4_MAP_ACTS; z++) {
-        fa->ops[z].ca.act_type = 0;
+        fa->ops[z].act_type = 0;
     }
 
     // F4_DBG_PRINTK("[INGR] START--\n");

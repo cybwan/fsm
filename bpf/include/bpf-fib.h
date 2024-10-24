@@ -47,7 +47,7 @@ xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
 
     pkt->ctx.phit |= F4_DP_FC_HIT;
 
-    if (acts->ops[DP_SET_SNAT].ca.act_type == DP_SET_SNAT) {
+    if (acts->ops[DP_SET_SNAT].act_type == DP_SET_SNAT) {
         ta = &acts->ops[DP_SET_SNAT];
 
         if (ta->nat_act.fr == 1 || ta->nat_act.doct) {
@@ -56,7 +56,7 @@ xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
         }
 
         xpkt_nat_load(skb, pkt, &ta->nat_act, 1);
-    } else if (acts->ops[DP_SET_DNAT].ca.act_type == DP_SET_DNAT) {
+    } else if (acts->ops[DP_SET_DNAT].act_type == DP_SET_DNAT) {
         ta = &acts->ops[DP_SET_DNAT];
 
         if (ta->nat_act.fr == 1 || ta->nat_act.doct) {

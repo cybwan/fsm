@@ -18,9 +18,9 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
 
     act->lts = bpf_ktime_get_ns();
 
-    if (act->ca.act_type == DP_SET_DO_CT) {
+    if (act->act_type == DP_SET_DO_CT) {
         goto ct_trk;
-    } else if (act->ca.act_type == DP_SET_NOP) {
+    } else if (act->act_type == DP_SET_NOP) {
         struct dp_rdr_act *ar = &act->port_act;
         if (pkt->ctx.l4fin) {
             ar->fr = 1;
@@ -30,7 +30,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
             goto ct_trk;
         }
 
-    } else if (act->ca.act_type == DP_SET_RDR_PORT) {
+    } else if (act->act_type == DP_SET_RDR_PORT) {
         struct dp_rdr_act *ar = &act->port_act;
         if (pkt->ctx.l4fin) {
             ar->fr = 1;
@@ -42,13 +42,11 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
 
         F4_PPLN_RDR_PRIO(pkt);
         pkt->ctx.oport = ar->oport;
-    } else if (act->ca.act_type == DP_SET_SNAT ||
-               act->ca.act_type == DP_SET_DNAT) {
+    } else if (act->act_type == DP_SET_SNAT || act->act_type == DP_SET_DNAT) {
         struct dp_nat_act *na;
         struct xpkt_fib4_op *ta =
-            &fa->ops[act->ca.act_type == DP_SET_SNAT ? DP_SET_SNAT
-                                                     : DP_SET_DNAT];
-        ta->ca.act_type = act->ca.act_type;
+            &fa->ops[act->act_type == DP_SET_SNAT ? DP_SET_SNAT : DP_SET_DNAT];
+        ta->act_type = act->act_type;
         memcpy(&ta->nat_act, &act->nat_act, sizeof(act->nat_act));
 
         na = &act->nat_act;
@@ -57,14 +55,14 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
             na->fr = 1;
         }
 
-        xpkt_nat_load(skb, pkt, na, act->ca.act_type == DP_SET_SNAT ? 1 : 0);
+        xpkt_nat_load(skb, pkt, na, act->act_type == DP_SET_SNAT ? 1 : 0);
 
         if (na->fr == 1 || na->doct || pkt->ctx.goct) {
             goto ct_trk;
         }
 
         F4_PPLN_RDR(pkt);
-    } else if (act->ca.act_type == DP_SET_TOCP) {
+    } else if (act->act_type == DP_SET_TOCP) {
         F4_PPLN_PASSC(pkt, F4_PIPE_RC_ACL_TRAP);
     } else {
         /* Same for DP_SET_DROP */

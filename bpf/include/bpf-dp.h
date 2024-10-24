@@ -187,7 +187,7 @@ struct dp_nat_act {
 };
 
 struct xpkt_fib4_op {
-    struct dp_cmn_act ca; /* Possible actions : See below */
+    __u8 act_type; /* Possible actions : See below */
     union {
         struct dp_rdr_act port_act;
         struct dp_nat_act nat_act; /* DP_SET_SNAT, DP_SET_DNAT */
@@ -195,7 +195,7 @@ struct xpkt_fib4_op {
 };
 
 struct xpkt_fib4_ops {
-    struct dp_cmn_act ca;
+    __u8 act_type;
     __u64 its;
     struct xpkt_fib4_op ops[F4_FCV4_MAP_ACTS];
 };
@@ -242,14 +242,14 @@ typedef struct {
 } ct_attr_t;
 
 typedef struct {
-    struct dp_cmn_act ca; /* Possible actions :
-                           *  DP_SET_DROP
-                           *  DP_SET_TOCP
-                           *  DP_SET_NOP
-                           *  DP_SET_RDR_PORT
-                           *  DP_SET_RT_NHNUM
-                           *  DP_SET_SESS_FWD_ACT
-                           */
+    __u8 act_type; /* Possible actions :
+                    *  DP_SET_DROP
+                    *  DP_SET_TOCP
+                    *  DP_SET_NOP
+                    *  DP_SET_RDR_PORT
+                    *  DP_SET_RT_NHNUM
+                    *  DP_SET_SESS_FWD_ACT
+                    */
     struct bpf_spin_lock lock;
     ct_attr_t attr;
     __u64 ito; /* Inactive timeout */
