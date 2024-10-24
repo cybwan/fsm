@@ -608,12 +608,10 @@ dp_ct_est(xpkt_t *pkt, ct_key_t *ckey, ct_key_t *rkey, ct_op_t *caop,
             if (pkt->ctx.dir == CT_DIR_IN) {
                 ckey->sport = pkt->l2.ssnid;
                 ckey->dport = pkt->l2.ssnid;
-                cuop->attr.sm.frag = 1;
                 bpf_map_update_elem(&fsm_ct, ckey, cuop, BPF_ANY);
             } else {
                 rkey->sport = pkt->l2.ssnid;
                 rkey->dport = pkt->l2.ssnid;
-                ruop->attr.sm.frag = 1;
                 bpf_map_update_elem(&fsm_ct, rkey, ruop, BPF_ANY);
             }
         }
@@ -719,7 +717,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             cuop->ito = pkt->nat.ito;
         } else {
             cuop->ito = 0;
-            cuop->act_type = NF_DO_CNTK;
+            cuop->act_type = NF_DO_CTTK;
         }
         cuop->attr.dir = CT_DIR_IN;
 
@@ -747,7 +745,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             ruop->ito = pkt->nat.ito;
         } else {
             ruop->ito = 0;
-            ruop->act_type = NF_DO_CNTK;
+            ruop->act_type = NF_DO_CTTK;
         }
         ruop->lts = cuop->lts;
         ruop->attr.dir = CT_DIR_OUT;

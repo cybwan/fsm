@@ -18,7 +18,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
 
     act->lts = bpf_ktime_get_ns();
 
-    if (act->act_type == NF_DO_CNTK) {
+    if (act->act_type == NF_DO_CTTK) {
         goto ct_trk;
     } else if (act->act_type == NF_DO_NOOP) {
         struct dp_rdr_act *ar = &act->port_act;

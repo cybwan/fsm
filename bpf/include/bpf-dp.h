@@ -6,7 +6,7 @@ enum {
     NF_DO_SNAT = 1,
     NF_DO_DNAT = 2,
     NF_DO_RDRT = 3,
-    NF_DO_CNTK = 4,
+    NF_DO_CTTK = 4,
     NF_DO_NOOP = 5
 };
 
@@ -100,19 +100,11 @@ typedef struct {
 } ct_icmp_sm_t;
 
 typedef struct {
-    ct_state_t state;
-} ct_l3inf_t;
-
-typedef struct {
     union {
         ct_tcp_sm_t t;
         ct_udp_sm_t u;
         ct_icmp_sm_t i;
     };
-    __u16 frag;
-    __u16 npmhh;
-    __u32 pmhh[4];
-    ct_l3inf_t l3i;
 } ct_sm_t;
 
 struct dp_rdr_act {
