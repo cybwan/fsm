@@ -145,7 +145,7 @@ struct xpkt_l34_meta {
     __u16 dport;
 
     __u32 seq;
-    __u32 ack;
+    __u32 ack_seq;
 
     __u32 saddr[4];
     __u32 daddr[4];

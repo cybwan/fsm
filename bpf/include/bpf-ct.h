@@ -13,7 +13,7 @@
         case NF_DO_SNAT:                                                       \
         case NF_DO_DNAT:                                                       \
             (a)->attr.sm.t.dirs[CT_DIR_IN].pseq = (x)->l34.seq;                \
-            (a)->attr.sm.t.dirs[CT_DIR_IN].pack = (x)->l34.ack;                \
+            (a)->attr.sm.t.dirs[CT_DIR_IN].pack = (x)->l34.ack_seq;            \
             break;                                                             \
         default:                                                               \
             break;                                                             \
@@ -123,8 +123,7 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *caop, ct_op_t *raop,
     __u8 tcp_flags = pkt->ctx.tcp_flags;
     ct_tcp_sm_dir_t *td = &ts->dirs[dir];
     ct_tcp_sm_dir_t *rtd;
-    __u32 seq;
-    __u32 ack;
+    __u32 seq, ack_seq;
     __u32 nstate = 0;
 
     if ((void *)(t + 1) > dend) {
@@ -133,7 +132,7 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *caop, ct_op_t *raop,
     }
 
     seq = ntohl(t->seq);
-    ack = ntohl(t->ack_seq);
+    ack_seq = ntohl(t->ack_seq);
 
     xpkt_spin_lock(&caop->lock);
 
@@ -160,7 +159,7 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *caop, ct_op_t *raop,
         if (tcp_flags & F4_TCP_ACK) {
             td->seq = seq;
             if (td->init_acks) {
-                if (ack > rtd->seq + 2) {
+                if (ack_seq > rtd->seq + 2) {
                     nstate = CT_TCP_ERR;
                     goto end;
                 }
@@ -180,8 +179,8 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *caop, ct_op_t *raop,
             goto end;
         }
 
-        /* SYN sent with ack 0 */
-        if (ack != 0 && dir != CT_DIR_IN) {
+        /* SYN sent with ack_seq 0 */
+        if (ack_seq != 0 && dir != CT_DIR_IN) {
             nstate = CT_TCP_ERR;
             goto end;
         }
@@ -206,7 +205,7 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *caop, ct_op_t *raop,
             goto end;
         }
 
-        if (ack != rtd->seq + 1) {
+        if (ack_seq != rtd->seq + 1) {
             nstate = CT_TCP_ERR;
             goto end;
         }
@@ -223,7 +222,7 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *caop, ct_op_t *raop,
                 goto end;
             }
 
-            if (ack != rtd->seq + 1) {
+            if (ack_seq != rtd->seq + 1) {
                 nstate = CT_TCP_ERR;
                 goto end;
             }
@@ -243,7 +242,7 @@ dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *caop, ct_op_t *raop,
             goto end;
         }
 
-        if (ack != rtd->seq + 1) {
+        if (ack_seq != rtd->seq + 1) {
             nstate = CT_TCP_ERR;
             goto end;
         }
