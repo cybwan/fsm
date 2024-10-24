@@ -166,12 +166,6 @@ typedef struct {
     __u8 inactive;
 } __attribute__((packed)) nat_endpoint_t;
 
-struct dp_pb_stats {
-    __u64 bytes;
-    __u64 packets;
-};
-typedef struct dp_pb_stats dp_pb_stats_t;
-
 struct dp_ct_dat {
     __u16 rid;
     __u16 aid;
@@ -180,7 +174,6 @@ struct dp_ct_dat {
     ct_dir_t dir;
     ct_smr_t smr;
     nat_endpoint_t xi;
-    dp_pb_stats_t pb;
 };
 
 struct xpkt_fib4_key {
@@ -245,7 +238,7 @@ typedef struct {
     nat_endpoint_t endpoints[F4_MAX_ENDPOINTS];
 } nat_ops_t;
 
-struct dp_ct_key {
+struct xpkt_ct_key {
     __u32 daddr[4];
     __u32 saddr[4];
     __u16 sport;
@@ -254,7 +247,7 @@ struct dp_ct_key {
     __u8 v6;
 } __attribute__((packed));
 
-struct dp_ct_tact {
+struct xpkt_ct_op {
     struct dp_cmn_act ca; /* Possible actions :
                            *  DP_SET_DROP
                            *  DP_SET_TOCP

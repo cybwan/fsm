@@ -7,7 +7,7 @@
 #include "bpf-lb.h"
 
 INTERNAL(int)
-dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, struct dp_ct_tact *act)
+dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, struct xpkt_ct_op *act)
 {
     struct xpkt_fib4_ops *fa = fa_;
     if (!act) {
@@ -88,8 +88,8 @@ INTERNAL(int)
 dp_do_ing_ct(skb_t *skb, xpkt_t *pkt, void *fa_)
 {
 
-    struct dp_ct_key key;
-    struct dp_ct_tact *act;
+    struct xpkt_ct_key key;
+    struct xpkt_ct_op *act;
 
     XADDR_COPY(key.daddr, pkt->l34.daddr);
     XADDR_COPY(key.saddr, pkt->l34.saddr);

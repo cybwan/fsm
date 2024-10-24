@@ -106,14 +106,14 @@ struct {
 struct bpf_map_def SEC("maps") fsm_ct_key = {
     .type = BPF_MAP_TYPE_PERCPU_ARRAY,
     .key_size = sizeof(__u32),
-    .value_size = sizeof(struct dp_ct_tact),
+    .value_size = sizeof(struct xpkt_ct_op),
     .max_entries = 2,
 };
 #else /* New BTF definitions */
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
     __type(key, __u32);
-    __type(value, struct dp_ct_tact);
+    __type(value, struct xpkt_ct_op);
     __uint(max_entries, 2);
 } fsm_ct_key SEC(".maps");
 #endif
@@ -137,15 +137,15 @@ struct {
 #ifdef LEGACY_BPF_MAPS
 struct bpf_map_def SEC("maps") fsm_ct = {
     .type = BPF_MAP_TYPE_HASH,
-    .key_size = sizeof(struct dp_ct_key),
-    .value_size = sizeof(struct dp_ct_tact),
+    .key_size = sizeof(struct xpkt_ct_key),
+    .value_size = sizeof(struct xpkt_ct_op),
     .max_entries = F4_CT_MAP_ENTRIES,
 };
 #else /* New BTF definitions */
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
-    __type(key, struct dp_ct_key);
-    __type(value, struct dp_ct_tact);
+    __type(key, struct xpkt_ct_key);
+    __type(value, struct xpkt_ct_op);
     __uint(max_entries, F4_CT_MAP_ENTRIES);
 } fsm_ct SEC(".maps");
 #endif
