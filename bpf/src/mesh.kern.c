@@ -84,6 +84,7 @@ int sidecar_egress(skb_t *skb)
     xpkt_decode(skb, pkt, 1);
 
     if (F4_DEBUG_EGR(pkt)) {
+        FSM_DBG("\n");
         FSM_DBG("[DBG] tc_egr ========\n");
         // FSM_DBG("[DBG] tc_egr pkt->l34 saddr4 %pI4 sport %d\n",
         //         &pkt->l34.saddr4, ntohs(pkt->l34.sport));

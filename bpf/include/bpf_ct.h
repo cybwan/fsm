@@ -119,14 +119,10 @@ dp_ct_est(xpkt_t *pkt, ct_key_t *ckey, ct_key_t *rkey, ct_op_t *acop,
 {
     ct_attr_t *tdat = &acop->attr;
     ct_op_t *ucop, *urop;
-    int i, j, k;
+    int cidx = 0, ridx = 1;
 
-    k = 0;
-    ucop = bpf_map_lookup_elem(&fsm_ct_ops, &k);
-
-    k = 1;
-    urop = bpf_map_lookup_elem(&fsm_ct_ops, &k);
-
+    ucop = bpf_map_lookup_elem(&fsm_ct_ops, &cidx);
+    urop = bpf_map_lookup_elem(&fsm_ct_ops, &ridx);
     if (ucop == NULL || urop == NULL || tdat->ep.v6) {
         return 0;
     }
@@ -217,7 +213,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     acop = bpf_map_lookup_elem(&fsm_ct, &ckey);
     arop = bpf_map_lookup_elem(&fsm_ct, &rkey);
     if (acop == NULL || arop == NULL) {
-        FSM_DBG("[CTRK] AAAAA 1\n");
         memset(&ucop->attr.sm, 0, sizeof(ct_sm_t));
         if (ucep->nat_flags) {
             ucop->nf = ucep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
@@ -227,8 +222,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             XADDR_COPY(ucop->nfs.nat.raddr, ucep->raddr);
             ucop->nfs.nat.xport = ucep->xport;
             ucop->nfs.nat.rport = ucep->rport;
-            ucop->nfs.nat.doct = 0;
-            ucop->nfs.nat.aid = pkt->nat.ep_sel;
+            ucop->nfs.nat.do_ct = 0;
+            ucop->nfs.nat.ep_sel = pkt->nat.ep_sel;
             ucop->nfs.nat.v6 = pkt->nat.v6 ? 1 : 0;
             ucop->ito = pkt->nat.ito;
         } else {
@@ -236,9 +231,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             ucop->nf = NF_DO_CTTK;
         }
         ucop->attr.dir = CT_DIR_IN;
-
-        /* FIXME This is duplicated data */
-        ucop->attr.ep_sel = pkt->nat.ep_sel;
         ucop->attr.smr = CT_SMR_INIT;
 
         memset(&urop->attr.sm, 0, sizeof(ct_sm_t));
@@ -250,18 +242,16 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             XADDR_COPY(urop->nfs.nat.raddr, urep->raddr);
             urop->nfs.nat.xport = urep->xport;
             urop->nfs.nat.rport = urep->rport;
-            urop->nfs.nat.doct = 0;
-            urop->nfs.nat.aid = pkt->nat.ep_sel;
+            urop->nfs.nat.do_ct = 0;
+            urop->nfs.nat.ep_sel = pkt->nat.ep_sel;
             urop->nfs.nat.v6 = ckey.v6 ? 1 : 0;
             urop->ito = pkt->nat.ito;
         } else {
             urop->ito = 0;
             urop->nf = NF_DO_CTTK;
         }
-        urop->lts = ucop->lts;
         urop->attr.dir = CT_DIR_OUT;
         urop->attr.smr = CT_SMR_INIT;
-        urop->attr.ep_sel = ucop->attr.ep_sel;
 
         bpf_map_update_elem(&fsm_ct, &rkey, urop, BPF_ANY);
         bpf_map_update_elem(&fsm_ct, &ckey, ucop, BPF_ANY);
@@ -271,7 +261,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     }
 
     if (acop != NULL && arop != NULL) {
-        FSM_DBG("[CTRK] AAAAA 2\n");
         acop->lts = bpf_ktime_get_ns();
         arop->lts = acop->lts;
         pkt->ctx.act = F4_PIPE_RDR;
@@ -287,8 +276,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
 
         if (smr == CT_SMR_EST) {
             if (ucep->nat_flags) {
-                acop->nfs.nat.doct = 0;
-                arop->nfs.nat.doct = 0;
+                acop->nfs.nat.do_ct = 0;
+                arop->nfs.nat.do_ct = 0;
                 if (acop->attr.dir == CT_DIR_IN) {
                     dp_ct_est(pkt, &ckey, &rkey, acop, arop);
                 } else {
@@ -301,7 +290,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         } else if (smr == CT_SMR_ERR || smr == CT_SMR_CTD) {
             bpf_map_delete_elem(&fsm_ct, &rkey);
             bpf_map_delete_elem(&fsm_ct, &ckey);
-
             if (F4_DEBUG_PKT(pkt)) {
                 FSM_DBG("[DBG] [CTRK] bpf_map_delete_elem by igr\n");
             }

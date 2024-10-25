@@ -55,7 +55,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, fib4_ops_t *fa, ct_op_t *act)
 
         xpkt_nat_load(skb, pkt, na, act->nf == NF_DO_SNAT ? 1 : 0);
 
-        if (na->fin == 1 || na->doct || pkt->ctx.goct) {
+        if (na->fin == 1 || na->do_ct || pkt->ctx.goct) {
             goto conn_track;
         }
 

@@ -121,10 +121,9 @@ typedef struct {
     __u16 rport;
     __u16 xifi;
     __u8 fin;
-    __u8 doct;
-    __u32 aid;
+    __u8 do_ct;
+    __u32 ep_sel;
     __u8 v6;
-    __u8 nmh;
 } nf_nat_t;
 
 typedef struct {
@@ -195,7 +194,6 @@ typedef struct {
     ct_dir_t dir;
     ct_sm_t sm;
     ct_smr_t smr;
-    __u16 ep_sel;
     nat_ep_t ep;
 } ct_attr_t;
 

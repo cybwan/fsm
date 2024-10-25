@@ -50,7 +50,7 @@ xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
     if (acts->ops[NF_DO_SNAT].nf == NF_DO_SNAT) {
         ta = &acts->ops[NF_DO_SNAT];
 
-        if (ta->nfs.nat.fin == 1 || ta->nfs.nat.doct) {
+        if (ta->nfs.nat.fin == 1 || ta->nfs.nat.do_ct) {
             pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
             return 0;
         }
@@ -59,7 +59,7 @@ xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
     } else if (acts->ops[NF_DO_DNAT].nf == NF_DO_DNAT) {
         ta = &acts->ops[NF_DO_DNAT];
 
-        if (ta->nfs.nat.fin == 1 || ta->nfs.nat.doct) {
+        if (ta->nfs.nat.fin == 1 || ta->nfs.nat.do_ct) {
             pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
             return 0;
         }
