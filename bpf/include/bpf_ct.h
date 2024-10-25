@@ -22,8 +22,8 @@
     } while (0)
 
 INTERNAL(int)
-dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_ep_t *cep, ct_key_t *rkey,
-                     nat_ep_t *rep)
+dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_ep_t *ucep, ct_key_t *rkey,
+                     nat_ep_t *urep)
 {
     XADDR_COPY(rkey->daddr, ckey->saddr);
     XADDR_COPY(rkey->saddr, ckey->daddr);
@@ -33,75 +33,75 @@ dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_ep_t *cep, ct_key_t *rkey,
     rkey->v6 = ckey->v6;
 
     /* Apply NAT xfrm if needed */
-    if (cep->nat_flags & F4_NAT_DST) {
-        rkey->v6 = (__u8)(cep->nv6);
-        XADDR_COPY(rkey->saddr, cep->nat_rip);
-        // XADDR_COPY(rkey->daddr, cep->nat_xip);
-        XADDR_COPY(rep->nat_xip, ckey->daddr);
-        XADDR_COPY(rep->nat_rip, ckey->saddr);
+    if (ucep->nat_flags & F4_NAT_DST) {
+        rkey->v6 = (__u8)(ucep->nv6);
+        XADDR_COPY(rkey->saddr, ucep->nat_rip);
+        // XADDR_COPY(rkey->daddr, ucep->nat_xip);
+        XADDR_COPY(urep->nat_xip, ckey->daddr);
+        XADDR_COPY(urep->nat_rip, ckey->saddr);
         if (ckey->proto != IPPROTO_ICMP) {
-            rkey->dport = cep->nat_xport;
-            rkey->sport = cep->nat_rport;
-            rep->nat_xport = ckey->dport;
-            rep->nat_rport = ckey->sport;
+            rkey->dport = ucep->nat_xport;
+            rkey->sport = ucep->nat_rport;
+            urep->nat_xport = ckey->dport;
+            urep->nat_rport = ckey->sport;
         }
 
-        rep->nat_flags = F4_NAT_SRC;
-        rep->nv6 = ckey->v6;
+        urep->nat_flags = F4_NAT_SRC;
+        urep->nv6 = ckey->v6;
     }
-    if (cep->nat_flags & F4_NAT_SRC) {
-        rkey->v6 = cep->nv6;
-        // XADDR_COPY(rkey->saddr, cep->nat_rip);
-        XADDR_COPY(rkey->daddr, cep->nat_xip);
-        XADDR_COPY(rep->nat_rip, pkt->l34.saddr);
-        XADDR_COPY(rep->nat_xip, pkt->l34.daddr);
+    if (ucep->nat_flags & F4_NAT_SRC) {
+        rkey->v6 = ucep->nv6;
+        // XADDR_COPY(rkey->saddr, ucep->nat_rip);
+        XADDR_COPY(rkey->daddr, ucep->nat_xip);
+        XADDR_COPY(urep->nat_rip, pkt->l34.saddr);
+        XADDR_COPY(urep->nat_xip, pkt->l34.daddr);
 
         if (ckey->proto != IPPROTO_ICMP) {
-            rkey->dport = cep->nat_xport;
-            rkey->sport = cep->nat_rport;
-            rep->nat_xport = ckey->dport;
-            rep->nat_rport = ckey->sport;
+            rkey->dport = ucep->nat_xport;
+            rkey->sport = ucep->nat_rport;
+            urep->nat_xport = ckey->dport;
+            urep->nat_rport = ckey->sport;
         }
 
-        rep->nat_flags = F4_NAT_DST;
-        rep->nv6 = ckey->v6;
+        urep->nat_flags = F4_NAT_DST;
+        urep->nv6 = ckey->v6;
     }
-    if (cep->nat_flags & F4_NAT_HDST) {
+    if (ucep->nat_flags & F4_NAT_HDST) {
         XADDR_COPY(rkey->saddr, ckey->saddr);
         XADDR_COPY(rkey->daddr, ckey->daddr);
 
         if (ckey->proto != IPPROTO_ICMP) {
-            if (cep->nat_xport)
-                rkey->sport = cep->nat_xport;
+            if (ucep->nat_xport)
+                rkey->sport = ucep->nat_xport;
             else
-                cep->nat_xport = ckey->dport;
+                ucep->nat_xport = ckey->dport;
         }
 
-        rep->nat_flags = F4_NAT_HSRC;
-        rep->nv6 = ckey->v6;
-        XADDR_SET_ZERO(rep->nat_xip);
-        XADDR_SET_ZERO(cep->nat_xip);
+        urep->nat_flags = F4_NAT_HSRC;
+        urep->nv6 = ckey->v6;
+        XADDR_SET_ZERO(urep->nat_xip);
+        XADDR_SET_ZERO(ucep->nat_xip);
         if (ckey->proto != IPPROTO_ICMP)
-            rep->nat_xport = ckey->dport;
+            urep->nat_xport = ckey->dport;
     }
-    if (cep->nat_flags & F4_NAT_HSRC) {
+    if (ucep->nat_flags & F4_NAT_HSRC) {
         XADDR_COPY(rkey->saddr, ckey->saddr);
         XADDR_COPY(rkey->daddr, ckey->daddr);
 
         if (ckey->proto != IPPROTO_ICMP) {
-            if (cep->nat_xport)
-                rkey->dport = cep->nat_xport;
+            if (ucep->nat_xport)
+                rkey->dport = ucep->nat_xport;
             else
-                cep->nat_xport = ckey->sport;
+                ucep->nat_xport = ckey->sport;
         }
 
-        rep->nat_flags = F4_NAT_HDST;
-        rep->nv6 = ckey->v6;
-        XADDR_SET_ZERO(rep->nat_xip);
-        XADDR_SET_ZERO(cep->nat_xip);
+        urep->nat_flags = F4_NAT_HDST;
+        urep->nv6 = ckey->v6;
+        XADDR_SET_ZERO(urep->nat_xip);
+        XADDR_SET_ZERO(ucep->nat_xip);
 
         if (ckey->proto != IPPROTO_ICMP)
-            rep->nat_xport = ckey->sport;
+            urep->nat_xport = ckey->sport;
     }
 
     return 0;
@@ -159,7 +159,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     ct_key_t ckey, rkey;
     ct_op_t *ucop, *urop;
     ct_op_t *acop, *arop;
-    nat_ep_t *cep, *rep;
+    nat_ep_t *ucep, *urep;
     int cidx = 0, ridx = 1;
     int smr = CT_SMR_ERR;
 
@@ -173,8 +173,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         return smr;
     }
 
-    cep = &ucop->attr.ep;
-    rep = &urop->attr.ep;
+    ucep = &ucop->attr.ep;
+    urep = &urop->attr.ep;
 
     /* CT Key */
     XADDR_COPY(ckey.daddr, pkt->l34.daddr);
@@ -189,43 +189,43 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         return CT_SMR_INPROG;
     }
 
-    cep->nat_flags = pkt->ctx.nf;
-    XADDR_COPY(cep->nat_xip, pkt->nat.nxip);
-    XADDR_COPY(cep->nat_rip, pkt->nat.nrip);
-    cep->nat_xport = pkt->nat.nxport;
-    cep->nat_rport = pkt->nat.nrport;
-    cep->nv6 = pkt->nat.nv6;
+    ucep->nat_flags = pkt->ctx.nf;
+    XADDR_COPY(ucep->nat_xip, pkt->nat.nxip);
+    XADDR_COPY(ucep->nat_rip, pkt->nat.nrip);
+    ucep->nat_xport = pkt->nat.nxport;
+    ucep->nat_rport = pkt->nat.nrport;
+    ucep->nv6 = pkt->nat.nv6;
 
-    rep->nat_flags = 0;
-    rep->nat_xport = 0;
-    rep->nat_rport = 0;
-    XADDR_SET_ZERO(rep->nat_xip);
-    XADDR_SET_ZERO(rep->nat_rip);
+    urep->nat_flags = 0;
+    urep->nat_xport = 0;
+    urep->nat_rport = 0;
+    XADDR_SET_ZERO(urep->nat_xip);
+    XADDR_SET_ZERO(urep->nat_rip);
 
     if (pkt->ctx.nf & (F4_NAT_DST | F4_NAT_SRC)) {
-        if (XADDR_IS_ZERO(cep->nat_xip)) {
+        if (XADDR_IS_ZERO(ucep->nat_xip)) {
             if (pkt->ctx.nf == F4_NAT_DST) {
-                cep->nat_flags = F4_NAT_HDST;
+                ucep->nat_flags = F4_NAT_HDST;
             } else if (pkt->ctx.nf == F4_NAT_SRC) {
-                cep->nat_flags = F4_NAT_HSRC;
+                ucep->nat_flags = F4_NAT_HSRC;
             }
         }
     }
 
-    dp_ct_proto_xfk_init(pkt, &ckey, cep, &rkey, rep);
+    dp_ct_proto_xfk_init(pkt, &ckey, ucep, &rkey, urep);
 
     acop = bpf_map_lookup_elem(&fsm_ct, &ckey);
     arop = bpf_map_lookup_elem(&fsm_ct, &rkey);
     if (acop == NULL || arop == NULL) {
         FSM_DBG("[CTRK] AAAAA 1\n");
         memset(&ucop->attr.sm, 0, sizeof(ct_sm_t));
-        if (cep->nat_flags) {
-            ucop->nf = cep->nat_flags & (F4_NAT_DST | F4_NAT_HDST) ? NF_DO_DNAT
+        if (ucep->nat_flags) {
+            ucop->nf = ucep->nat_flags & (F4_NAT_DST | F4_NAT_HDST) ? NF_DO_DNAT
                                                                    : NF_DO_SNAT;
-            XADDR_COPY(ucop->nfs.nat.xip, cep->nat_xip);
-            XADDR_COPY(ucop->nfs.nat.rip, cep->nat_rip);
-            ucop->nfs.nat.xport = cep->nat_xport;
-            ucop->nfs.nat.rport = cep->nat_rport;
+            XADDR_COPY(ucop->nfs.nat.xip, ucep->nat_xip);
+            XADDR_COPY(ucop->nfs.nat.rip, ucep->nat_rip);
+            ucop->nfs.nat.xport = ucep->nat_xport;
+            ucop->nfs.nat.rport = ucep->nat_rport;
             ucop->nfs.nat.doct = 0;
             ucop->nfs.nat.aid = pkt->nat.ep_sel;
             ucop->nfs.nat.nv6 = pkt->nat.nv6 ? 1 : 0;
@@ -241,13 +241,13 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         ucop->attr.smr = CT_SMR_INIT;
 
         memset(&urop->attr.sm, 0, sizeof(ct_sm_t));
-        if (rep->nat_flags) {
-            urop->nf = rep->nat_flags & (F4_NAT_DST | F4_NAT_HDST) ? NF_DO_DNAT
+        if (urep->nat_flags) {
+            urop->nf = urep->nat_flags & (F4_NAT_DST | F4_NAT_HDST) ? NF_DO_DNAT
                                                                    : NF_DO_SNAT;
-            XADDR_COPY(urop->nfs.nat.xip, rep->nat_xip);
-            XADDR_COPY(urop->nfs.nat.rip, rep->nat_rip);
-            urop->nfs.nat.xport = rep->nat_xport;
-            urop->nfs.nat.rport = rep->nat_rport;
+            XADDR_COPY(urop->nfs.nat.xip, urep->nat_xip);
+            XADDR_COPY(urop->nfs.nat.rip, urep->nat_rip);
+            urop->nfs.nat.xport = urep->nat_xport;
+            urop->nfs.nat.rport = urep->nat_rport;
             urop->nfs.nat.doct = 0;
             urop->nfs.nat.aid = pkt->nat.ep_sel;
             urop->nfs.nat.nv6 = ckey.v6 ? 1 : 0;
@@ -284,7 +284,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         }
 
         if (smr == CT_SMR_EST) {
-            if (cep->nat_flags) {
+            if (ucep->nat_flags) {
                 acop->nfs.nat.doct = 0;
                 arop->nfs.nat.doct = 0;
                 if (acop->attr.dir == CT_DIR_IN) {
