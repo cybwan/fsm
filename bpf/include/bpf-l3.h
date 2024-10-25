@@ -7,9 +7,8 @@
 #include "bpf-lb.h"
 
 INTERNAL(int)
-dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
+dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
 {
-    struct xpkt_fib4_ops *fa = fa_;
     if (!act) {
         goto ct_trk;
     }
@@ -73,11 +72,11 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, void *fa_, ct_op_t *act)
     return 0;
 
 ct_trk:
-    return xpkt_tail_call(skb, pkt, fa_, FSM_CNI_CONNTRACK_PROG_ID);
+    return xpkt_tail_call(skb, pkt, fa, FSM_CNI_CONNTRACK_PROG_ID);
 }
 
 INTERNAL(int)
-dp_do_ing_ct(skb_t *skb, xpkt_t *pkt, void *fa_)
+dp_do_ing_ct(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa)
 {
 
     ct_key_t key;
@@ -91,14 +90,7 @@ dp_do_ing_ct(skb_t *skb, xpkt_t *pkt, void *fa_)
     key.v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;
 
     act = bpf_map_lookup_elem(&fsm_ct, &key);
-    return dp_do_ctops(skb, pkt, fa_, act);
-}
-
-INTERNAL(int)
-dp_ing_l3(skb_t *skb, xpkt_t *pkt, void *fa)
-{
-    dp_do_ing_ct(skb, pkt, fa);
-    return 0;
+    return dp_do_ctops(skb, pkt, fa, act);
 }
 
 #endif

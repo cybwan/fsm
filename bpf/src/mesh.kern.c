@@ -58,6 +58,8 @@ int sidecar_ingress(skb_t *skb)
                 t->fin);
         FSM_DBG("[DBG] tc_igr seq: %u ack_seq: %u\n", ntohl(t->seq),
                 ntohl(t->ack_seq));
+        FSM_DBG("[DBG] tc_igr ingress_ifindex: %u ifindex: %u\n",
+                skb->ingress_ifindex, skb->ifindex);
     }
 
     return dp_ing_fc_main(skb, pkt);
@@ -96,6 +98,8 @@ int sidecar_egress(skb_t *skb)
                 t->fin);
         FSM_DBG("[DBG] tc_egr seq: %u ack_seq: %u\n", ntohl(t->seq),
                 ntohl(t->ack_seq));
+        FSM_DBG("[DBG] tc_egr ingress_ifindex: %u ifindex: %u\n",
+                skb->ingress_ifindex, skb->ifindex);
     }
     return dp_ing_fc_main(skb, pkt);
     // return TC_ACT_OK;

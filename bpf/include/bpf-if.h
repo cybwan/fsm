@@ -100,19 +100,6 @@ xpkt_handshake_proc(skb_t *skb, xpkt_t *pkt)
         fa->ops[z].act_type = 0;
     }
 
-    // F4_DBG_PRINTK("[INGR] START--\n");
-
-    // /* If there are any packets marked for mirroring, we do
-    //  * it here and immediately get it out of way without
-    //  * doing any further processing
-    //  */
-    // if (pkt->ctx.mirr != 0) {
-    //   dp_do_mirr_lkup(skb, pkt);
-    //   goto out;
-    // }
-
-    // dp_ing(skb, pkt);
-
     /* If there are pipeline errors at this stage,
      * we again skip any further processing
      */
@@ -120,7 +107,7 @@ xpkt_handshake_proc(skb_t *skb, xpkt_t *pkt)
         goto out;
     }
 
-    dp_ing_l3(skb, pkt, fa);
+    dp_do_ing_ct(skb, pkt, fa);
 
     /* fast-cache is used only when certain conditions are met */
     if (F4_PIPE_FC_CAP(pkt)) {

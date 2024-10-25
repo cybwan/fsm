@@ -284,7 +284,7 @@ xpkt_do_out(skb_t *skb, xpkt_t *pkt)
 }
 
 INTERNAL(int)
-xpkt_tail_call(skb_t *skb, xpkt_t *pkt, void *fa, __u32 idx)
+xpkt_tail_call(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, __u32 idx)
 {
     int z = 0;
 
