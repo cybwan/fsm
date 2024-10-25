@@ -5,10 +5,10 @@
 
 typedef struct __sk_buff skb_t;
 
-#define xip4 xip[0]
-#define rip4 rip[0]
-#define nat_xip4 nat_xip[0]
-#define nat_rip4 nat_rip[0]
+#define xaddr4 xaddr[0]
+#define raddr4 raddr[0]
+#define nat_xaddr4 nat_xaddr[0]
+#define nat_raddr4 nat_raddr[0]
 
 #ifndef memcpy
 #define memcpy(dest, src, n) __builtin_memcpy((dest), (src), (n))

@@ -35,15 +35,15 @@ dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_ep_t *ucep,
     /* Apply NAT xfrm if needed */
     if (ucep->nat_flags & F4_NAT_DST) {
         rkey->v6 = (__u8)(ucep->v6);
-        XADDR_COPY(rkey->saddr, ucep->nat_rip);
-        // XADDR_COPY(rkey->daddr, ucep->nat_xip);
-        XADDR_COPY(urep->nat_xip, ckey->daddr);
-        XADDR_COPY(urep->nat_rip, ckey->saddr);
+        XADDR_COPY(rkey->saddr, ucep->raddr);
+        // XADDR_COPY(rkey->daddr, ucep->xaddr);
+        XADDR_COPY(urep->xaddr, ckey->daddr);
+        XADDR_COPY(urep->raddr, ckey->saddr);
         if (ckey->proto != IPPROTO_ICMP) {
-            rkey->dport = ucep->nat_xport;
-            rkey->sport = ucep->nat_rport;
-            urep->nat_xport = ckey->dport;
-            urep->nat_rport = ckey->sport;
+            rkey->dport = ucep->xport;
+            rkey->sport = ucep->rport;
+            urep->xport = ckey->dport;
+            urep->rport = ckey->sport;
         }
 
         urep->nat_flags = F4_NAT_SRC;
@@ -51,16 +51,16 @@ dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_ep_t *ucep,
     }
     if (ucep->nat_flags & F4_NAT_SRC) {
         rkey->v6 = ucep->v6;
-        // XADDR_COPY(rkey->saddr, ucep->nat_rip);
-        XADDR_COPY(rkey->daddr, ucep->nat_xip);
-        XADDR_COPY(urep->nat_rip, pkt->l34.saddr);
-        XADDR_COPY(urep->nat_xip, pkt->l34.daddr);
+        // XADDR_COPY(rkey->saddr, ucep->raddr);
+        XADDR_COPY(rkey->daddr, ucep->xaddr);
+        XADDR_COPY(urep->raddr, pkt->l34.saddr);
+        XADDR_COPY(urep->xaddr, pkt->l34.daddr);
 
         if (ckey->proto != IPPROTO_ICMP) {
-            rkey->dport = ucep->nat_xport;
-            rkey->sport = ucep->nat_rport;
-            urep->nat_xport = ckey->dport;
-            urep->nat_rport = ckey->sport;
+            rkey->dport = ucep->xport;
+            rkey->sport = ucep->rport;
+            urep->xport = ckey->dport;
+            urep->rport = ckey->sport;
         }
 
         urep->nat_flags = F4_NAT_DST;
@@ -71,37 +71,37 @@ dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_ep_t *ucep,
         XADDR_COPY(rkey->daddr, ckey->daddr);
 
         if (ckey->proto != IPPROTO_ICMP) {
-            if (ucep->nat_xport)
-                rkey->sport = ucep->nat_xport;
+            if (ucep->xport)
+                rkey->sport = ucep->xport;
             else
-                ucep->nat_xport = ckey->dport;
+                ucep->xport = ckey->dport;
         }
 
         urep->nat_flags = F4_NAT_HSRC;
         urep->v6 = ckey->v6;
-        XADDR_SET_ZERO(urep->nat_xip);
-        XADDR_SET_ZERO(ucep->nat_xip);
+        XADDR_SET_ZERO(urep->xaddr);
+        XADDR_SET_ZERO(ucep->xaddr);
         if (ckey->proto != IPPROTO_ICMP)
-            urep->nat_xport = ckey->dport;
+            urep->xport = ckey->dport;
     }
     if (ucep->nat_flags & F4_NAT_HSRC) {
         XADDR_COPY(rkey->saddr, ckey->saddr);
         XADDR_COPY(rkey->daddr, ckey->daddr);
 
         if (ckey->proto != IPPROTO_ICMP) {
-            if (ucep->nat_xport)
-                rkey->dport = ucep->nat_xport;
+            if (ucep->xport)
+                rkey->dport = ucep->xport;
             else
-                ucep->nat_xport = ckey->sport;
+                ucep->xport = ckey->sport;
         }
 
         urep->nat_flags = F4_NAT_HDST;
         urep->v6 = ckey->v6;
-        XADDR_SET_ZERO(urep->nat_xip);
-        XADDR_SET_ZERO(ucep->nat_xip);
+        XADDR_SET_ZERO(urep->xaddr);
+        XADDR_SET_ZERO(ucep->xaddr);
 
         if (ckey->proto != IPPROTO_ICMP)
-            urep->nat_xport = ckey->sport;
+            urep->xport = ckey->sport;
     }
 
     return 0;
@@ -190,20 +190,20 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     ckey.v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;
 
     ucep->nat_flags = pkt->ctx.nf;
-    XADDR_COPY(ucep->nat_xip, pkt->nat.nxip);
-    XADDR_COPY(ucep->nat_rip, pkt->nat.nrip);
-    ucep->nat_xport = pkt->nat.nxport;
-    ucep->nat_rport = pkt->nat.nrport;
+    XADDR_COPY(ucep->xaddr, pkt->nat.xaddr);
+    XADDR_COPY(ucep->raddr, pkt->nat.raddr);
+    ucep->xport = pkt->nat.xport;
+    ucep->rport = pkt->nat.rport;
     ucep->v6 = pkt->nat.v6;
 
     urep->nat_flags = 0;
-    urep->nat_xport = 0;
-    urep->nat_rport = 0;
-    XADDR_SET_ZERO(urep->nat_xip);
-    XADDR_SET_ZERO(urep->nat_rip);
+    urep->xport = 0;
+    urep->rport = 0;
+    XADDR_SET_ZERO(urep->xaddr);
+    XADDR_SET_ZERO(urep->raddr);
 
     if (pkt->ctx.nf & (F4_NAT_DST | F4_NAT_SRC)) {
-        if (XADDR_IS_ZERO(ucep->nat_xip)) {
+        if (XADDR_IS_ZERO(ucep->xaddr)) {
             if (pkt->ctx.nf == F4_NAT_DST) {
                 ucep->nat_flags = F4_NAT_HDST;
             } else if (pkt->ctx.nf == F4_NAT_SRC) {
@@ -223,10 +223,10 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             ucop->nf = ucep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
                            ? NF_DO_DNAT
                            : NF_DO_SNAT;
-            XADDR_COPY(ucop->nfs.nat.xip, ucep->nat_xip);
-            XADDR_COPY(ucop->nfs.nat.rip, ucep->nat_rip);
-            ucop->nfs.nat.xport = ucep->nat_xport;
-            ucop->nfs.nat.rport = ucep->nat_rport;
+            XADDR_COPY(ucop->nfs.nat.xaddr, ucep->xaddr);
+            XADDR_COPY(ucop->nfs.nat.raddr, ucep->raddr);
+            ucop->nfs.nat.xport = ucep->xport;
+            ucop->nfs.nat.rport = ucep->rport;
             ucop->nfs.nat.doct = 0;
             ucop->nfs.nat.aid = pkt->nat.ep_sel;
             ucop->nfs.nat.v6 = pkt->nat.v6 ? 1 : 0;
@@ -246,10 +246,10 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             urop->nf = urep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
                            ? NF_DO_DNAT
                            : NF_DO_SNAT;
-            XADDR_COPY(urop->nfs.nat.xip, urep->nat_xip);
-            XADDR_COPY(urop->nfs.nat.rip, urep->nat_rip);
-            urop->nfs.nat.xport = urep->nat_xport;
-            urop->nfs.nat.rport = urep->nat_rport;
+            XADDR_COPY(urop->nfs.nat.xaddr, urep->xaddr);
+            XADDR_COPY(urop->nfs.nat.raddr, urep->raddr);
+            urop->nfs.nat.xport = urep->xport;
+            urop->nfs.nat.rport = urep->rport;
             urop->nfs.nat.doct = 0;
             urop->nfs.nat.aid = pkt->nat.ep_sel;
             urop->nfs.nat.v6 = ckey.v6 ? 1 : 0;

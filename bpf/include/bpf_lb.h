@@ -8,11 +8,11 @@ INTERNAL(int)
 xpkt_nat_load(skb_t *skb, xpkt_t *pkt, nf_nat_t *na, int do_snat)
 {
     pkt->ctx.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
-    XADDR_COPY(pkt->nat.nxip, na->xip);
-    XADDR_COPY(pkt->nat.nrip, na->rip);
-    pkt->nat.nxifi = na->xifi;
-    pkt->nat.nxport = na->xport;
-    pkt->nat.nrport = na->rport;
+    XADDR_COPY(pkt->nat.xaddr, na->xaddr);
+    XADDR_COPY(pkt->nat.raddr, na->raddr);
+    pkt->nat.xifi = na->xifi;
+    pkt->nat.xport = na->xport;
+    pkt->nat.rport = na->rport;
     pkt->nat.v6 = na->v6 ? 1 : 0;
     return 0;
 }
@@ -98,14 +98,14 @@ INTERNAL(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
         if (ep_sel >= 0 && ep_sel < F4_MAX_ENDPOINTS) {
             ep = &ops->eps[ep_sel];
 
-            XADDR_COPY(pkt->nat.nxip, ep->nat_xip);
-            XADDR_COPY(pkt->nat.nrip, ep->nat_rip);
-            pkt->nat.nxifi = ep->nat_xifi;
-            pkt->nat.nrport = ep->nat_rport;
-            if (ep->nat_xport) {
-                pkt->nat.nxport = ep->nat_xport;
+            XADDR_COPY(pkt->nat.xaddr, ep->xaddr);
+            XADDR_COPY(pkt->nat.raddr, ep->raddr);
+            pkt->nat.xifi = ep->xifi;
+            pkt->nat.rport = ep->rport;
+            if (ep->xport) {
+                pkt->nat.xport = ep->xport;
             } else {
-                pkt->nat.nxport = pkt->l34.sport;
+                pkt->nat.xport = pkt->l34.sport;
             }
 
             pkt->nat.v6 = ep->v6 ? 1 : 0;
@@ -113,9 +113,9 @@ INTERNAL(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
             pkt->nat.ito = ops->ito;
 
             /* Special case related to host-dnat */
-            if (pkt->l34.saddr4 == pkt->nat.nxip4 &&
+            if (pkt->l34.saddr4 == pkt->nat.xaddr4 &&
                 pkt->ctx.nf == F4_NAT_DST) {
-                pkt->nat.nxip4 = 0;
+                pkt->nat.xaddr4 = 0;
             }
         } else {
             pkt->ctx.nf = 0;

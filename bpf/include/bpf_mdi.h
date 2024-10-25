@@ -150,15 +150,15 @@ struct xpkt_l34_meta {
     __u32 daddr[4];
 };
 
-#define nxip4 nxip[0]
-#define nrip4 nrip[0]
+#define xaddr4 xaddr[0]
+#define raddr4 raddr[0]
 
 struct xpkt_nat_meta {
-    __u32 nxip[4]; /* NAT xIP */
-    __u32 nrip[4]; /* NAT rIP (for one-arm) */
-    __u16 nxport;  /* NAT xport */
-    __u16 nrport;  /* NAT rport */
-    __u16 nxifi;
+    __u32 xaddr[4]; /* NAT xIP */
+    __u32 raddr[4]; /* NAT rIP (for one-arm) */
+    __u16 xport;    /* NAT xport */
+    __u16 rport;    /* NAT rport */
+    __u16 xifi;
 #define F4_PIPE_CT_NONE 0
 #define F4_PIPE_CT_INP 1
 #define F4_PIPE_CT_EST 2

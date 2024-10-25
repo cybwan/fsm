@@ -115,13 +115,11 @@ typedef struct {
 } nf_rdr_t;
 
 typedef struct {
-    __u32 xip[4];
-    __u32 rip[4];
+    __u32 xaddr[4];
+    __u32 raddr[4];
     __u16 xport;
     __u16 rport;
     __u16 xifi;
-    __u8 xmac[6];
-    __u8 rmac[6];
     __u8 fin;
     __u8 doct;
     __u32 aid;
@@ -132,11 +130,11 @@ typedef struct {
 typedef struct {
     __u8 nat_flags;
     __u8 v6;
-    __u16 nat_xifi;
-    __u16 nat_xport;
-    __u16 nat_rport;
-    __u32 nat_xip[4];
-    __u32 nat_rip[4];
+    __u16 xifi;
+    __u16 xport;
+    __u16 rport;
+    __u32 xaddr[4];
+    __u32 raddr[4];
     __u8 inactive;
 } __attribute__((packed)) nat_ep_t;
 

@@ -36,7 +36,7 @@ dp_pipe_check_res(skb_t *skb, xpkt_t *pkt, void *fa)
         }
 
         if (pkt->ctx.act & F4_PIPE_RDR) {
-            pkt->ctx.oport = pkt->nat.nxifi;
+            pkt->ctx.oport = pkt->nat.xifi;
         }
 
         if (xpkt_encode_packet_always(skb, pkt) != 0) {

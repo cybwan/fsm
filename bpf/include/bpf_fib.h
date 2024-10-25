@@ -73,7 +73,7 @@ xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
     }
 
     // DP_RUN_CT_HELPER(pkt);
-    pkt->ctx.oport = pkt->nat.nxifi;
+    pkt->ctx.oport = pkt->nat.xifi;
 
     xpkt_encode_packet_always(skb, pkt);
     // xpkt_encode_packet(skb, pkt);

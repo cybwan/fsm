@@ -15,17 +15,17 @@ xpkt_do_dnat(skb_t *skb, xpkt_t *pkt)
             return -1;
         }
 
-        if (pkt->nat.nrip4 == 0) {
+        if (pkt->nat.raddr4 == 0) {
             // /* Hairpin nat to host */
-            // xip = pkt->l34m.saddr4;
+            // xaddr = pkt->l34m.saddr4;
             // xpkt_csum_replace_tcp_src_ip(skb, pkt, pkt->l34m.daddr4);
-            // xpkt_csum_replace_tcp_dst_ip(skb, pkt, xip);
+            // xpkt_csum_replace_tcp_dst_ip(skb, pkt, xaddr);
         } else {
-            // xpkt_csum_replace_tcp_src_ip(skb, xf, pkt->nm.nxip4);
-            xpkt_csum_replace_tcp_dst_ip(skb, pkt, pkt->nat.nrip4);
+            // xpkt_csum_replace_tcp_src_ip(skb, xf, pkt->nm.xaddr4);
+            xpkt_csum_replace_tcp_dst_ip(skb, pkt, pkt->nat.raddr4);
         }
-        // xpkt_csum_replace_tcp_src_port(skb, xf, pkt->nm.nxport);
-        xpkt_csum_replace_tcp_dst_port(skb, pkt, pkt->nat.nrport);
+        // xpkt_csum_replace_tcp_src_port(skb, xf, pkt->nm.xport);
+        xpkt_csum_replace_tcp_dst_port(skb, pkt, pkt->nat.rport);
     } else if (pkt->l34.proto == IPPROTO_UDP) {
         struct udphdr *udp = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
 
@@ -34,20 +34,20 @@ xpkt_do_dnat(skb_t *skb, xpkt_t *pkt)
             return -1;
         }
 
-        if (pkt->nat.nrip4 == 0) {
+        if (pkt->nat.raddr4 == 0) {
             // /* Hairpin nat to host */
-            // xip = pkt->l34m.saddr4;
+            // xaddr = pkt->l34m.saddr4;
             // xpkt_csum_replace_udp_src_ip(skb, pkt, pkt->l34m.daddr4);
-            // xpkt_csum_replace_udp_dst_ip(skb, pkt, xip);
+            // xpkt_csum_replace_udp_dst_ip(skb, pkt, xaddr);
         } else {
-            // xpkt_csum_replace_udp_src_ip(skb, pkt, pkt->nm.nxip4);
-            xpkt_csum_replace_udp_dst_ip(skb, pkt, pkt->nat.nrip4);
+            // xpkt_csum_replace_udp_src_ip(skb, pkt, pkt->nm.xaddr4);
+            xpkt_csum_replace_udp_dst_ip(skb, pkt, pkt->nat.raddr4);
         }
-        // xpkt_csum_replace_udp_src_port(skb, pkt, pkt->nm.nxport);
-        xpkt_csum_replace_udp_dst_port(skb, pkt, pkt->nat.nrport);
+        // xpkt_csum_replace_udp_src_port(skb, pkt, pkt->nm.xport);
+        xpkt_csum_replace_udp_dst_port(skb, pkt, pkt->nat.rport);
     } else if (pkt->l34.proto == IPPROTO_ICMP) {
-        // xpkt_csum_replace_icmp_src_ip(skb, pkt, pkt->nm.nxip4);
-        xpkt_csum_replace_icmp_dst_ip(skb, pkt, pkt->nat.nrip4);
+        // xpkt_csum_replace_icmp_src_ip(skb, pkt, pkt->nm.xaddr4);
+        xpkt_csum_replace_icmp_dst_ip(skb, pkt, pkt->nat.raddr4);
     }
 
     return 0;
@@ -70,17 +70,17 @@ xpkt_do_snat(skb_t *skb, xpkt_t *pkt)
             return -1;
         }
 
-        if (pkt->nat.nrip4 == 0) {
+        if (pkt->nat.raddr4 == 0) {
             /* Hairpin nat to host */
-            // xip = pkt->l34m.saddr4;
+            // xaddr = pkt->l34m.saddr4;
             // xpkt_csum_replace_tcp_src_ip(skb, pkt, pkt->l34m.daddr4);
-            // xpkt_csum_replace_tcp_dst_ip(skb, pkt, xip);
+            // xpkt_csum_replace_tcp_dst_ip(skb, pkt, xaddr);
         } else {
-            xpkt_csum_replace_tcp_src_ip(skb, pkt, pkt->nat.nxip4);
-            // xpkt_csum_replace_tcp_dst_ip(skb, pkt, pkt->nm.nrip4);
+            xpkt_csum_replace_tcp_src_ip(skb, pkt, pkt->nat.xaddr4);
+            // xpkt_csum_replace_tcp_dst_ip(skb, pkt, pkt->nm.raddr4);
         }
-        xpkt_csum_replace_tcp_src_port(skb, pkt, pkt->nat.nxport);
-        // xpkt_csum_replace_tcp_dst_port(skb, pkt, pkt->nm.nrport);
+        xpkt_csum_replace_tcp_src_port(skb, pkt, pkt->nat.xport);
+        // xpkt_csum_replace_tcp_dst_port(skb, pkt, pkt->nm.rport);
     } else if (pkt->l34.proto == IPPROTO_UDP) {
         struct udphdr *udp = XPKT_PTR_ADD(XPKT_DATA(skb), pkt->ctx.l4_off);
 
@@ -89,20 +89,20 @@ xpkt_do_snat(skb_t *skb, xpkt_t *pkt)
             return -1;
         }
 
-        if (pkt->nat.nrip4 == 0) {
+        if (pkt->nat.raddr4 == 0) {
             // /* Hairpin nat to host */
-            // xip = pkt->l34m.saddr4;
+            // xaddr = pkt->l34m.saddr4;
             // xpkt_csum_replace_udp_src_ip(skb, pkt, pkt->l34m.daddr4);
-            // xpkt_csum_replace_udp_dst_ip(skb, pkt, xip);
+            // xpkt_csum_replace_udp_dst_ip(skb, pkt, xaddr);
         } else {
-            xpkt_csum_replace_udp_src_ip(skb, pkt, pkt->nat.nxip4);
-            // xpkt_csum_replace_udp_dst_ip(skb, pkt, pkt->nm.nrip4);
+            xpkt_csum_replace_udp_src_ip(skb, pkt, pkt->nat.xaddr4);
+            // xpkt_csum_replace_udp_dst_ip(skb, pkt, pkt->nm.raddr4);
         }
-        xpkt_csum_replace_udp_src_port(skb, pkt, pkt->nat.nxport);
-        // xpkt_csum_replace_udp_dst_port(skb, pkt, pkt->nm.nrport);
+        xpkt_csum_replace_udp_src_port(skb, pkt, pkt->nat.xport);
+        // xpkt_csum_replace_udp_dst_port(skb, pkt, pkt->nm.rport);
     } else if (pkt->l34.proto == IPPROTO_ICMP) {
-        xpkt_csum_replace_icmp_src_ip(skb, pkt, pkt->nat.nxip4);
-        // xpkt_csum_replace_icmp_dst_ip(skb, pkt, pkt->nm.nrip4);
+        xpkt_csum_replace_icmp_src_ip(skb, pkt, pkt->nat.xaddr4);
+        // xpkt_csum_replace_icmp_dst_ip(skb, pkt, pkt->nm.raddr4);
     }
 
     return 0;
