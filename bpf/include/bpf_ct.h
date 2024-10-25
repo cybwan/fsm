@@ -22,8 +22,8 @@
     } while (0)
 
 INTERNAL(int)
-dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_endpoint_t *cep,
-                     ct_key_t *rkey, nat_endpoint_t *rep)
+dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_ep_t *cep, ct_key_t *rkey,
+                     nat_ep_t *rep)
 {
     XADDR_COPY(rkey->daddr, ckey->saddr);
     XADDR_COPY(rkey->saddr, ckey->daddr);
@@ -159,7 +159,7 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     ct_key_t ckey, rkey;
     ct_op_t *ucop, *urop;
     ct_op_t *acop, *arop;
-    nat_endpoint_t *cep, *rep;
+    nat_ep_t *cep, *rep;
     int cidx = 0, ridx = 1;
     int smr = CT_SMR_ERR;
 

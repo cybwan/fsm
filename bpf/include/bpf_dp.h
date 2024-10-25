@@ -138,7 +138,7 @@ typedef struct {
     __u32 nat_xip[4];
     __u32 nat_rip[4];
     __u8 inactive;
-} __attribute__((packed)) nat_endpoint_t;
+} __attribute__((packed)) nat_ep_t;
 
 typedef struct {
     __u32 daddr;
@@ -181,7 +181,7 @@ typedef struct {
     __u8 lb_algo;
     __u8 ep_sel;
     __u8 ep_cnt;
-    nat_endpoint_t endpoints[F4_MAX_ENDPOINTS];
+    nat_ep_t eps[F4_MAX_ENDPOINTS];
 } nat_ops_t;
 
 typedef struct {
@@ -198,7 +198,7 @@ typedef struct {
     ct_sm_t sm;
     ct_smr_t smr;
     __u16 ep_sel;
-    nat_endpoint_t ep;
+    nat_ep_t ep;
 } ct_attr_t;
 
 typedef struct {

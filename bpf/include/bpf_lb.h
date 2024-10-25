@@ -23,13 +23,13 @@ xpkt_nat_endpoint(skb_t *skb, xpkt_t *pkt, nat_ops_t *ops)
     int sel = -1;
     __u8 ep_idx = 0;
     __u8 ep_sel = 0;
-    nat_endpoint_t *ep;
+    nat_ep_t *ep;
 
     if (ops->lb_algo == NAT_LB_ALGO_HASH) {
         bpf_set_hash_invalid(skb);
         sel = bpf_get_hash_recalc(skb) % ops->ep_cnt;
         if (sel >= 0 && sel < F4_MAX_ENDPOINTS) {
-            if (ops->endpoints[sel].inactive) {
+            if (ops->eps[sel].inactive) {
                 goto lb_rr;
             }
         }
@@ -41,7 +41,7 @@ xpkt_nat_endpoint(skb_t *skb, xpkt_t *pkt, nat_ops_t *ops)
         ep_sel = ops->ep_sel;
         while (ep_idx < F4_MAX_ENDPOINTS) {
             if (ep_sel < F4_MAX_ENDPOINTS) {
-                ep = &ops->endpoints[ep_sel];
+                ep = &ops->eps[ep_sel];
                 if (ep->inactive == 0) {
                     ops->ep_sel = (ep_sel + 1) % ops->ep_cnt;
                     sel = ep_sel;
@@ -61,7 +61,7 @@ xpkt_nat_endpoint(skb_t *skb, xpkt_t *pkt, nat_ops_t *ops)
 INTERNAL(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
 {
     nat_key_t key;
-    nat_endpoint_t *ep;
+    nat_ep_t *ep;
     nat_ops_t *ops;
     int ep_sel;
 
@@ -96,7 +96,7 @@ INTERNAL(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
          * Need multi-passes for selection
          */
         if (ep_sel >= 0 && ep_sel < F4_MAX_ENDPOINTS) {
-            ep = &ops->endpoints[ep_sel];
+            ep = &ops->eps[ep_sel];
 
             XADDR_COPY(pkt->nat.nxip, ep->nat_xip);
             XADDR_COPY(pkt->nat.nrip, ep->nat_rip);
