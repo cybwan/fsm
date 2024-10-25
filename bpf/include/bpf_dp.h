@@ -156,7 +156,6 @@ typedef struct {
 
 typedef struct {
     __u64 its;
-    nf_t nf;
     fib4_op_t ops[F4_FCV4_MAP_ACTS];
 } fib4_ops_t;
 
