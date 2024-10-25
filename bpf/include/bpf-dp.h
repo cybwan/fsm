@@ -156,7 +156,7 @@ struct dp_nat_act {
 struct xpkt_fib4_op {
     __u8 act_type; /* Possible actions : See below */
     union {
-        struct dp_rdr_act port_act;
+        struct dp_rdr_act rdr_act;
         struct dp_nat_act nat_act; /* NF_DO_SNAT, NF_DO_DNAT */
     } act;
 };
@@ -253,23 +253,6 @@ struct dp_snat_opt_tact {
     __u32 xaddr;
     __u16 xport;
 };
-
-struct dp_t4 {
-    __be32 saddr;
-    __be32 daddr;
-    __be16 sport;
-    __be16 dport;
-} __attribute__((aligned(4)));
-
-struct dp_t2_addr {
-    __be32 saddr;
-    __be32 daddr;
-} __attribute__((aligned(4)));
-
-struct dp_t2_port {
-    __be16 sport;
-    __be16 dport;
-} __attribute__((aligned(4)));
 
 #ifndef memcpy
 #define memcpy(dest, src, n) __builtin_memcpy((dest), (src), (n))

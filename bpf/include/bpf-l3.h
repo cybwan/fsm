@@ -10,7 +10,7 @@ INTERNAL(int)
 dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
 {
     if (!act) {
-        goto ct_trk;
+        goto conn_track;
     }
 
     pkt->ctx.phit |= F4_DP_CTM_HIT;
@@ -18,7 +18,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
     act->lts = bpf_ktime_get_ns();
 
     if (act->act_type == NF_DO_CTTK) {
-        goto ct_trk;
+        goto conn_track;
     } else if (act->act_type == NF_DO_NOOP) {
         struct dp_rdr_act *ar = &act->act.rdr_act;
         if (pkt->ctx.l4fin) {
@@ -26,7 +26,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
         }
 
         if (ar->fin == 1) {
-            goto ct_trk;
+            goto conn_track;
         }
     } else if (act->act_type == NF_DO_RDRT) {
         struct dp_rdr_act *ar = &act->act.rdr_act;
@@ -35,7 +35,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
         }
 
         if (ar->fin == 1) {
-            goto ct_trk;
+            goto conn_track;
         }
 
         F4_PPLN_RDR_PRIO(pkt);
@@ -56,7 +56,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
         xpkt_nat_load(skb, pkt, na, act->act_type == NF_DO_SNAT ? 1 : 0);
 
         if (na->fin == 1 || na->doct || pkt->ctx.goct) {
-            goto ct_trk;
+            goto conn_track;
         }
 
         F4_PPLN_RDR(pkt);
@@ -71,7 +71,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
 
     return 0;
 
-ct_trk:
+conn_track:
     return xpkt_tail_call(skb, pkt, fa, FSM_CNI_CONNTRACK_PROG_ID);
 }
 
