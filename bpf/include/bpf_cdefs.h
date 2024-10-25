@@ -3,8 +3,8 @@
 
 #include <linux/pkt_cls.h>
 #include <stdio.h>
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
 
 #define XPKT_IFI(md) (((struct __sk_buff *)md)->ifindex)
 #define XPKT_IGR_IFI(md) (((struct __sk_buff *)md)->ingress_ifindex)
@@ -284,7 +284,7 @@ xpkt_do_out(skb_t *skb, xpkt_t *pkt)
 }
 
 INTERNAL(int)
-xpkt_tail_call(skb_t *skb, xpkt_t *pkt, void *fa, __u32 idx)
+xpkt_tail_call(skb_t *skb, xpkt_t *pkt, fib4_ops_t *fa, __u32 idx)
 {
     int z = 0;
 

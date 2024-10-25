@@ -1,7 +1,7 @@
 #ifndef __F4_BPF_NAT_H__
 #define __F4_BPF_NAT_H__
 
-#include "bpf-macros.h"
+#include "bpf_macros.h"
 
 INTERNAL(int)
 xpkt_do_dnat(skb_t *skb, xpkt_t *pkt)

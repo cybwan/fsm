@@ -40,14 +40,14 @@ struct {
 struct bpf_map_def SEC("maps") fsm_fib4_key = {
     .type = BPF_MAP_TYPE_PERCPU_ARRAY,
     .key_size = sizeof(__u32),
-    .value_size = sizeof(struct xpkt_fib4_key),
+    .value_size = sizeof(fib4_key_t),
     .max_entries = 1,
 };
 #else /* New BTF definitions */
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
     __type(key, __u32);
-    __type(value, struct xpkt_fib4_key);
+    __type(value, fib4_key_t);
     __uint(max_entries, 1);
 } fsm_fib4_key SEC(".maps");
 #endif
@@ -56,14 +56,14 @@ struct {
 struct bpf_map_def SEC("maps") fsm_fib4_ops = {
     .type = BPF_MAP_TYPE_PERCPU_ARRAY,
     .key_size = sizeof(__u32),
-    .value_size = sizeof(struct xpkt_fib4_ops),
+    .value_size = sizeof(fib4_ops_t),
     .max_entries = 1,
 };
 #else /* New BTF definitions */
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
     __type(key, __u32);
-    __type(value, struct xpkt_fib4_ops);
+    __type(value, fib4_ops_t);
     __uint(max_entries, 1);
 } fsm_fib4_ops SEC(".maps");
 #endif

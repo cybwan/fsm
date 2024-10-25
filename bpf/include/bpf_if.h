@@ -1,16 +1,16 @@
 #ifndef __F4_BPF_DEVIF_H__
 #define __F4_BPF_DEVIF_H__
 
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
-#include "bpf-pkt.h"
-#include "bpf-l3.h"
-#include "bpf-lb.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
+#include "bpf_pkt.h"
+#include "bpf_l3.h"
+#include "bpf_lb.h"
 
 INTERNAL(int)
-xpkt_fib4_insert(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *ops)
+xpkt_fib4_insert(skb_t *skb, xpkt_t *pkt, fib4_ops_t *ops)
 {
-    struct xpkt_fib4_key *key;
+    fib4_key_t *key;
     int z = 0;
 
     key = bpf_map_lookup_elem(&fsm_fib4_key, &z);
@@ -64,7 +64,7 @@ INTERNAL(int)
 xpkt_conntrack_proc(skb_t *skb, xpkt_t *pkt)
 {
     int val = 0;
-    struct xpkt_fib4_ops *fa = NULL;
+    fib4_ops_t *fa = NULL;
 
     fa = bpf_map_lookup_elem(&fsm_fib4_ops, &val);
     if (!fa)
@@ -86,7 +86,7 @@ res_end:
 INTERNAL(int)
 xpkt_handshake_proc(skb_t *skb, xpkt_t *pkt)
 {
-    struct xpkt_fib4_ops *fa = NULL;
+    fib4_ops_t *fa = NULL;
     int z = 0;
 
     fa = bpf_map_lookup_elem(&fsm_fib4_ops, &z);
@@ -97,21 +97,8 @@ xpkt_handshake_proc(skb_t *skb, xpkt_t *pkt)
     fa->its = bpf_ktime_get_ns();
 #pragma clang loop unroll(full)
     for (z = 0; z < F4_FCV4_MAP_ACTS; z++) {
-        fa->ops[z].act_type = 0;
+        fa->ops[z].nf = 0;
     }
-
-    // F4_DBG_PRINTK("[INGR] START--\n");
-
-    // /* If there are any packets marked for mirroring, we do
-    //  * it here and immediately get it out of way without
-    //  * doing any further processing
-    //  */
-    // if (pkt->ctx.mirr != 0) {
-    //   dp_do_mirr_lkup(skb, pkt);
-    //   goto out;
-    // }
-
-    // dp_ing(skb, pkt);
 
     /* If there are pipeline errors at this stage,
      * we again skip any further processing
@@ -120,7 +107,7 @@ xpkt_handshake_proc(skb_t *skb, xpkt_t *pkt)
         goto out;
     }
 
-    dp_ing_l3(skb, pkt, fa);
+    dp_do_ing_ct(skb, pkt, fa);
 
     /* fast-cache is used only when certain conditions are met */
     if (F4_PIPE_FC_CAP(pkt)) {

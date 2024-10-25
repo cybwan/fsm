@@ -13,23 +13,7 @@ import (
 	"github.com/cilium/ebpf"
 )
 
-type FsmDpCtCtrtact struct {
-	Ca struct {
-		ActType uint8
-		Ftrap   uint8
-		Oaux    uint16
-		Cidx    uint32
-		Fwrid   uint32
-		Mark    uint16
-		Record  uint16
-	}
-	Lock    struct{ Val uint32 }
-	Start   uint32
-	Counter uint32
-	Entries uint32
-}
-
-type FsmDpCtKey struct {
+type FsmCtKeyT struct {
 	Daddr [4]uint32
 	Saddr [4]uint32
 	Sport uint16
@@ -38,27 +22,17 @@ type FsmDpCtKey struct {
 	V6    uint8
 }
 
-type FsmDpCtTact struct {
-	Ca struct {
-		ActType uint8
-		Ftrap   uint8
-		Oaux    uint16
-		Cidx    uint32
-		Fwrid   uint32
-		Mark    uint16
-		Record  uint16
-	}
-	Lock struct{ Val uint32 }
-	_    [4]byte
-	Ctd  struct {
-		Rid uint16
-		Aid uint16
-		Nid uint32
-		Pi  struct {
+type FsmCtOpT struct {
+	ActType uint8
+	_       [3]byte
+	Lock    struct{ Val uint32 }
+	Attr    struct {
+		Dir uint32
+		Sm  struct {
 			T struct {
-				State  uint32
-				Fndir  uint32
-				TcpCts [2]struct {
+				State uint32
+				Fndir uint32
+				Dirs  [2]struct {
 					Hstate   uint16
 					InitAcks uint16
 					Seq      uint32
@@ -66,14 +40,10 @@ type FsmDpCtTact struct {
 					Pseq     uint32
 				}
 			}
-			Frag  uint16
-			Npmhh uint16
-			Pmhh  [4]uint32
-			L3i   struct{ State uint32 }
 		}
-		Dir uint32
-		Smr uint32
-		Xi  struct {
+		Smr   uint32
+		EpSel uint16
+		Ep    struct {
 			NatFlags uint8
 			Nv6      uint8
 			NatXifi  uint16
@@ -85,19 +55,18 @@ type FsmDpCtTact struct {
 			NatRmac  [6]uint8
 			Inactive uint8
 		}
-		_  [3]byte
-		Pb struct {
-			Bytes   uint64
-			Packets uint64
+		_ [1]byte
+	}
+	Ito uint64
+	Lts uint64
+	Nf  struct {
+		Rdr struct {
+			Oport uint16
+			Fin   uint16
 		}
+		_ [56]byte
 	}
-	Ito     uint64
-	Lts     uint64
-	PortAct struct {
-		Oport uint16
-		Fr    uint16
-	}
-	_ [60]byte
+	_ [4]byte
 }
 
 type FsmDpDnatOptKey struct {
@@ -132,9 +101,31 @@ type FsmDpSnatOptTact struct {
 	_     [2]byte
 }
 
-type FsmFib4KeyT FsmXpktFib4Key
+type FsmFib4KeyT struct {
+	Daddr uint32
+	Saddr uint32
+	Sport uint16
+	Dport uint16
+	Ifi   uint16
+	Proto uint8
+}
 
-type FsmFib4OpsT FsmXpktFib4Ops
+type FsmFib4OpsT struct {
+	ActType uint8
+	_       [7]byte
+	Its     uint64
+	Ops     [3]struct {
+		ActType uint8
+		_       [3]byte
+		Nf      struct {
+			Rdr struct {
+				Oport uint16
+				Fin   uint16
+			}
+			_ [56]byte
+		}
+	}
+}
 
 type FsmNatKeyT struct {
 	Daddr [4]uint32
@@ -185,10 +176,10 @@ type FsmXpkt struct {
 		Proto  uint8
 		Valid  uint8
 		Frg    uint8
-		Source uint16
-		Dest   uint16
+		Sport  uint16
+		Dport  uint16
 		Seq    uint32
-		Ack    uint32
+		AckSeq uint32
 		Saddr  [4]uint32
 		Daddr  [4]uint32
 	}
@@ -206,10 +197,10 @@ type FsmXpkt struct {
 		Proto  uint8
 		Valid  uint8
 		Frg    uint8
-		Source uint16
-		Dest   uint16
+		Sport  uint16
+		Dport  uint16
 		Seq    uint32
-		Ack    uint32
+		AckSeq uint32
 		Saddr  [4]uint32
 		Daddr  [4]uint32
 	}
@@ -251,7 +242,6 @@ type FsmXpkt struct {
 		Mirr      uint16
 		TcpFlags  uint8
 		Nf        uint8
-		RuleId    uint16
 		L3Adj     int16
 		Il3Off    uint8
 		Il4Off    uint8
@@ -261,49 +251,10 @@ type FsmXpkt struct {
 		L3Plen    uint16
 		Il3Len    uint16
 		Il3Plen   uint16
-		DpRec     uint16
 		TunOff    uint16
 		FwMid     uint16
 		FwLid     uint16
 		FwRid     uint16
-	}
-}
-
-type FsmXpktFib4Key struct {
-	Daddr uint32
-	Saddr uint32
-	Sport uint16
-	Dport uint16
-	Ifi   uint16
-	Proto uint8
-}
-
-type FsmXpktFib4Ops struct {
-	Ca struct {
-		ActType uint8
-		Ftrap   uint8
-		Oaux    uint16
-		Cidx    uint32
-		Fwrid   uint32
-		Mark    uint16
-		Record  uint16
-	}
-	Its uint64
-	Ops [7]struct {
-		Ca struct {
-			ActType uint8
-			Ftrap   uint8
-			Oaux    uint16
-			Cidx    uint32
-			Fwrid   uint32
-			Mark    uint16
-			Record  uint16
-		}
-		PortAct struct {
-			Oport uint16
-			Fr    uint16
-		}
-		_ [60]byte
 	}
 }
 
@@ -348,12 +299,12 @@ type FsmSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type FsmProgramSpecs struct {
-	SidecarEgress   *ebpf.ProgramSpec `ebpf:"sidecar_egress"`
-	SidecarIngress  *ebpf.ProgramSpec `ebpf:"sidecar_ingress"`
-	TcConnTrackFunc *ebpf.ProgramSpec `ebpf:"tc_conn_track_func"`
-	TcDrop          *ebpf.ProgramSpec `ebpf:"tc_drop"`
-	TcHandShakeFunc *ebpf.ProgramSpec `ebpf:"tc_hand_shake_func"`
-	TcPass          *ebpf.ProgramSpec `ebpf:"tc_pass"`
+	SidecarConnTrack *ebpf.ProgramSpec `ebpf:"sidecar_conn_track"`
+	SidecarDrop      *ebpf.ProgramSpec `ebpf:"sidecar_drop"`
+	SidecarEgress    *ebpf.ProgramSpec `ebpf:"sidecar_egress"`
+	SidecarHandShake *ebpf.ProgramSpec `ebpf:"sidecar_hand_shake"`
+	SidecarIngress   *ebpf.ProgramSpec `ebpf:"sidecar_ingress"`
+	SidecarPass      *ebpf.ProgramSpec `ebpf:"sidecar_pass"`
 }
 
 // FsmMapSpecs contains maps before they are loaded into the kernel.
@@ -361,8 +312,7 @@ type FsmProgramSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type FsmMapSpecs struct {
 	FsmCt      *ebpf.MapSpec `ebpf:"fsm_ct"`
-	FsmCtCtr   *ebpf.MapSpec `ebpf:"fsm_ct_ctr"`
-	FsmCtKey   *ebpf.MapSpec `ebpf:"fsm_ct_key"`
+	FsmCtOps   *ebpf.MapSpec `ebpf:"fsm_ct_ops"`
 	FsmDnatOpt *ebpf.MapSpec `ebpf:"fsm_dnat_opt"`
 	FsmEgrIpv4 *ebpf.MapSpec `ebpf:"fsm_egr_ipv4"`
 	FsmFib4    *ebpf.MapSpec `ebpf:"fsm_fib4"`
@@ -395,8 +345,7 @@ func (o *FsmObjects) Close() error {
 // It can be passed to LoadFsmObjects or ebpf.CollectionSpec.LoadAndAssign.
 type FsmMaps struct {
 	FsmCt      *ebpf.Map `ebpf:"fsm_ct"`
-	FsmCtCtr   *ebpf.Map `ebpf:"fsm_ct_ctr"`
-	FsmCtKey   *ebpf.Map `ebpf:"fsm_ct_key"`
+	FsmCtOps   *ebpf.Map `ebpf:"fsm_ct_ops"`
 	FsmDnatOpt *ebpf.Map `ebpf:"fsm_dnat_opt"`
 	FsmEgrIpv4 *ebpf.Map `ebpf:"fsm_egr_ipv4"`
 	FsmFib4    *ebpf.Map `ebpf:"fsm_fib4"`
@@ -412,8 +361,7 @@ type FsmMaps struct {
 func (m *FsmMaps) Close() error {
 	return _FsmClose(
 		m.FsmCt,
-		m.FsmCtCtr,
-		m.FsmCtKey,
+		m.FsmCtOps,
 		m.FsmDnatOpt,
 		m.FsmEgrIpv4,
 		m.FsmFib4,
@@ -431,22 +379,22 @@ func (m *FsmMaps) Close() error {
 //
 // It can be passed to LoadFsmObjects or ebpf.CollectionSpec.LoadAndAssign.
 type FsmPrograms struct {
-	SidecarEgress   *ebpf.Program `ebpf:"sidecar_egress"`
-	SidecarIngress  *ebpf.Program `ebpf:"sidecar_ingress"`
-	TcConnTrackFunc *ebpf.Program `ebpf:"tc_conn_track_func"`
-	TcDrop          *ebpf.Program `ebpf:"tc_drop"`
-	TcHandShakeFunc *ebpf.Program `ebpf:"tc_hand_shake_func"`
-	TcPass          *ebpf.Program `ebpf:"tc_pass"`
+	SidecarConnTrack *ebpf.Program `ebpf:"sidecar_conn_track"`
+	SidecarDrop      *ebpf.Program `ebpf:"sidecar_drop"`
+	SidecarEgress    *ebpf.Program `ebpf:"sidecar_egress"`
+	SidecarHandShake *ebpf.Program `ebpf:"sidecar_hand_shake"`
+	SidecarIngress   *ebpf.Program `ebpf:"sidecar_ingress"`
+	SidecarPass      *ebpf.Program `ebpf:"sidecar_pass"`
 }
 
 func (p *FsmPrograms) Close() error {
 	return _FsmClose(
+		p.SidecarConnTrack,
+		p.SidecarDrop,
 		p.SidecarEgress,
+		p.SidecarHandShake,
 		p.SidecarIngress,
-		p.TcConnTrackFunc,
-		p.TcDrop,
-		p.TcHandShakeFunc,
-		p.TcPass,
+		p.SidecarPass,
 	)
 }
 

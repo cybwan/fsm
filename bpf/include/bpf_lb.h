@@ -1,11 +1,11 @@
 #ifndef __F4_BPF_LB_H__
 #define __F4_BPF_LB_H__
 
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
 
 INTERNAL(int)
-xpkt_nat_load(skb_t *skb, xpkt_t *pkt, struct dp_nat_act *na, int do_snat)
+xpkt_nat_load(skb_t *skb, xpkt_t *pkt, nf_nat_t *na, int do_snat)
 {
     pkt->ctx.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
     XADDR_COPY(pkt->nat.nxip, na->xip);

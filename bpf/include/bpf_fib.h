@@ -1,11 +1,11 @@
 #ifndef __F4_BPF_FC_H__
 #define __F4_BPF_FC_H__
 
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
 
 INTERNAL(int)
-xpkt_fib4_init_key(xpkt_t *pkt, struct xpkt_fib4_key *key)
+xpkt_fib4_init_key(xpkt_t *pkt, fib4_key_t *key)
 {
     key->daddr = pkt->l34.daddr4;
     key->saddr = pkt->l34.saddr4;
@@ -19,9 +19,9 @@ xpkt_fib4_init_key(xpkt_t *pkt, struct xpkt_fib4_key *key)
 INTERNAL(int)
 xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
 {
-    struct xpkt_fib4_key key;
-    struct xpkt_fib4_ops *acts;
-    struct xpkt_fib4_op *ta;
+    fib4_key_t key;
+    fib4_ops_t *acts;
+    fib4_op_t *ta;
     int ret = 1;
     int z = 0;
 
@@ -47,24 +47,24 @@ xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
 
     pkt->ctx.phit |= F4_DP_FC_HIT;
 
-    if (acts->ops[NF_DO_SNAT].act_type == NF_DO_SNAT) {
+    if (acts->ops[NF_DO_SNAT].nf == NF_DO_SNAT) {
         ta = &acts->ops[NF_DO_SNAT];
 
-        if (ta->act.nat_act.fin == 1 || ta->act.nat_act.doct) {
+        if (ta->nfs.nat.fin == 1 || ta->nfs.nat.doct) {
             pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
             return 0;
         }
 
-        xpkt_nat_load(skb, pkt, &ta->act.nat_act, 1);
-    } else if (acts->ops[NF_DO_DNAT].act_type == NF_DO_DNAT) {
+        xpkt_nat_load(skb, pkt, &ta->nfs.nat, 1);
+    } else if (acts->ops[NF_DO_DNAT].nf == NF_DO_DNAT) {
         ta = &acts->ops[NF_DO_DNAT];
 
-        if (ta->act.nat_act.fin == 1 || ta->act.nat_act.doct) {
+        if (ta->nfs.nat.fin == 1 || ta->nfs.nat.doct) {
             pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
             return 0;
         }
 
-        xpkt_nat_load(skb, pkt, &ta->act.nat_act, 0);
+        xpkt_nat_load(skb, pkt, &ta->nfs.nat, 0);
     }
 
     /* Catch any conditions which need us to go to cp/ct */

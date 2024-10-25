@@ -10,19 +10,19 @@
 #include <linux/icmp.h>
 #include <linux/icmpv6.h>
 
-#include "bpf-macros.h"
-#include "bpf-utils.h"
-#include "bpf-config.h"
-#include "bpf-dp.h"
-#include "bpf-mdi.h"
-#include "bpf-mdefs.h"
-#include "bpf-cdefs.h"
-#include "bpf-if.h"
-#include "bpf-l3.h"
-#include "bpf-fib.h"
-#include "bpf-lb.h"
-#include "bpf-ct.h"
-#include "bpf-pkt.h"
+#include "bpf_macros.h"
+#include "bpf_utils.h"
+#include "bpf_config.h"
+#include "bpf_dp.h"
+#include "bpf_mdi.h"
+#include "bpf_mdefs.h"
+#include "bpf_cdefs.h"
+#include "bpf_if.h"
+#include "bpf_l3.h"
+#include "bpf_fib.h"
+#include "bpf_lb.h"
+#include "bpf_ct.h"
+#include "bpf_pkt.h"
 
 char __LICENSE[] SEC("license") = "GPL";
 
@@ -58,6 +58,8 @@ int sidecar_ingress(skb_t *skb)
                 t->fin);
         FSM_DBG("[DBG] tc_igr seq: %u ack_seq: %u\n", ntohl(t->seq),
                 ntohl(t->ack_seq));
+        FSM_DBG("[DBG] tc_igr ingress_ifindex: %u ifindex: %u\n",
+                skb->ingress_ifindex, skb->ifindex);
     }
 
     return dp_ing_fc_main(skb, pkt);
@@ -96,6 +98,8 @@ int sidecar_egress(skb_t *skb)
                 t->fin);
         FSM_DBG("[DBG] tc_egr seq: %u ack_seq: %u\n", ntohl(t->seq),
                 ntohl(t->ack_seq));
+        FSM_DBG("[DBG] tc_egr ingress_ifindex: %u ifindex: %u\n",
+                skb->ingress_ifindex, skb->ifindex);
     }
     return dp_ing_fc_main(skb, pkt);
     // return TC_ACT_OK;
