@@ -107,11 +107,28 @@ typedef struct {
     };
 } ct_sm_t;
 
-struct dp_rdr_act {
+typedef struct {
     __u16 oport;
     __u16 fin;
-};
+} nf_rdr_t;
 
+typedef struct {
+    __u32 xip[4];
+    __u32 rip[4];
+    __u16 xport;
+    __u16 rport;
+    __u16 xifi;
+    __u8 xmac[6];
+    __u8 rmac[6];
+    __u8 fin;
+    __u8 doct;
+    __u32 aid;
+    __u8 nv6;
+    __u8 nmh;
+} nf_nat_t;
+
+#define xip4 xip[0]
+#define rip4 rip[0]
 #define nat_xip4 nat_xip[0]
 #define nat_rip4 nat_rip[0]
 
@@ -138,27 +155,12 @@ struct xpkt_fib4_key {
 } __attribute__((packed));
 typedef struct xpkt_fib4_key fib4_key_t;
 
-struct dp_nat_act {
-    __u32 xip[4];
-    __u32 rip[4];
-    __u16 xport;
-    __u16 rport;
-    __u16 xifi;
-    __u8 xmac[6];
-    __u8 rmac[6];
-    __u8 fin;
-    __u8 doct;
-    __u32 aid;
-    __u8 nv6;
-    __u8 nmh;
-};
-
 struct xpkt_fib4_op {
     __u8 act_type; /* Possible actions : See below */
     union {
-        struct dp_rdr_act rdr_act;
-        struct dp_nat_act nat_act; /* NF_DO_SNAT, NF_DO_DNAT */
-    } act;
+        nf_rdr_t rdr;
+        nf_nat_t nat; /* NF_DO_SNAT, NF_DO_DNAT */
+    } nf;
 };
 
 struct xpkt_fib4_ops {
@@ -209,20 +211,17 @@ typedef struct {
 typedef struct {
     __u8 act_type; /* Possible actions :
                     *  NF_DO_DROP
-                    *  DP_SET_TOCP
                     *  NF_DO_NOOP
                     *  NF_DO_RDRT
-                    *  DP_SET_RT_NHNUM
-                    *  DP_SET_SESS_FWD_ACT
                     */
     struct bpf_spin_lock lock;
     ct_attr_t attr;
     __u64 ito; /* Inactive timeout */
     __u64 lts; /* Last used timestamp */
     union {
-        struct dp_rdr_act rdr_act;
-        struct dp_nat_act nat_act;
-    } act;
+        nf_rdr_t rdr;
+        nf_nat_t nat;
+    } nf;
 } ct_op_t;
 
 struct dp_dnat_opt_key {

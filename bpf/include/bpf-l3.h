@@ -20,7 +20,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
     if (act->act_type == NF_DO_CTTK) {
         goto conn_track;
     } else if (act->act_type == NF_DO_NOOP) {
-        struct dp_rdr_act *ar = &act->act.rdr_act;
+        nf_rdr_t *ar = &act->nf.rdr;
         if (pkt->ctx.l4fin) {
             ar->fin = 1;
         }
@@ -29,7 +29,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
             goto conn_track;
         }
     } else if (act->act_type == NF_DO_RDRT) {
-        struct dp_rdr_act *ar = &act->act.rdr_act;
+        nf_rdr_t *ar = &act->nf.rdr;
         if (pkt->ctx.l4fin) {
             ar->fin = 1;
         }
@@ -41,13 +41,13 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
         F4_PPLN_RDR_PRIO(pkt);
         pkt->ctx.oport = ar->oport;
     } else if (act->act_type == NF_DO_SNAT || act->act_type == NF_DO_DNAT) {
-        struct dp_nat_act *na;
+        nf_nat_t *na;
         struct xpkt_fib4_op *ta =
             &fa->ops[act->act_type == NF_DO_SNAT ? NF_DO_SNAT : NF_DO_DNAT];
         ta->act_type = act->act_type;
-        memcpy(&ta->act.nat_act, &act->act.nat_act, sizeof(act->act.nat_act));
+        memcpy(&ta->nf.nat, &act->nf.nat, sizeof(act->nf.nat));
 
-        na = &act->act.nat_act;
+        na = &act->nf.nat;
 
         if (pkt->ctx.l4fin) {
             na->fin = 1;

@@ -115,7 +115,7 @@ dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_endpoint_t *cep,
     memcpy(&dst->attr, &src->attr, sizeof(ct_attr_t));                         \
     dst->ito = src->ito;                                                       \
     dst->lts = src->lts;                                                       \
-    memcpy(&dst->act.nat_act, &src->act.nat_act, sizeof(struct dp_nat_act));
+    memcpy(&dst->nf.nat, &src->nf.nat, sizeof(nf_nat_t));
 
 INTERNAL(int)
 dp_ct_est(xpkt_t *pkt, ct_key_t *ckey, ct_key_t *rkey, ct_op_t *caop,
@@ -233,16 +233,16 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             cuop->act_type = cep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
                                  ? NF_DO_DNAT
                                  : NF_DO_SNAT;
-            XADDR_COPY(cuop->act.nat_act.xip, cep->nat_xip);
-            XADDR_COPY(cuop->act.nat_act.rip, cep->nat_rip);
+            XADDR_COPY(cuop->nf.nat.xip, cep->nat_xip);
+            XADDR_COPY(cuop->nf.nat.rip, cep->nat_rip);
             // XMAC_COPY(cuop->nat_act.xmac,  cep->nat_xmac);
             // XMAC_COPY(cuop->nat_act.rmac, cep->nat_rmac);
             // cuop->nat_act.xifi = cep->nat_xifi;
-            cuop->act.nat_act.xport = cep->nat_xport;
-            cuop->act.nat_act.rport = cep->nat_rport;
-            cuop->act.nat_act.doct = 0;
-            cuop->act.nat_act.aid = pkt->nat.ep_sel;
-            cuop->act.nat_act.nv6 = pkt->nat.nv6 ? 1 : 0;
+            cuop->nf.nat.xport = cep->nat_xport;
+            cuop->nf.nat.rport = cep->nat_rport;
+            cuop->nf.nat.doct = 0;
+            cuop->nf.nat.aid = pkt->nat.ep_sel;
+            cuop->nf.nat.nv6 = pkt->nat.nv6 ? 1 : 0;
             cuop->ito = pkt->nat.ito;
         } else {
             cuop->ito = 0;
@@ -259,16 +259,16 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
             ruop->act_type = rep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
                                  ? NF_DO_DNAT
                                  : NF_DO_SNAT;
-            XADDR_COPY(ruop->act.nat_act.xip, rep->nat_xip);
-            XADDR_COPY(ruop->act.nat_act.rip, rep->nat_rip);
+            XADDR_COPY(ruop->nf.nat.xip, rep->nat_xip);
+            XADDR_COPY(ruop->nf.nat.rip, rep->nat_rip);
             // XMAC_COPY(ruop->nat_act.xmac, rep->nat_xmac);
             // XMAC_COPY(ruop->nat_act.rmac, rep->nat_rmac);
             // ruop->nat_act.xifi = rep->nat_xifi;
-            ruop->act.nat_act.xport = rep->nat_xport;
-            ruop->act.nat_act.rport = rep->nat_rport;
-            ruop->act.nat_act.doct = 0;
-            ruop->act.nat_act.aid = pkt->nat.ep_sel;
-            ruop->act.nat_act.nv6 = ckey.v6 ? 1 : 0;
+            ruop->nf.nat.xport = rep->nat_xport;
+            ruop->nf.nat.rport = rep->nat_rport;
+            ruop->nf.nat.doct = 0;
+            ruop->nf.nat.aid = pkt->nat.ep_sel;
+            ruop->nf.nat.nv6 = ckey.v6 ? 1 : 0;
             ruop->ito = pkt->nat.ito;
         } else {
             ruop->ito = 0;
@@ -303,8 +303,8 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
 
         if (smr == CT_SMR_EST) {
             if (cep->nat_flags) {
-                caop->act.nat_act.doct = 0;
-                raop->act.nat_act.doct = 0;
+                caop->nf.nat.doct = 0;
+                raop->nf.nat.doct = 0;
                 if (caop->attr.dir == CT_DIR_IN) {
                     dp_ct_est(pkt, &ckey, &rkey, caop, raop);
                 } else {

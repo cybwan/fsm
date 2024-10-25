@@ -50,21 +50,21 @@ xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
     if (acts->ops[NF_DO_SNAT].act_type == NF_DO_SNAT) {
         ta = &acts->ops[NF_DO_SNAT];
 
-        if (ta->act.nat_act.fin == 1 || ta->act.nat_act.doct) {
+        if (ta->nf.nat.fin == 1 || ta->nf.nat.doct) {
             pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
             return 0;
         }
 
-        xpkt_nat_load(skb, pkt, &ta->act.nat_act, 1);
+        xpkt_nat_load(skb, pkt, &ta->nf.nat, 1);
     } else if (acts->ops[NF_DO_DNAT].act_type == NF_DO_DNAT) {
         ta = &acts->ops[NF_DO_DNAT];
 
-        if (ta->act.nat_act.fin == 1 || ta->act.nat_act.doct) {
+        if (ta->nf.nat.fin == 1 || ta->nf.nat.doct) {
             pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
             return 0;
         }
 
-        xpkt_nat_load(skb, pkt, &ta->act.nat_act, 0);
+        xpkt_nat_load(skb, pkt, &ta->nf.nat, 0);
     }
 
     /* Catch any conditions which need us to go to cp/ct */
