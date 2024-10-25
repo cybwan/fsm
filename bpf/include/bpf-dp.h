@@ -10,6 +10,8 @@ enum {
     NF_DO_NOOP = 5
 };
 
+typedef __u8 nf_t;
+
 /* Connection tracking related defines */
 typedef enum { CT_DIR_IN = 0, CT_DIR_OUT, CT_DIR_MAX } ct_dir_t;
 
@@ -150,16 +152,16 @@ typedef struct {
 } __attribute__((packed)) fib4_key_t;
 
 typedef struct {
-    __u8 act_type; /* Possible actions : See below */
+    nf_t nf; /* Possible actions : See below */
     union {
         nf_rdr_t rdr;
         nf_nat_t nat; /* NF_DO_SNAT, NF_DO_DNAT */
-    } nf;
+    } nfs;
 } fib4_op_t;
 
 typedef struct {
-    __u8 act_type;
     __u64 its;
+    nf_t nf;
     fib4_op_t ops[F4_FCV4_MAP_ACTS];
 } fib4_ops_t;
 
@@ -202,11 +204,11 @@ typedef struct {
 } ct_attr_t;
 
 typedef struct {
-    __u8 act_type; /* Possible actions :
-                    *  NF_DO_DROP
-                    *  NF_DO_NOOP
-                    *  NF_DO_RDRT
-                    */
+    nf_t nf; /* Possible actions :
+              *  NF_DO_DROP
+              *  NF_DO_NOOP
+              *  NF_DO_RDRT
+              */
     struct bpf_spin_lock lock;
     ct_attr_t attr;
     __u64 ito; /* Inactive timeout */
@@ -214,7 +216,7 @@ typedef struct {
     union {
         nf_rdr_t rdr;
         nf_nat_t nat;
-    } nf;
+    } nfs;
 } ct_op_t;
 
 struct dp_dnat_opt_key {

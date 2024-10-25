@@ -47,24 +47,24 @@ xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
 
     pkt->ctx.phit |= F4_DP_FC_HIT;
 
-    if (acts->ops[NF_DO_SNAT].act_type == NF_DO_SNAT) {
+    if (acts->ops[NF_DO_SNAT].nf == NF_DO_SNAT) {
         ta = &acts->ops[NF_DO_SNAT];
 
-        if (ta->nf.nat.fin == 1 || ta->nf.nat.doct) {
+        if (ta->nfs.nat.fin == 1 || ta->nfs.nat.doct) {
             pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
             return 0;
         }
 
-        xpkt_nat_load(skb, pkt, &ta->nf.nat, 1);
-    } else if (acts->ops[NF_DO_DNAT].act_type == NF_DO_DNAT) {
+        xpkt_nat_load(skb, pkt, &ta->nfs.nat, 1);
+    } else if (acts->ops[NF_DO_DNAT].nf == NF_DO_DNAT) {
         ta = &acts->ops[NF_DO_DNAT];
 
-        if (ta->nf.nat.fin == 1 || ta->nf.nat.doct) {
+        if (ta->nfs.nat.fin == 1 || ta->nfs.nat.doct) {
             pkt->ctx.rcode |= F4_PIPE_RC_FCBP;
             return 0;
         }
 
-        xpkt_nat_load(skb, pkt, &ta->nf.nat, 0);
+        xpkt_nat_load(skb, pkt, &ta->nfs.nat, 0);
     }
 
     /* Catch any conditions which need us to go to cp/ct */

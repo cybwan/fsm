@@ -17,10 +17,10 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, fib4_ops_t *fa, ct_op_t *act)
 
     act->lts = bpf_ktime_get_ns();
 
-    if (act->act_type == NF_DO_CTTK) {
+    if (act->nf == NF_DO_CTTK) {
         goto conn_track;
-    } else if (act->act_type == NF_DO_NOOP) {
-        nf_rdr_t *ar = &act->nf.rdr;
+    } else if (act->nf == NF_DO_NOOP) {
+        nf_rdr_t *ar = &act->nfs.rdr;
         if (pkt->ctx.l4fin) {
             ar->fin = 1;
         }
@@ -28,8 +28,8 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, fib4_ops_t *fa, ct_op_t *act)
         if (ar->fin == 1) {
             goto conn_track;
         }
-    } else if (act->act_type == NF_DO_RDRT) {
-        nf_rdr_t *ar = &act->nf.rdr;
+    } else if (act->nf == NF_DO_RDRT) {
+        nf_rdr_t *ar = &act->nfs.rdr;
         if (pkt->ctx.l4fin) {
             ar->fin = 1;
         }
@@ -40,20 +40,20 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, fib4_ops_t *fa, ct_op_t *act)
 
         F4_PPLN_RDR_PRIO(pkt);
         pkt->ctx.oport = ar->oport;
-    } else if (act->act_type == NF_DO_SNAT || act->act_type == NF_DO_DNAT) {
+    } else if (act->nf == NF_DO_SNAT || act->nf == NF_DO_DNAT) {
         nf_nat_t *na;
         fib4_op_t *ta =
-            &fa->ops[act->act_type == NF_DO_SNAT ? NF_DO_SNAT : NF_DO_DNAT];
-        ta->act_type = act->act_type;
-        memcpy(&ta->nf.nat, &act->nf.nat, sizeof(act->nf.nat));
+            &fa->ops[act->nf == NF_DO_SNAT ? NF_DO_SNAT : NF_DO_DNAT];
+        ta->nf = act->nf;
+        memcpy(&ta->nfs.nat, &act->nfs.nat, sizeof(act->nfs.nat));
 
-        na = &act->nf.nat;
+        na = &act->nfs.nat;
 
         if (pkt->ctx.l4fin) {
             na->fin = 1;
         }
 
-        xpkt_nat_load(skb, pkt, na, act->act_type == NF_DO_SNAT ? 1 : 0);
+        xpkt_nat_load(skb, pkt, na, act->nf == NF_DO_SNAT ? 1 : 0);
 
         if (na->fin == 1 || na->doct || pkt->ctx.goct) {
             goto conn_track;
