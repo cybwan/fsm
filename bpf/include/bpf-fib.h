@@ -5,7 +5,7 @@
 #include "bpf-dbg.h"
 
 INTERNAL(int)
-xpkt_fib4_init_key(xpkt_t *pkt, struct xpkt_fib4_key *key)
+xpkt_fib4_init_key(xpkt_t *pkt, fib4_key_t *key)
 {
     key->daddr = pkt->l34.daddr4;
     key->saddr = pkt->l34.saddr4;
@@ -19,9 +19,9 @@ xpkt_fib4_init_key(xpkt_t *pkt, struct xpkt_fib4_key *key)
 INTERNAL(int)
 xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
 {
-    struct xpkt_fib4_key key;
-    struct xpkt_fib4_ops *acts;
-    struct xpkt_fib4_op *ta;
+    fib4_key_t key;
+    fib4_ops_t *acts;
+    fib4_op_t *ta;
     int ret = 1;
     int z = 0;
 

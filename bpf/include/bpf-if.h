@@ -8,9 +8,9 @@
 #include "bpf-lb.h"
 
 INTERNAL(int)
-xpkt_fib4_insert(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *ops)
+xpkt_fib4_insert(skb_t *skb, xpkt_t *pkt, fib4_ops_t *ops)
 {
-    struct xpkt_fib4_key *key;
+    fib4_key_t *key;
     int z = 0;
 
     key = bpf_map_lookup_elem(&fsm_fib4_key, &z);
@@ -64,7 +64,7 @@ INTERNAL(int)
 xpkt_conntrack_proc(skb_t *skb, xpkt_t *pkt)
 {
     int val = 0;
-    struct xpkt_fib4_ops *fa = NULL;
+    fib4_ops_t *fa = NULL;
 
     fa = bpf_map_lookup_elem(&fsm_fib4_ops, &val);
     if (!fa)
@@ -86,7 +86,7 @@ res_end:
 INTERNAL(int)
 xpkt_handshake_proc(skb_t *skb, xpkt_t *pkt)
 {
-    struct xpkt_fib4_ops *fa = NULL;
+    fib4_ops_t *fa = NULL;
     int z = 0;
 
     fa = bpf_map_lookup_elem(&fsm_fib4_ops, &z);

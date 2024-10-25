@@ -7,7 +7,7 @@
 #include "bpf-lb.h"
 
 INTERNAL(int)
-dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
+dp_do_ctops(skb_t *skb, xpkt_t *pkt, fib4_ops_t *fa, ct_op_t *act)
 {
     if (!act) {
         goto conn_track;
@@ -42,7 +42,7 @@ dp_do_ctops(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa, ct_op_t *act)
         pkt->ctx.oport = ar->oport;
     } else if (act->act_type == NF_DO_SNAT || act->act_type == NF_DO_DNAT) {
         nf_nat_t *na;
-        struct xpkt_fib4_op *ta =
+        fib4_op_t *ta =
             &fa->ops[act->act_type == NF_DO_SNAT ? NF_DO_SNAT : NF_DO_DNAT];
         ta->act_type = act->act_type;
         memcpy(&ta->nf.nat, &act->nf.nat, sizeof(act->nf.nat));
@@ -76,7 +76,7 @@ conn_track:
 }
 
 INTERNAL(int)
-dp_do_ing_ct(skb_t *skb, xpkt_t *pkt, struct xpkt_fib4_ops *fa)
+dp_do_ing_ct(skb_t *skb, xpkt_t *pkt, fib4_ops_t *fa)
 {
 
     ct_key_t key;
