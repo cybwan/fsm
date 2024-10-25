@@ -167,6 +167,11 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         FSM_DBG("[DBG] dp_ct_in\n");
     }
 
+    if (pkt->l34.proto != IPPROTO_TCP && pkt->l34.proto != IPPROTO_UDP &&
+        pkt->l34.proto != IPPROTO_ICMP && pkt->l34.proto != IPPROTO_ICMPV6) {
+        return CT_SMR_INPROG;
+    }
+
     ucop = bpf_map_lookup_elem(&fsm_ct_ops, &cidx);
     urop = bpf_map_lookup_elem(&fsm_ct_ops, &ridx);
     if (ucop == NULL || urop == NULL) {
@@ -183,11 +188,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     ckey.dport = pkt->l34.dport;
     ckey.proto = pkt->l34.proto;
     ckey.v6 = pkt->l2.dl_type == ntohs(ETH_P_IPV6) ? 1 : 0;
-
-    if (ckey.proto != IPPROTO_TCP && ckey.proto != IPPROTO_UDP &&
-        ckey.proto != IPPROTO_ICMP && ckey.proto != IPPROTO_ICMPV6) {
-        return CT_SMR_INPROG;
-    }
 
     ucep->nat_flags = pkt->ctx.nf;
     XADDR_COPY(ucep->nat_xip, pkt->nat.nxip);
