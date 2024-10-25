@@ -125,13 +125,13 @@ typedef struct {
     __u8 fin;
     __u8 doct;
     __u32 aid;
-    __u8 nv6;
+    __u8 v6;
     __u8 nmh;
 } nf_nat_t;
 
 typedef struct {
     __u8 nat_flags;
-    __u8 nv6;
+    __u8 v6;
     __u16 nat_xifi;
     __u16 nat_xport;
     __u16 nat_rport;

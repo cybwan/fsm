@@ -13,7 +13,7 @@ xpkt_nat_load(skb_t *skb, xpkt_t *pkt, nf_nat_t *na, int do_snat)
     pkt->nat.nxifi = na->xifi;
     pkt->nat.nxport = na->xport;
     pkt->nat.nrport = na->rport;
-    pkt->nat.nv6 = na->nv6 ? 1 : 0;
+    pkt->nat.v6 = na->v6 ? 1 : 0;
     return 0;
 }
 
@@ -108,7 +108,7 @@ INTERNAL(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
                 pkt->nat.nxport = pkt->l34.sport;
             }
 
-            pkt->nat.nv6 = ep->nv6 ? 1 : 0;
+            pkt->nat.v6 = ep->v6 ? 1 : 0;
             pkt->nat.ep_sel = ep_sel;
             pkt->nat.ito = ops->ito;
 

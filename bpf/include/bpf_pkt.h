@@ -367,7 +367,7 @@ INTERNAL(int)
 xpkt_encode_packet_always(skb_t *skb, xpkt_t *pkt)
 {
     if (pkt->ctx.nf & F4_NAT_SRC) {
-        if (pkt->l2.dl_type == ntohs(ETH_P_IPV6) || pkt->nat.nv6) {
+        if (pkt->l2.dl_type == ntohs(ETH_P_IPV6) || pkt->nat.v6) {
             // dp_sunp_tcall(skb, xf);
         } else {
             if (xpkt_do_snat(skb, pkt) != 0) {
