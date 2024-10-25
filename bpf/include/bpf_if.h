@@ -1,11 +1,11 @@
 #ifndef __F4_BPF_DEVIF_H__
 #define __F4_BPF_DEVIF_H__
 
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
-#include "bpf-pkt.h"
-#include "bpf-l3.h"
-#include "bpf-lb.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
+#include "bpf_pkt.h"
+#include "bpf_l3.h"
+#include "bpf_lb.h"
 
 INTERNAL(int)
 xpkt_fib4_insert(skb_t *skb, xpkt_t *pkt, fib4_ops_t *ops)

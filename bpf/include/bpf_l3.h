@@ -1,10 +1,10 @@
 #ifndef __F4_BPF_L3_H__
 #define __F4_BPF_L3_H__
 
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
-#include "bpf-ct.h"
-#include "bpf-lb.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
+#include "bpf_ct.h"
+#include "bpf_lb.h"
 
 INTERNAL(int)
 dp_do_ctops(skb_t *skb, xpkt_t *pkt, fib4_ops_t *fa, ct_op_t *act)

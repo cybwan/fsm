@@ -3,8 +3,8 @@
 
 #include <linux/pkt_cls.h>
 #include <stdio.h>
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
 
 #define XPKT_IFI(md) (((struct __sk_buff *)md)->ifindex)
 #define XPKT_IGR_IFI(md) (((struct __sk_buff *)md)->ingress_ifindex)

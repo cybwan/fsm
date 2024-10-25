@@ -1,10 +1,10 @@
 #ifndef __F4_BPF_SM_H__
 #define __F4_BPF_SM_H__
 
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
-#include "bpf-dp.h"
-#include "bpf-mdi.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
+#include "bpf_dp.h"
+#include "bpf_mdi.h"
 
 INTERNAL(int)
 dp_ct_tcp_sm(skb_t *skb, xpkt_t *pkt, ct_op_t *caop, ct_op_t *raop,

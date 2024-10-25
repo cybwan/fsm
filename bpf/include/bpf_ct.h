@@ -1,11 +1,11 @@
 #ifndef __F4_BPF_CT_H__
 #define __F4_BPF_CT_H__
 
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
-#include "bpf-dp.h"
-#include "bpf-mdi.h"
-#include "bpf-sm.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
+#include "bpf_dp.h"
+#include "bpf_mdi.h"
+#include "bpf_sm.h"
 
 #define dp_run_ctact_helper(x, a)                                              \
     do {                                                                       \

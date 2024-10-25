@@ -1,8 +1,8 @@
 #ifndef __F4_BPF_FC_H__
 #define __F4_BPF_FC_H__
 
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
 
 INTERNAL(int)
 xpkt_fib4_init_key(xpkt_t *pkt, fib4_key_t *key)

@@ -5,10 +5,10 @@
  */
 
 #include <linux/if_packet.h>
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
-#include "bpf-cdefs.h"
-#include "bpf-nat.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
+#include "bpf_cdefs.h"
+#include "bpf_nat.h"
 
 /* IP flags */
 #define IP_CE 0x8000     /* Flag: "Congestion"		*/

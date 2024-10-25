@@ -1,8 +1,8 @@
 #ifndef __F4_BPF_LB_H__
 #define __F4_BPF_LB_H__
 
-#include "bpf-macros.h"
-#include "bpf-dbg.h"
+#include "bpf_macros.h"
+#include "bpf_dbg.h"
 
 INTERNAL(int)
 xpkt_nat_load(skb_t *skb, xpkt_t *pkt, nf_nat_t *na, int do_snat)
