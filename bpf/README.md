@@ -1,6 +1,6 @@
 ```
 
-make -f bpf/Makefile kern-trace
+clear;make -f bpf/Makefile kern-trace
 
 make -f bpf/Makefile pipy-demo
 
@@ -40,3 +40,17 @@ SidecarInboundListenerPort = 15003
 SidecarPrometheusInboundListenerPort = 15010
 FSMDNSProxyPort = 15053
 ```
+
+
+
+https://elixir.bootlin.com/linux/v6.11.4/source/include/net/tcp_states.h
+
+https://m.elecfans.com/article/2064612.html
+
+https://zhuanlan.zhihu.com/p/98821434
+
+https://zhuanlan.zhihu.com/p/600644770
+
+https://blog.51cto.com/wzgl08/1666021
+
+https://www.cs.montana.edu/courses/spring2004/440/topics/15-transport/lectures/slideset2.pdf
