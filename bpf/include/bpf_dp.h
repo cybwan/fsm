@@ -137,8 +137,6 @@ typedef struct {
     __u16 nat_rport;
     __u32 nat_xip[4];
     __u32 nat_rip[4];
-    __u8 nat_xmac[6];
-    __u8 nat_rmac[6];
     __u8 inactive;
 } __attribute__((packed)) nat_endpoint_t;
 
@@ -152,7 +150,7 @@ typedef struct {
 } __attribute__((packed)) fib4_key_t;
 
 typedef struct {
-    nf_t nf; /* Possible actions : See below */
+    nf_t nf;
     union {
         nf_rdr_t rdr;
         nf_nat_t nat; /* NF_DO_SNAT, NF_DO_DNAT */

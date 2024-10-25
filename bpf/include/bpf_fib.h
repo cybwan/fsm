@@ -73,9 +73,6 @@ xpkt_fib4_find(skb_t *skb, xpkt_t *pkt)
     }
 
     // DP_RUN_CT_HELPER(pkt);
-
-    XMAC_COPY(pkt->l2.dl_src, pkt->nat.nxmac);
-    XMAC_COPY(pkt->l2.dl_dst, pkt->nat.nrmac);
     pkt->ctx.oport = pkt->nat.nxifi;
 
     xpkt_encode_packet_always(skb, pkt);

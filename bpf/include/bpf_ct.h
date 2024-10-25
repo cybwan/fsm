@@ -63,12 +63,8 @@ dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_endpoint_t *cep,
             rep->nat_rport = ckey->sport;
         }
 
-        // rep->nat_xifi = pkt->ctx.ifi;
         rep->nat_flags = F4_NAT_DST;
         rep->nv6 = ckey->v6;
-
-        // XMAC_COPY(rep->nat_xmac, pkt->l2m.dl_dst);
-        // XMAC_COPY(rep->nat_rmac, pkt->l2m.dl_src);
     }
     if (cep->nat_flags & F4_NAT_HDST) {
         XADDR_COPY(rkey->saddr, ckey->saddr);
@@ -173,7 +169,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
 
     ucop = bpf_map_lookup_elem(&fsm_ct_ops, &cidx);
     urop = bpf_map_lookup_elem(&fsm_ct_ops, &ridx);
-
     if (ucop == NULL || urop == NULL) {
         return smr;
     }
@@ -197,9 +192,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     cep->nat_flags = pkt->ctx.nf;
     XADDR_COPY(cep->nat_xip, pkt->nat.nxip);
     XADDR_COPY(cep->nat_rip, pkt->nat.nrip);
-    // XMAC_COPY(cep->nat_xmac, pkt->nm.nxmac);
-    // XMAC_COPY(cep->nat_rmac, pkt->nm.nrmac);
-    // cep->nat_xifi = pkt->nm.nxifi;
     cep->nat_xport = pkt->nat.nxport;
     cep->nat_rport = pkt->nat.nrport;
     cep->nv6 = pkt->nat.nv6;
@@ -209,8 +201,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
     rep->nat_rport = 0;
     XADDR_SET_ZERO(rep->nat_xip);
     XADDR_SET_ZERO(rep->nat_rip);
-    // XMAC_SET_ZERO(rep->nat_xmac);
-    // XMAC_SET_ZERO(rep->nat_rmac);
 
     if (pkt->ctx.nf & (F4_NAT_DST | F4_NAT_SRC)) {
         if (XADDR_IS_ZERO(cep->nat_xip)) {
@@ -234,9 +224,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
                                                                    : NF_DO_SNAT;
             XADDR_COPY(ucop->nfs.nat.xip, cep->nat_xip);
             XADDR_COPY(ucop->nfs.nat.rip, cep->nat_rip);
-            // XMAC_COPY(ucop->nat_act.xmac,  cep->nat_xmac);
-            // XMAC_COPY(ucop->nat_act.rmac, cep->nat_rmac);
-            // ucop->nat_act.xifi = cep->nat_xifi;
             ucop->nfs.nat.xport = cep->nat_xport;
             ucop->nfs.nat.rport = cep->nat_rport;
             ucop->nfs.nat.doct = 0;
@@ -259,9 +246,6 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
                                                                    : NF_DO_SNAT;
             XADDR_COPY(urop->nfs.nat.xip, rep->nat_xip);
             XADDR_COPY(urop->nfs.nat.rip, rep->nat_rip);
-            // XMAC_COPY(urop->nat_act.xmac, rep->nat_xmac);
-            // XMAC_COPY(urop->nat_act.rmac, rep->nat_rmac);
-            // urop->nat_act.xifi = rep->nat_xifi;
             urop->nfs.nat.xport = rep->nat_xport;
             urop->nfs.nat.rport = rep->nat_rport;
             urop->nfs.nat.doct = 0;

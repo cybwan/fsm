@@ -36,8 +36,6 @@ dp_pipe_check_res(skb_t *skb, xpkt_t *pkt, void *fa)
         }
 
         if (pkt->ctx.act & F4_PIPE_RDR) {
-            // XMAC_COPY(pkt->l2m.dl_src, pkt->nm.nxmac);
-            // XMAC_COPY(pkt->l2m.dl_dst, pkt->nm.nrmac);
             pkt->ctx.oport = pkt->nat.nxifi;
         }
 

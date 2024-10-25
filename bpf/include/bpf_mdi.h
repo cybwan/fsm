@@ -159,8 +159,6 @@ struct xpkt_nat_meta {
     __u16 nxport;  /* NAT xport */
     __u16 nrport;  /* NAT rport */
     __u16 nxifi;
-    __u8 nxmac[6];
-    __u8 nrmac[6];
 #define F4_PIPE_CT_NONE 0
 #define F4_PIPE_CT_INP 1
 #define F4_PIPE_CT_EST 2

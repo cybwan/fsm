@@ -10,8 +10,6 @@ xpkt_nat_load(skb_t *skb, xpkt_t *pkt, nf_nat_t *na, int do_snat)
     pkt->ctx.nf = do_snat ? F4_NAT_SRC : F4_NAT_DST;
     XADDR_COPY(pkt->nat.nxip, na->xip);
     XADDR_COPY(pkt->nat.nrip, na->rip);
-    XMAC_COPY(pkt->nat.nxmac, na->xmac);
-    XMAC_COPY(pkt->nat.nrmac, na->rmac);
     pkt->nat.nxifi = na->xifi;
     pkt->nat.nxport = na->xport;
     pkt->nat.nrport = na->rport;
@@ -102,8 +100,6 @@ INTERNAL(int) xpkt_nat_proc(skb_t *skb, xpkt_t *pkt)
 
             XADDR_COPY(pkt->nat.nxip, ep->nat_xip);
             XADDR_COPY(pkt->nat.nrip, ep->nat_rip);
-            XMAC_COPY(pkt->nat.nxmac, ep->nat_xmac);
-            XMAC_COPY(pkt->nat.nrmac, ep->nat_rmac);
             pkt->nat.nxifi = ep->nat_xifi;
             pkt->nat.nrport = ep->nat_rport;
             if (ep->nat_xport) {

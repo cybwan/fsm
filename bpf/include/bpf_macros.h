@@ -42,24 +42,4 @@ typedef struct __sk_buff skb_t;
         (var)[3] = 0;                                                          \
     } while (0)
 
-#define XMAC_COPY(dst, src)                                                    \
-    do {                                                                       \
-        (dst)[0] = (src)[0];                                                   \
-        (dst)[1] = (src)[1];                                                   \
-        (dst)[2] = (src)[2];                                                   \
-        (dst)[3] = (src)[3];                                                   \
-        (dst)[4] = (src)[4];                                                   \
-        (dst)[5] = (src)[5];                                                   \
-    } while (0)
-
-#define XMAC_SET_ZERO(var)                                                     \
-    do {                                                                       \
-        (var)[0] = 0;                                                          \
-        (var)[1] = 0;                                                          \
-        (var)[2] = 0;                                                          \
-        (var)[3] = 0;                                                          \
-        (var)[4] = 0;                                                          \
-        (var)[5] = 0;                                                          \
-    } while (0)
-
 #endif
