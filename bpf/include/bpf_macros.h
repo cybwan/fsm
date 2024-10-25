@@ -23,23 +23,8 @@ typedef struct __sk_buff skb_t;
 #define XPKT_PTR_ADD(x, len) ((void *)(((__u8 *)((long)x)) + (len)))
 #define XPKT_PTR_SUB(x, y) (((__u8 *)XPKT_PTR(x)) - ((__u8 *)XPKT_PTR(y)))
 
-#define XADDR_IS_ZERO(var)                                                     \
-    ((var)[0] == 0 && (var)[1] == 0 && (var)[2] == 0 && (var)[3] == 0)
-
-#define XADDR_COPY(dst, src)                                                   \
-    do {                                                                       \
-        (dst)[0] = (src)[0];                                                   \
-        (dst)[1] = (src)[1];                                                   \
-        (dst)[2] = (src)[2];                                                   \
-        (dst)[3] = (src)[3];                                                   \
-    } while (0)
-
-#define XADDR_SET_ZERO(var)                                                    \
-    do {                                                                       \
-        (var)[0] = 0;                                                          \
-        (var)[1] = 0;                                                          \
-        (var)[2] = 0;                                                          \
-        (var)[3] = 0;                                                          \
-    } while (0)
+#define XADDR_COPY(dst, src) memcpy(dst, src, 16)
+#define XADDR_SET_ZERO(v) memset(v, 0, 16)
+#define XADDR_IS_ZERO(v) (v[0] == 0 && v[1] == 0 && v[2] == 0 && v[3] == 0)
 
 #endif

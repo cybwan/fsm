@@ -22,8 +22,8 @@
     } while (0)
 
 INTERNAL(int)
-dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_ep_t *ucep, ct_key_t *rkey,
-                     nat_ep_t *urep)
+dp_ct_proto_xfk_init(xpkt_t *pkt, ct_key_t *ckey, nat_ep_t *ucep,
+                     ct_key_t *rkey, nat_ep_t *urep)
 {
     XADDR_COPY(rkey->daddr, ckey->saddr);
     XADDR_COPY(rkey->saddr, ckey->daddr);
@@ -220,8 +220,9 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
         FSM_DBG("[CTRK] AAAAA 1\n");
         memset(&ucop->attr.sm, 0, sizeof(ct_sm_t));
         if (ucep->nat_flags) {
-            ucop->nf = ucep->nat_flags & (F4_NAT_DST | F4_NAT_HDST) ? NF_DO_DNAT
-                                                                   : NF_DO_SNAT;
+            ucop->nf = ucep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
+                           ? NF_DO_DNAT
+                           : NF_DO_SNAT;
             XADDR_COPY(ucop->nfs.nat.xip, ucep->nat_xip);
             XADDR_COPY(ucop->nfs.nat.rip, ucep->nat_rip);
             ucop->nfs.nat.xport = ucep->nat_xport;
@@ -242,8 +243,9 @@ INTERNAL(int) dp_ct_in(skb_t *skb, xpkt_t *pkt)
 
         memset(&urop->attr.sm, 0, sizeof(ct_sm_t));
         if (urep->nat_flags) {
-            urop->nf = urep->nat_flags & (F4_NAT_DST | F4_NAT_HDST) ? NF_DO_DNAT
-                                                                   : NF_DO_SNAT;
+            urop->nf = urep->nat_flags & (F4_NAT_DST | F4_NAT_HDST)
+                           ? NF_DO_DNAT
+                           : NF_DO_SNAT;
             XADDR_COPY(urop->nfs.nat.xip, urep->nat_xip);
             XADDR_COPY(urop->nfs.nat.rip, urep->nat_rip);
             urop->nfs.nat.xport = urep->nat_xport;
