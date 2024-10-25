@@ -54,3 +54,27 @@ https://zhuanlan.zhihu.com/p/600644770
 https://blog.51cto.com/wzgl08/1666021
 
 https://www.cs.montana.edu/courses/spring2004/440/topics/15-transport/lectures/slideset2.pdf
+
+
+
+
+
+https://github.com/torvalds/linux/blob/master/net/netfilter/nf_conntrack_core.c
+
+https://github.com/torvalds/linux/blob/master/net/openvswitch/conntrack.c
+
+https://arthurchiao.art/blog/conntrack-design-and-implementation/
+
+
+
+https://github.com/chobits/tapip/blob/master/tcp/tcp_state.c
+
+
+
+https://book.huihoo.com/iptables-tutorial/book1.htm
+
+
+
+https://blog.csdn.net/eroswang/article/details/3357617
+
+https://blog.51cto.com/u_4983206/1149724
