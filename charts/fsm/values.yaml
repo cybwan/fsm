@@ -450,7 +450,7 @@ fsm:
   serviceAccessMode: mixed
 
   # -- Traffic interception mode in the mesh
-  trafficInterceptionMode: NodeLevel
+  trafficInterceptionMode: PodLevel
 
   # -- Enable egress in the mesh
   enableEgress: true

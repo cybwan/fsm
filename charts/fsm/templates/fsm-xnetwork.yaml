@@ -23,15 +23,15 @@ spec:
       {{- end }}
       hostNetwork: true
       containers:
-      - name: fsm-xnetwork
+      - name: fsm-xmgt
         image: "{{ include "fsmXnetmgmt.image" . }}"
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
-        command: ['/app/fsm-xnetwork']
+        command: ['/fsm-xnet-mgmt']
         args: [
           "--verbosity", "{{.Values.fsm.controllerLogLevel}}",
-          "--fsm-namespace", "{{ include "fsm.namespace" . }}",
-          "--fsm-version", "{{ .Chart.AppVersion }}",
           "--mesh-name", "{{.Values.fsm.meshName}}",
+          "--fsm-version", "{{ .Chart.AppVersion }}",
+          "--fsm-namespace", "{{ include "fsm.namespace" . }}",
           "--trust-domain", "{{.Values.fsm.trustDomain}}",
         ]
         resources:
@@ -44,39 +44,73 @@ spec:
         securityContext:
           privileged: true
         volumeMounts:
-          - mountPath: /sys/fs/cgroup
-            name: sys-fs-cgroup
-          - mountPath: /host/opt/cni/bin
-            name: cni-bin-dir
-          - mountPath: /host/etc/cni/net.d
-            name: cni-config-dir
-          - mountPath: /host/proc
-            name: host-proc
-          - mountPath: /host/var/run
-            name: host-var-run
-            mountPropagation: Bidirectional
+        - mountPath: /host/sys/fs
+          name: host-sys-fs
+          mountPropagation: Bidirectional
+      - name: fsm-xnet
+        image: "localhost:5000/flomesh/xnet:latest"
+        imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
+        command: ['/fsm-xnet-engine']
+        args: [
+          "--verbosity", "{{.Values.fsm.controllerLogLevel}}",
+          "--mesh-name", "{{.Values.fsm.meshName}}",
+          "--fsm-version", "{{ .Chart.AppVersion }}",
+          "--fsm-namespace", "{{ include "fsm.namespace" . }}",
+        ]
+        resources:
+          limits:
+            cpu: "{{.Values.fsm.fsmXnetwork.resource.limits.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.resource.limits.memory}}"
+          requests:
+            cpu: "{{.Values.fsm.fsmXnetwork.resource.requests.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.resource.requests.memory}}"
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /host/cni/bin
+          name: host-cni-bin
+        - mountPath: /host/cni/net.d
+          name: host-cni-netd
+        - mountPath: /host/kube/.token
+          name: host-kube-token
+        - mountPath: /host/run
+          name: host-run
+          mountPropagation: Bidirectional
+        - mountPath: /host/sys/fs
+          name: host-sys-fs
+          mountPropagation: Bidirectional
       dnsPolicy: ClusterFirst
       priorityClassName: system-node-critical
       restartPolicy: Always
       serviceAccountName: {{ .Release.Name }}
-      tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
-      - operator: Exists
       volumes:
       - hostPath:
-          path: /sys/fs/cgroup
-        name: sys-fs-cgroup
+          #path: /opt/cni/bin
+          path: /bin
+        name: host-cni-bin
       - hostPath:
-          path: /proc
-        name: host-proc
-      - hostPath:
-          path: /opt/cni/bin
-        name: cni-bin-dir
-      - hostPath:
-          path: /etc/cni/net.d
-        name: cni-config-dir
+          #path: /etc/cni/net.d
+          path: /var/lib/rancher/k3s/agent/etc/cni/net.d
+        name: host-cni-netd
       - hostPath:
           path: /var/run
-        name: host-var-run
+        name: host-run
+      - hostPath:
+          path: /opt
+        name: host-sys-fs
+      - hostPath:
+          path: /var/lib/rancher/k3s/server/token
+        name: host-kube-token
+    {{- if .Values.fsm.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.fsm.imagePullSecrets | indent 8 }}
+    {{- end }}
+      {{- if .Values.fsm.fsmXnetwork.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.fsm.fsmXnetwork.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.fsm.fsmXnetwork.tolerations }}
+      tolerations:
+      {{- toYaml .Values.fsm.fsmXnetwork.tolerations | nindent 8 }}
+      {{- end }}
 {{- end }}
