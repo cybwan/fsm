@@ -8,7 +8,7 @@ WORKDIR /fsm
 COPY . .
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o fsm-interceptor -ldflags "$LDFLAGS" ./cmd/fsm-interceptor
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o fsm-xnetmgmt -ldflags "$LDFLAGS" ./cmd/fsm-xnetmgmt
 
 FROM gcr.io/distroless/static
-COPY --from=builder /fsm/fsm-interceptor /
+COPY --from=builder /fsm/fsm-xnetmgmt /

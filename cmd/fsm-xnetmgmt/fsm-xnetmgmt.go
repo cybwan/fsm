@@ -1,4 +1,4 @@
-// Package main implements fsm interceptor.
+// Package main implements fsm xnetmgmt.
 package main
 
 import (
@@ -41,8 +41,8 @@ var (
 
 	scheme = runtime.NewScheme()
 
-	flags = pflag.NewFlagSet(`fsm-interceptor`, pflag.ExitOnError)
-	log   = logger.New("fsm-interceptor/main")
+	flags = pflag.NewFlagSet(`fsm-xnetmgmt`, pflag.ExitOnError)
+	log   = logger.New("fsm-xnetmgmt/main")
 )
 
 func init() {
@@ -78,7 +78,7 @@ func validateCLIParams() error {
 }
 
 func main() {
-	log.Info().Msgf("Starting fsm-interceptor %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
+	log.Info().Msgf("Starting fsm-xnetmgmt %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
 	if err := parseFlags(); err != nil {
 		log.Fatal().Err(err).Msg("Error parsing cmd line arguments")
 	}
@@ -145,5 +145,5 @@ func main() {
 
 	<-stop
 	cancel()
-	log.Info().Msgf("Stopping fsm-interceptor %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
+	log.Info().Msgf("Stopping fsm-xnetmgmt %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
 }

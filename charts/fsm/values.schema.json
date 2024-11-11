@@ -191,7 +191,7 @@
                 "remoteLogging",
                 "webhookConfigNamePrefix",
                 "fsmController",
-                "fsmInterceptor",
+                "fsmXnetwork",
                 "enablePrivilegedInitContainer",
                 "injector",
                 "fsmBootstrap",
@@ -260,11 +260,11 @@
                     },
                     "additionalProperties": false
                 },
-                "fsmInterceptor": {
-                    "$id": "#/properties/fsm/properties/fsmInterceptor",
+                "fsmXnetwork": {
+                    "$id": "#/properties/fsm/properties/fsmXnetwork",
                     "type": "object",
-                    "title": "The fsmInterceptor schema",
-                    "description": "The details of the fsmInterceptor.",
+                    "title": "The fsmXnetwork schema",
+                    "description": "The details of the fsmXnetwork.",
                     "required": [
                         "resource"
                     ],
@@ -273,10 +273,10 @@
                             "$ref": "#/definitions/containerResources"
                         },
                         "podLabels": {
-                            "$id": "#/properties/fsm/properties/fsmInterceptor/properties/podLabels",
+                            "$id": "#/properties/fsm/properties/fsmXnetwork/properties/podLabels",
                             "type": "object",
                             "title": "The podLabels schema",
-                            "description": "Labels for the fsmInterceptor pod.",
+                            "description": "Labels for the fsmXnetwork pod.",
                             "default": {}
                         },
                         "affinity": {
@@ -286,7 +286,7 @@
                             "type": "array"
                         },
                         "kernelTracing": {
-                            "$id": "#/properties/fsm/properties/fsmInterceptor/properties/kernelTracing",
+                            "$id": "#/properties/fsm/properties/fsmXnetwork/properties/kernelTracing",
                             "type": "boolean",
                             "title": "kernel tracing enable",
                             "description": "Indicates whether kernel tracing should be enabled or not.",
@@ -295,7 +295,7 @@
                             ]
                         },
                         "cniMode": {
-                            "$id": "#/properties/fsm/properties/fsmInterceptor/properties/cniMode",
+                            "$id": "#/properties/fsm/properties/fsmXnetwork/properties/cniMode",
                             "type": "boolean",
                             "title": "cni plugin enable",
                             "description": "Indicates whether cni plugin should be enabled or not.",
@@ -304,7 +304,7 @@
                             ]
                         },
                         "kindMode": {
-                            "$id": "#/properties/fsm/properties/fsmInterceptor/properties/kindMode",
+                            "$id": "#/properties/fsm/properties/fsmXnetwork/properties/kindMode",
                             "type": "boolean",
                             "title": "running kind cluster",
                             "description": "Indicates whether running kind cluster.",
@@ -357,7 +357,7 @@
                               "fsmCRDs",
                               "fsmPreinstall",
                               "fsmHealthcheck",
-                              "fsmInterceptor",
+                              "fsmXnetmgmt",
                               "fsmConnector",
                               "fsmIngress",
                               "fsmGateway",
@@ -406,11 +406,11 @@
                                 "title": "fsm-healthcheck's image name",
                                 "description": "fsm-healthcheck container's image name."
                               },
-                              "fsmInterceptor": {
-                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmInterceptor",
+                              "fsmXnetmgmt": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmXnetmgmt",
                                 "type": "string",
-                                "title": "fsm-interceptor's image name",
-                                "description": "fsm-interceptor container's image name."
+                                "title": "fsm-xnetmgnt's image name",
+                                "description": "fsm-xnetmgnt container's image name."
                               },
                               "fsmConnector": {
                                 "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmConnector",
@@ -470,7 +470,7 @@
                               "fsmBootstrap",
                               "fsmPreinstall",
                               "fsmHealthcheck",
-                              "fsmInterceptor",
+                              "fsmXnetmgmt",
                               "fsmConnector",
                               "fsmIngress",
                               "fsmGateway",
@@ -519,11 +519,11 @@
                                 "title": "fsm-healthcheck's image digest",
                                 "description": "fsm-healthcheck container's image digest."
                               },
-                              "fsmInterceptor": {
-                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmInterceptor",
+                              "fsmXnetmgmt": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmXnetmgmt",
                                 "type": "string",
-                                "title": "fsm-interceptor's image digest",
-                                "description": "fsm-interceptor container's image digest."
+                                "title": "fsm-xnetmgmt's image digest",
+                                "description": "fsm-xnetmgmt container's image digest."
                               },
                               "fsmConnector": {
                                 "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmConnector",

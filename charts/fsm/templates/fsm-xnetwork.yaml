@@ -1,74 +1,32 @@
-{{- if eq .Values.fsm.trafficInterceptionMode "ebpf" }}
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: fsm-interceptor
-  namespace: {{ include "fsm.namespace" . }}
-  labels:
-    {{- include "fsm.labels" . | nindent 4 }}
-    app: fsm-interceptor
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: fsm-interceptor
-  labels:
-    {{- include "fsm.labels" . | nindent 4 }}
-    app: fsm-interceptor
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - list
-  - get
-  - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: fsm-interceptor
-  labels:
-    {{- include "fsm.labels" . | nindent 4 }}
-    app: fsm-interceptor
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: fsm-interceptor
-subjects:
-- kind: ServiceAccount
-  name: fsm-interceptor
-  namespace: fsm-system
----
+{{- if eq .Values.fsm.trafficInterceptionMode "NodeLevel" }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: fsm-interceptor
+  name: fsm-xnetwork
   namespace: {{ include "fsm.namespace" . }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
-    app: fsm-interceptor
+    app: fsm-xnetwork
 spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: fsm-interceptor
+      app: fsm-xnetwork
   template:
     metadata:
       labels:
-        app: fsm-interceptor
+        app: fsm-xnetwork
     spec:
-      {{- if .Values.fsm.fsmInterceptor.affinity }}
+      {{- if .Values.fsm.fsmXnetwork.affinity }}
       affinity:
-      {{- toYaml .Values.fsm.fsmInterceptor.affinity | nindent 8 }}
+      {{- toYaml .Values.fsm.fsmXnetwork.affinity | nindent 8 }}
       {{- end }}
       hostNetwork: true
       containers:
-      - name: fsm-interceptor
-        image: "{{ include "fsmInterceptor.image" . }}"
+      - name: fsm-xnetwork
+        image: "{{ include "fsmXnetmgmt.image" . }}"
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
-        command: ['/app/fsm-interceptor']
+        command: ['/app/fsm-xnetwork']
         args: [
           "--verbosity", "{{.Values.fsm.controllerLogLevel}}",
           "--fsm-namespace", "{{ include "fsm.namespace" . }}",
@@ -78,11 +36,11 @@ spec:
         ]
         resources:
           limits:
-            cpu: "{{.Values.fsm.fsmInterceptor.resource.limits.cpu}}"
-            memory: "{{.Values.fsm.fsmInterceptor.resource.limits.memory}}"
+            cpu: "{{.Values.fsm.fsmXnetwork.resource.limits.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.resource.limits.memory}}"
           requests:
-            cpu: "{{.Values.fsm.fsmInterceptor.resource.requests.cpu}}"
-            memory: "{{.Values.fsm.fsmInterceptor.resource.requests.memory}}"
+            cpu: "{{.Values.fsm.fsmXnetwork.resource.requests.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.resource.requests.memory}}"
         securityContext:
           privileged: true
         volumeMounts:
@@ -100,7 +58,7 @@ spec:
       dnsPolicy: ClusterFirst
       priorityClassName: system-node-critical
       restartPolicy: Always
-      serviceAccountName: fsm-interceptor
+      serviceAccountName: {{ .Release.Name }}
       tolerations:
       - key: CriticalAddonsOnly
         operator: Exists
