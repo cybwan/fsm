@@ -75,17 +75,7 @@ spec:
           "--fsm-version", "{{ .Chart.AppVersion }}",
           "--mesh-name", "{{.Values.fsm.meshName}}",
           "--trust-domain", "{{.Values.fsm.trustDomain}}",
-          "--cni-mode={{ .Values.fsm.fsmInterceptor.cniMode }}",
-          "--kind={{ .Values.fsm.fsmInterceptor.kindMode }}",
-          "--kernel-tracing={{ .Values.fsm.fsmInterceptor.kernelTracing }}",
         ]
-        lifecycle:
-          preStop:
-            exec:
-              command:
-              - make
-              - -k
-              - clean
         resources:
           limits:
             cpu: "{{.Values.fsm.fsmInterceptor.resource.limits.cpu}}"
@@ -110,7 +100,6 @@ spec:
       dnsPolicy: ClusterFirst
       priorityClassName: system-node-critical
       restartPolicy: Always
-      serviceAccount: fsm-interceptor
       serviceAccountName: fsm-interceptor
       tolerations:
       - key: CriticalAddonsOnly

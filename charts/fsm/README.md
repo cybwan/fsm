@@ -476,7 +476,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.tracing.nodeSelector | object | `{}` |  |
 | fsm.tracing.port | int | `9411` | Port of the tracing collector service |
 | fsm.tracing.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
-| fsm.trafficInterceptionMode | string | `"iptables"` | Traffic interception mode in the mesh |
+| fsm.trafficInterceptionMode | string | `"NodeLevel"` | Traffic interception mode in the mesh |
 | fsm.trustDomain | string | `"cluster.local"` | The trust domain to use as part of the common name when requesting new certificates. |
 | fsm.validatorWebhook.webhookConfigurationName | string | `""` | Name of the ValidatingWebhookConfiguration |
 | fsm.vault.host | string | `""` | Hashicorp Vault host/service - where Vault is installed |

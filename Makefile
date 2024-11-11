@@ -269,7 +269,6 @@ docker-build-fsm-ingress:
 docker-build-fsm-gateway:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-gateway:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-gateway --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) --build-arg DISTROLESS_TAG=$(DISTROLESS_TAG) .
 
-TRI_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
 FSM_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-interceptor fsm-ingress fsm-gateway
 E2E_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
 MIN_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck
@@ -352,8 +351,8 @@ trivy-scan-fail-%:
 	  "$(CTR_REGISTRY)/$(NAME):$(CTR_TAG)"
 
 .PHONY: trivy-scan-images trivy-scan-images-fail trivy-scan-images-verbose
-trivy-scan-images-verbose: $(addprefix trivy-scan-verbose-, $(TRI_TARGETS))
-trivy-scan-images-fail: $(addprefix trivy-scan-fail-, $(TRI_TARGETS))
+trivy-scan-images-verbose: $(addprefix trivy-scan-verbose-, $(FSM_TARGETS))
+trivy-scan-images-fail: $(addprefix trivy-scan-fail-, $(FSM_TARGETS))
 trivy-scan-images: trivy-scan-images-verbose trivy-scan-images-fail
 
 .PHONY: shellcheck

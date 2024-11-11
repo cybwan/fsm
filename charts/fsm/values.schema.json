@@ -979,12 +979,11 @@
                     "title": "The trafficInterceptionMode schema",
                     "description": "Traffic interception mode in the mesh.",
                     "enum": [
-                        "iptables",
-                        "ebpf",
-                        "none"
+                        "NodeLevel",
+                        "PodLevel"
                     ],
                     "examples": [
-                        "iptables"
+                        "NodeLevel"
                     ]
                 },
                 "enableEgress": {
