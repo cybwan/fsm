@@ -29,8 +29,8 @@ fsm:
       fsmPreinstall: fsm-preinstall
       # -- fsm-healthcheck's image name
       fsmHealthcheck: fsm-healthcheck
-      # -- fsm-interceptor's image name
-      fsmInterceptor: fsm-interceptor
+      # -- fsm-xnetmgmt's image name
+      fsmXnetmgmt: fsm-xnetmgmt
       # -- fsm-connector's image name
       fsmConnector: fsm-connector
       # -- fsm-ingress's image name
@@ -55,8 +55,8 @@ fsm:
       fsmPreinstall: ""
       # -- fsm-healthcheck's image digest
       fsmHealthcheck: ""
-      # -- fsm-interceptor's image digest
-      fsmInterceptor: ""
+      # -- fsm-xnetwork's image digest
+      fsmXnetmgmt: ""
       # -- fsm-connector's image digest
       fsmConnector: ""
       # -- fsm-ingress's image digest
@@ -242,8 +242,8 @@ fsm:
         memory: "256M"
 
   #
-  # -- FSM interceptor parameters
-  fsmInterceptor:
+  # -- FSM xnetwork parameters
+  fsmXnetwork:
     kernelTracing: true
     cniMode: true
     kindMode: false
@@ -278,7 +278,7 @@ fsm:
                   - key: app
                     operator: In
                     values:
-                      - fsm-controller
+                      - fsm-xnetwork
               topologyKey: kubernetes.io/hostname
             weight: 100
 
@@ -450,7 +450,7 @@ fsm:
   serviceAccessMode: mixed
 
   # -- Traffic interception mode in the mesh
-  trafficInterceptionMode: iptables
+  trafficInterceptionMode: PodLevel
 
   # -- Enable egress in the mesh
   enableEgress: true

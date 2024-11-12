@@ -8,7 +8,8 @@ WORKDIR /fsm
 COPY . .
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o fsm-injector -ldflags "$LDFLAGS" ./cmd/fsm-injector
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o fsm-xnet-mgmt -ldflags "$LDFLAGS" ./cmd/fsm-xnetmgmt
 
-FROM gcr.io/distroless/static
-COPY --from=builder /fsm/fsm-injector /
+#FROM gcr.io/distroless/static
+FROM ubuntu:22.04
+COPY --from=builder /fsm/fsm-xnet-mgmt /
