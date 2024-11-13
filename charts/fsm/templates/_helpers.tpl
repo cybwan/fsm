@@ -112,12 +112,12 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
-{{/* fsm-interceptor image */}}
-{{- define "fsmInterceptor.image" -}}
+{{/* fsm-xnetmgmt image */}}
+{{- define "fsmXnetmgmt.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmInterceptor .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmXnetmgmt .Values.fsm.image.tag -}}
 {{- else -}}
-{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmInterceptor .Values.fsm.image.digest.fsmController -}}
+{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmXnetmgmt .Values.fsm.image.digest.fsmController -}}
 {{- end -}}
 {{- end -}}
 
