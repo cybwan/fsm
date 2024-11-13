@@ -33,8 +33,6 @@ spec:
           "--fsm-version", "{{ .Chart.AppVersion }}",
           "--fsm-namespace", "{{ include "fsm.namespace" . }}",
           "--trust-domain", "{{.Values.fsm.trustDomain}}",
-          "--inbound-port-flag", "inbound",
-          "--outbound-port-flag", "outbound",
         ]
         resources:
           limits:
@@ -58,6 +56,8 @@ spec:
           "--mesh-name", "{{.Values.fsm.meshName}}",
           "--fsm-version", "{{ .Chart.AppVersion }}",
           "--fsm-namespace", "{{ include "fsm.namespace" . }}",
+          "--inbound-port-flag", "inbound",
+          "--outbound-port-flag", "outbound",
         ]
         resources:
           limits:
