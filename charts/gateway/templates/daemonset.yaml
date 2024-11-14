@@ -77,8 +77,8 @@ spec:
         {{- end }}
       containers:
       - name: gateway
-        image: localhost:5000/flomesh/pipy-nightly:latest
-        imagePullPolicy: IfNotPresent
+        image: {{ include "fsmGateway.image" . }}
+        imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         ports:
           {{- range $listener := .Values.fsm.gateway.listeners }}
           - name: {{ $listener.name }}
@@ -86,15 +86,14 @@ spec:
           {{- end }}
           - name: admin
             containerPort: 59091
-        command:
-          - pipy
-          - -e
-          - |
-            pipy()
-            .listen(15001)
-            .serveHTTP(new Message('hi, it works as fgw1 outbound listener.\n'))
-            .listen(15003)
-            .serveHTTP(new Message('hi, it works as fgw1 inbound listener.\n'))
+        args:
+          - --verbosity={{ .Values.fsm.gateway.logLevel }}
+          - --fsm-namespace={{ .Values.fsm.fsmNamespace }}
+          - --fsm-version={{ .Chart.AppVersion }}
+          - --mesh-name={{ .Values.fsm.meshName }}
+          - --gateway-namespace={{ .Values.fsm.gateway.namespace }}
+          - --gateway-name={{ .Values.fsm.gateway.name }}
+          - --service-name={{ .Values.fsm.gateway.serviceName }}
         resources:
           {{- toYaml .Values.fsm.gateway.resources | nindent 10 }}
         env:
