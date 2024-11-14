@@ -77,7 +77,7 @@ spec:
         {{- end }}
       containers:
       - name: gateway
-        image: localhost:5000/flomesh/pipy-nightly:latest
+        image: cybwan/ubuntu:22.04
         imagePullPolicy: IfNotPresent
         ports:
           {{- range $listener := .Values.fsm.gateway.listeners }}
