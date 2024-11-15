@@ -48,7 +48,7 @@ spec:
           name: host-sys-fs
           mountPropagation: Bidirectional
       - name: fsm-xnet
-        image: "localhost:5000/flomesh/xnet:latest"
+        image: "cybwan/xnet:latest"
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         command: ['/fsm-xnet-engine']
         args: [
