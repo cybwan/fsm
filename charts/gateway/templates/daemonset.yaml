@@ -129,7 +129,7 @@ spec:
             path: /healthz
             port: 59091
       - name: curl
-        image: localhost:5000/cybwan/ubuntu:22.04
+        image: cybwan/ubuntu:22.04
         imagePullPolicy: IfNotPresent
         command: [ "sleep", "365d" ]
       terminationGracePeriodSeconds: 60
