@@ -244,16 +244,34 @@ fsm:
   #
   # -- FSM xnetwork parameters
   fsmXnetwork:
-    kernelTracing: true
-    cniMode: true
-    kindMode: false
-    resource:
-      limits:
-        cpu: "1.5"
-        memory: "1G"
-      requests:
-        cpu: "0.5"
-        memory: "256M"
+    # -- xmgt
+    xmgt:
+      kernelTracing: true
+      cniMode: true
+      kindMode: false
+      resource:
+        limits:
+          cpu: "1.5"
+          memory: "1G"
+        requests:
+          cpu: "0.5"
+          memory: "256M"
+    # -- xnet
+    xnet:
+      image:
+        # -- Registry for xnet image
+        registry: cybwan
+        # -- xnet image name
+        name: xnet
+        # -- xnet image tag
+        tag: 0.9.1-amd64
+      resource:
+        limits:
+          cpu: "1.5"
+          memory: "1G"
+        requests:
+          cpu: "0.5"
+          memory: "256M"
     ## Affinity settings for pod assignment
     ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
     affinity:

@@ -251,14 +251,12 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].values[0] | string | `"fsm-xnetwork"` |  |
 | fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.topologyKey | string | `"kubernetes.io/hostname"` |  |
 | fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight | int | `100` |  |
-| fsm.fsmXnetwork.cniMode | bool | `true` |  |
-| fsm.fsmXnetwork.kernelTracing | bool | `true` |  |
-| fsm.fsmXnetwork.kindMode | bool | `false` |  |
-| fsm.fsmXnetwork.resource.limits.cpu | string | `"1.5"` |  |
-| fsm.fsmXnetwork.resource.limits.memory | string | `"1G"` |  |
-| fsm.fsmXnetwork.resource.requests.cpu | string | `"0.5"` |  |
-| fsm.fsmXnetwork.resource.requests.memory | string | `"256M"` |  |
 | fsm.fsmXnetwork.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
+| fsm.fsmXnetwork.xmgt | object | `{"cniMode":true,"kernelTracing":true,"kindMode":false,"resource":{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}}` | xmgt |
+| fsm.fsmXnetwork.xnet | object | `{"image":{"name":"xnet","registry":"cybwan","tag":"0.9.1-amd64"},"resource":{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}}` | xnet |
+| fsm.fsmXnetwork.xnet.image.name | string | `"xnet"` | xnet image name |
+| fsm.fsmXnetwork.xnet.image.registry | string | `"cybwan"` | Registry for xnet image |
+| fsm.fsmXnetwork.xnet.image.tag | string | `"0.9.1-amd64"` | xnet image tag |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |

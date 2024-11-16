@@ -24,7 +24,7 @@ spec:
       hostNetwork: true
       containers:
       - name: fsm-xmgt
-        image: "{{ include "fsmXnetmgmt.image" . }}"
+        image: "{{ include "fsmXnetwork.xmgt.image" . }}"
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         command: ['/fsm-xnet-mgmt']
         args: [
@@ -36,11 +36,11 @@ spec:
         ]
         resources:
           limits:
-            cpu: "{{.Values.fsm.fsmXnetwork.resource.limits.cpu}}"
-            memory: "{{.Values.fsm.fsmXnetwork.resource.limits.memory}}"
+            cpu: "{{.Values.fsm.fsmXnetwork.xmgt.resource.limits.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.xmgt.resource.limits.memory}}"
           requests:
-            cpu: "{{.Values.fsm.fsmXnetwork.resource.requests.cpu}}"
-            memory: "{{.Values.fsm.fsmXnetwork.resource.requests.memory}}"
+            cpu: "{{.Values.fsm.fsmXnetwork.xmgt.resource.requests.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.xmgt.resource.requests.memory}}"
         securityContext:
           privileged: true
         volumeMounts:
@@ -48,7 +48,7 @@ spec:
           name: host-sys-fs
           mountPropagation: Bidirectional
       - name: fsm-xnet
-        image: "cybwan/xnet:0.9.1"
+        image: "{{ include "fsmXnetwork.xnet.image" . }}"
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         command: ['/fsm-xnet-engine']
         args: [
@@ -61,11 +61,11 @@ spec:
         ]
         resources:
           limits:
-            cpu: "{{.Values.fsm.fsmXnetwork.resource.limits.cpu}}"
-            memory: "{{.Values.fsm.fsmXnetwork.resource.limits.memory}}"
+            cpu: "{{.Values.fsm.fsmXnetwork.xnet.resource.limits.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.xnet.resource.limits.memory}}"
           requests:
-            cpu: "{{.Values.fsm.fsmXnetwork.resource.requests.cpu}}"
-            memory: "{{.Values.fsm.fsmXnetwork.resource.requests.memory}}"
+            cpu: "{{.Values.fsm.fsmXnetwork.xnet.resource.requests.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.xnet.resource.requests.memory}}"
         securityContext:
           privileged: true
         volumeMounts:

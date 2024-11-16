@@ -112,12 +112,21 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
-{{/* fsm-xnetmgmt image */}}
-{{- define "fsmXnetmgmt.image" -}}
+{{/* fsm-xmgt image */}}
+{{- define "fsmXnetwork.xmgt.image" -}}
 {{- if .Values.fsm.image.tag -}}
 {{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmXnetmgmt .Values.fsm.image.tag -}}
 {{- else -}}
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmXnetmgmt .Values.fsm.image.digest.fsmController -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fsm-xnet image */}}
+{{- define "fsmXnetwork.xnet.image" -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.fsmXnetwork.xnet.image.registry .Values.fsm.fsmXnetwork.xnet.image.name .Values.fsm.fsmXnetwork.xnet.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.fsmXnetwork.xnet.image.name .Values.fsm.fsmXnetwork.xnet.image.tag -}}
 {{- end -}}
 {{- end -}}
 
