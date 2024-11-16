@@ -48,7 +48,7 @@ spec:
           name: host-sys-fs
           mountPropagation: Bidirectional
       - name: fsm-xnet
-        image: "cybwan/xnet:latest"
+        image: "cybwan/xnet:0.9.1"
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         command: ['/fsm-xnet-engine']
         args: [
