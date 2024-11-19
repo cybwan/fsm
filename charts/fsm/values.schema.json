@@ -334,7 +334,8 @@
                             "image",
                             "resource",
                             "filter",
-                            "flush"
+                            "flush",
+                            "nodePaths"
                           ],
                           "additionalProperties": false,
                           "properties": {
@@ -480,6 +481,105 @@
                                         }
                                       },
                                       "additionalProperties": false
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "nodePaths": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths",
+                              "type": "object",
+                              "title": "volume mounts schema",
+                              "description": "volume mounts",
+                              "required": [
+                                "k8s",
+                                "k3s"
+                              ],
+                              "properties": {
+                                "k8s": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s",
+                                  "type": "object",
+                                  "title": "k8s volume mounts schema",
+                                  "required": [
+                                    "kubeToken",
+                                    "cniBin",
+                                    "cniNetd",
+                                    "sysFs",
+                                    "sysRun"
+                                  ],
+                                  "properties": {
+                                    "kubeToken": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/kubeToken",
+                                      "type": "string",
+                                      "title": "The kube token schema"
+                                    },
+                                    "cniBin": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/cniBin",
+                                      "type": "string",
+                                      "title": "The cni bin schema"
+                                    },
+                                    "cniNetd": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/cniNetd",
+                                      "type": "string",
+                                      "title": "The cni netd schema"
+                                    },
+                                    "sysFs": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/sysFs",
+                                      "type": "string",
+                                      "title": "The sys fs schema"
+                                    },
+                                    "sysRun": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/sysRun",
+                                      "type": "string",
+                                      "title": "The sys run schema"
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                },
+                                "k3s": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s",
+                                  "type": "object",
+                                  "title": "k8s volume mounts schema",
+                                  "required": [
+                                    "enable",
+                                    "kubeToken",
+                                    "cniBin",
+                                    "cniNetd",
+                                    "sysFs",
+                                    "sysRun"
+                                  ],
+                                  "properties": {
+                                    "enable": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/enable",
+                                      "type": "boolean",
+                                      "title": "The enable schema"
+                                    },
+                                    "kubeToken": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/kubeToken",
+                                      "type": "string",
+                                      "title": "The kube token schema"
+                                    },
+                                    "cniBin": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/cniBin",
+                                      "type": "string",
+                                      "title": "The cni bin schema"
+                                    },
+                                    "cniNetd": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/cniNetd",
+                                      "type": "string",
+                                      "title": "The cni netd schema"
+                                    },
+                                    "sysFs": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/sysFs",
+                                      "type": "string",
+                                      "title": "The sys fs schema"
+                                    },
+                                    "sysRun": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/sysRun",
+                                      "type": "string",
+                                      "title": "The sys run schema"
                                     }
                                   },
                                   "additionalProperties": false
