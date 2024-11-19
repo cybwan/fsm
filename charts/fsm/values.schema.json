@@ -331,7 +331,10 @@
                           "title": "xnet",
                           "description": "xnet",
                           "required": [
-                            "image"
+                            "image",
+                            "resource",
+                            "filter",
+                            "flush"
                           ],
                           "additionalProperties": false,
                           "properties": {
@@ -365,6 +368,124 @@
                             },
                             "resource": {
                               "$ref": "#/definitions/containerResources"
+                            },
+                            "filter": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/filter",
+                              "type": "object",
+                              "title": "filter schema",
+                              "description": "filter used for xnet",
+                              "required": [
+                                "ports"
+                              ],
+                              "properties": {
+                                "ports": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/filter/properties/ports",
+                                  "type": "object",
+                                  "title": "ports schema",
+                                  "required": [
+                                    "inbound",
+                                    "outbound"
+                                  ],
+                                  "properties": {
+                                    "inbound": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/filter/properties/ports/properties/inbound",
+                                      "type": "string",
+                                      "title": "The inbound port filter schema"
+                                    },
+                                    "outbound": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/filter/properties/ports/properties/outbound",
+                                      "type": "string",
+                                      "title": "The outbound port filter schema"
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "flush": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush",
+                              "type": "object",
+                              "title": "flush schema",
+                              "description": "flush xnet data",
+                              "required": [
+                                "conntrack"
+                              ],
+                              "properties": {
+                                "conntrack": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack",
+                                  "type": "object",
+                                  "title": "The conn track schema",
+                                  "required": [
+                                    "tcp",
+                                    "udp"
+                                  ],
+                                  "properties": {
+                                    "tcp": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/tcp",
+                                      "type": "object",
+                                      "title": "The tcp schema",
+                                      "required": [
+                                        "crontab",
+                                        "idleSeconds",
+                                        "batchSize"
+                                      ],
+                                      "properties": {
+                                        "crontab": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/tcp/properties/crontab",
+                                          "type": "string",
+                                          "title": "The crontab schema"
+                                        },
+                                        "idleSeconds": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/tcp/properties/idleSeconds",
+                                          "type": "integer",
+                                          "title": "The idle seconds schema",
+                                          "minimum": 60
+                                        },
+                                        "batchSize": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/tcp/properties/batchSize",
+                                          "type": "integer",
+                                          "minimum": 512,
+                                          "maximum": 10240
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    },
+                                    "udp": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/udp",
+                                      "type": "object",
+                                      "title": "The udp schema",
+                                      "required": [
+                                        "crontab",
+                                        "idleSeconds",
+                                        "batchSize"
+                                      ],
+                                      "properties": {
+                                        "crontab": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/udp/properties/crontab",
+                                          "type": "string",
+                                          "title": "The crontab schema"
+                                        },
+                                        "idleSeconds": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/udp/properties/idleSeconds",
+                                          "type": "integer",
+                                          "title": "The idle seconds schema",
+                                          "minimum": 60
+                                        },
+                                        "batchSize": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/udp/properties/batchSize",
+                                          "type": "integer",
+                                          "minimum": 512,
+                                          "maximum": 10240
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
                             }
                           }
                         }

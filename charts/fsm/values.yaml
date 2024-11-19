@@ -272,6 +272,20 @@ fsm:
         requests:
           cpu: "0.5"
           memory: "256M"
+      filter:
+        ports:
+          inbound: "mesh"
+          outbound: "mesh"
+      flush:
+        conntrack:
+          tcp:
+            crontab: "30 3 */1 * *" ## At 3:30am every day
+            idleSeconds: 3600
+            batchSize: 4096
+          udp:
+            crontab: "*/2 * * * *" ## Every 120 seconds
+            idleSeconds: 120
+            batchSize: 4096
     ## Affinity settings for pod assignment
     ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
     affinity:

@@ -56,8 +56,14 @@ spec:
           "--mesh-name", "{{.Values.fsm.meshName}}",
           "--fsm-version", "{{ .Chart.AppVersion }}",
           "--fsm-namespace", "{{ include "fsm.namespace" . }}",
-          "--inbound-port-flag", "inbound",
-          "--outbound-port-flag", "outbound",
+          "--filter-port-inbound", "{{.Values.fsm.fsmXnetwork.xnet.filter.ports.inbound}}",
+          "--filter-port-outbound", "{{.Values.fsm.fsmXnetwork.xnet.filter.ports.outbound}}",
+          "--flush-tcp-conn-track-cron-tab", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.tcp.crontab}}",
+          "--flush-tcp-conn-track-idle-seconds", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.tcp.idleSeconds}}",
+          "--flush-tcp-conn-track-batch-size", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.tcp.batchSize}}",
+          "--flush-udp-conn-track-cron-tab", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.udp.crontab}}",
+          "--flush-udp-conn-track-idle-seconds", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.udp.idleSeconds}}",
+          "--flush-udp-conn-track-batch-size", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.udp.batchSize}}",
         ]
         resources:
           limits:
