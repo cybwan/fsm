@@ -24,7 +24,7 @@ spec:
       hostNetwork: true
       containers:
       - name: fsm-xmgt
-        image: "{{ include "fsmXnetmgmt.image" . }}"
+        image: "{{ include "fsmXnetwork.xmgt.image" . }}"
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         command: ['/fsm-xnet-mgmt']
         args: [
@@ -36,11 +36,11 @@ spec:
         ]
         resources:
           limits:
-            cpu: "{{.Values.fsm.fsmXnetwork.resource.limits.cpu}}"
-            memory: "{{.Values.fsm.fsmXnetwork.resource.limits.memory}}"
+            cpu: "{{.Values.fsm.fsmXnetwork.xmgt.resource.limits.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.xmgt.resource.limits.memory}}"
           requests:
-            cpu: "{{.Values.fsm.fsmXnetwork.resource.requests.cpu}}"
-            memory: "{{.Values.fsm.fsmXnetwork.resource.requests.memory}}"
+            cpu: "{{.Values.fsm.fsmXnetwork.xmgt.resource.requests.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.xmgt.resource.requests.memory}}"
         securityContext:
           privileged: true
         volumeMounts:
@@ -48,7 +48,7 @@ spec:
           name: host-sys-fs
           mountPropagation: Bidirectional
       - name: fsm-xnet
-        image: "localhost:5000/flomesh/xnet:latest"
+        image: "{{ include "fsmXnetwork.xnet.image" . }}"
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         command: ['/fsm-xnet-engine']
         args: [
@@ -56,53 +56,62 @@ spec:
           "--mesh-name", "{{.Values.fsm.meshName}}",
           "--fsm-version", "{{ .Chart.AppVersion }}",
           "--fsm-namespace", "{{ include "fsm.namespace" . }}",
-          "--inbound-port-flag", "inbound",
-          "--outbound-port-flag", "outbound",
+          "--filter-port-inbound", "{{.Values.fsm.fsmXnetwork.xnet.filter.ports.inbound}}",
+          "--filter-port-outbound", "{{.Values.fsm.fsmXnetwork.xnet.filter.ports.outbound}}",
+          "--flush-tcp-conn-track-cron-tab", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.tcp.crontab}}",
+          "--flush-tcp-conn-track-idle-seconds", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.tcp.idleSeconds}}",
+          "--flush-tcp-conn-track-batch-size", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.tcp.batchSize}}",
+          "--flush-udp-conn-track-cron-tab", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.udp.crontab}}",
+          "--flush-udp-conn-track-idle-seconds", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.udp.idleSeconds}}",
+          "--flush-udp-conn-track-batch-size", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.udp.batchSize}}",
+          "--node-path-kube-token", "{{ include "fsmXnetwork.xnet.node.kubeToken.path" . }}",
+          "--node-path-cni-bin", "{{ include "fsmXnetwork.xnet.node.cniBin.path" . }}",
+          "--node-path-cni-netd", "{{ include "fsmXnetwork.xnet.node.cniNetd.path" . }}",
+          "--node-path-sys-fs", "{{ include "fsmXnetwork.xnet.node.sysFs.path" . }}",
+          "--node-path-sys-run", "{{ include "fsmXnetwork.xnet.node.sysRun.path" . }}",
         ]
         resources:
           limits:
-            cpu: "{{.Values.fsm.fsmXnetwork.resource.limits.cpu}}"
-            memory: "{{.Values.fsm.fsmXnetwork.resource.limits.memory}}"
+            cpu: "{{.Values.fsm.fsmXnetwork.xnet.resource.limits.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.xnet.resource.limits.memory}}"
           requests:
-            cpu: "{{.Values.fsm.fsmXnetwork.resource.requests.cpu}}"
-            memory: "{{.Values.fsm.fsmXnetwork.resource.requests.memory}}"
+            cpu: "{{.Values.fsm.fsmXnetwork.xnet.resource.requests.cpu}}"
+            memory: "{{.Values.fsm.fsmXnetwork.xnet.resource.requests.memory}}"
         securityContext:
           privileged: true
         volumeMounts:
-        - mountPath: /host/cni/bin
-          name: host-cni-bin
-        - mountPath: /host/cni/net.d
-          name: host-cni-netd
-        - mountPath: /host/kube/.token
-          name: host-kube-token
-        - mountPath: /host/run
-          name: host-run
-          mountPropagation: Bidirectional
-        - mountPath: /host/sys/fs
-          name: host-sys-fs
-          mountPropagation: Bidirectional
+          - mountPath: /host/kube/.token
+            name: host-kube-token
+          - mountPath: /host/cni/bin
+            name: host-cni-bin
+          - mountPath: /host/cni/net.d
+            name: host-cni-netd
+          - mountPath: /host/sys/fs
+            name: host-sys-fs
+            mountPropagation: Bidirectional
+          - mountPath: /host/run
+            name: host-run
+            mountPropagation: Bidirectional
       dnsPolicy: ClusterFirst
       priorityClassName: system-node-critical
       restartPolicy: Always
       serviceAccountName: {{ .Release.Name }}
       volumes:
-      - hostPath:
-          #path: /opt/cni/bin
-          path: /bin
-        name: host-cni-bin
-      - hostPath:
-          #path: /etc/cni/net.d
-          path: /var/lib/rancher/k3s/agent/etc/cni/net.d
-        name: host-cni-netd
-      - hostPath:
-          path: /var/run
-        name: host-run
-      - hostPath:
-          path: /opt
-        name: host-sys-fs
-      - hostPath:
-          path: /var/lib/rancher/k3s/server/token
-        name: host-kube-token
+        - hostPath:
+            path: {{ include "fsmXnetwork.xnet.node.kubeToken.path" . }}
+          name: host-kube-token
+        - hostPath:
+            path: {{ include "fsmXnetwork.xnet.node.cniBin.path" . }}
+          name: host-cni-bin
+        - hostPath:
+            path: {{ include "fsmXnetwork.xnet.node.cniNetd.path" . }}
+          name: host-cni-netd
+        - hostPath:
+            path: {{ include "fsmXnetwork.xnet.node.sysFs.path" . }}
+          name: host-sys-fs
+        - hostPath:
+            path: {{ include "fsmXnetwork.xnet.node.sysRun.path" . }}
+          name: host-run
     {{- if .Values.fsm.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.fsm.imagePullSecrets | indent 8 }}

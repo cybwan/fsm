@@ -76,7 +76,7 @@ fsm:
       # -- Sidecar image name
       name: pipy
       # -- Sidecar image tag
-      tag: 1.5.3
+      tag: 1.5.5
     # -- Sidecar runs without mTLS
     sidecarDisabledMTLS: false
     # -- Sidecar compresses config.json
@@ -94,7 +94,7 @@ fsm:
       # -- Repo server image name
       name: pipy-repo
       # -- Repo server image tag
-      tag: 1.5.3
+      tag: 1.5.5
     # -- if false , Pipy RepoServer is installed within fsmController pod.
     standalone: false
     # -- ipaddr of host/service where Pipy RepoServer is installed
@@ -244,16 +244,62 @@ fsm:
   #
   # -- FSM xnetwork parameters
   fsmXnetwork:
-    kernelTracing: true
-    cniMode: true
-    kindMode: false
-    resource:
-      limits:
-        cpu: "1.5"
-        memory: "1G"
-      requests:
-        cpu: "0.5"
-        memory: "256M"
+    # -- xmgt
+    xmgt:
+      kernelTracing: true
+      cniMode: true
+      kindMode: false
+      resource:
+        limits:
+          cpu: "1.5"
+          memory: "1G"
+        requests:
+          cpu: "0.5"
+          memory: "256M"
+    # -- xnet
+    xnet:
+      image:
+        # -- Registry for xnet image
+        registry: cybwan
+        # -- xnet image name
+        name: xnet
+        # -- xnet image tag
+        tag: 0.9.1
+      resource:
+        limits:
+          cpu: "1.5"
+          memory: "1G"
+        requests:
+          cpu: "0.5"
+          memory: "256M"
+      filter:
+        ports:
+          inbound: "mesh"
+          outbound: "mesh"
+      flush:
+        conntrack:
+          tcp:
+            crontab: "30 3 */1 * *" ## At 3:30am every day
+            idleSeconds: 3600
+            batchSize: 4096
+          udp:
+            crontab: "*/2 * * * *" ## Every 120 seconds
+            idleSeconds: 120
+            batchSize: 4096
+      nodePaths:
+        k8s:
+          kubeToken: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+          cniBin: "/opt/cni/bin"
+          cniNetd: "/etc/cni/net.d"
+          sysFs: "/opt"
+          sysRun: "/var/run"
+        k3s:
+          enable: true
+          kubeToken: "/var/lib/rancher/k3s/server/token"
+          cniBin: "/bin"
+          cniNetd: "/var/lib/rancher/k3s/agent/etc/cni/net.d"
+          sysFs: "/opt"
+          sysRun: "/var/run"
     ## Affinity settings for pod assignment
     ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
     affinity:

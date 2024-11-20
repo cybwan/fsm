@@ -278,7 +278,7 @@ docker-build-fsm: charts-tgz $(DOCKER_FSM_TARGETS)
 
 .PHONY: buildx-context
 buildx-context:
-	@if ! docker buildx ls | grep -q "^fsm "; then docker buildx create --name fsm --driver-opt network=host; fi
+	@if ! docker buildx ls | grep -q "^fsm"; then docker buildx create --name fsm --driver-opt network=host; fi
 
 check-image-exists-%: NAME=$(@:check-image-exists-%=%)
 check-image-exists-%:
@@ -357,6 +357,9 @@ install-git-pre-push-hook:
 #  release targets below
 # -------------------------------------------
 ##@ Release Targets
+
+.PHONY: generate-cli-chart
+generate-cli-chart: helm-update-dep cmd/cli/chart.tgz
 
 .PHONY: build-cross
 build-cross: helm-update-dep cmd/cli/chart.tgz

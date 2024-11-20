@@ -251,14 +251,12 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].values[0] | string | `"fsm-xnetwork"` |  |
 | fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.topologyKey | string | `"kubernetes.io/hostname"` |  |
 | fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight | int | `100` |  |
-| fsm.fsmXnetwork.cniMode | bool | `true` |  |
-| fsm.fsmXnetwork.kernelTracing | bool | `true` |  |
-| fsm.fsmXnetwork.kindMode | bool | `false` |  |
-| fsm.fsmXnetwork.resource.limits.cpu | string | `"1.5"` |  |
-| fsm.fsmXnetwork.resource.limits.memory | string | `"1G"` |  |
-| fsm.fsmXnetwork.resource.requests.cpu | string | `"0.5"` |  |
-| fsm.fsmXnetwork.resource.requests.memory | string | `"256M"` |  |
 | fsm.fsmXnetwork.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
+| fsm.fsmXnetwork.xmgt | object | `{"cniMode":true,"kernelTracing":true,"kindMode":false,"resource":{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}}` | xmgt |
+| fsm.fsmXnetwork.xnet | object | `{"filter":{"ports":{"inbound":"mesh","outbound":"mesh"}},"flush":{"conntrack":{"tcp":{"batchSize":4096,"crontab":"30 3 */1 * *","idleSeconds":3600},"udp":{"batchSize":4096,"crontab":"*/2 * * * *","idleSeconds":120}}},"image":{"name":"xnet","registry":"cybwan","tag":"0.9.1"},"nodePaths":{"k3s":{"cniBin":"/bin","cniNetd":"/var/lib/rancher/k3s/agent/etc/cni/net.d","enable":true,"kubeToken":"/var/lib/rancher/k3s/server/token","sysFs":"/opt","sysRun":"/var/run"},"k8s":{"cniBin":"/opt/cni/bin","cniNetd":"/etc/cni/net.d","kubeToken":"/var/run/secrets/kubernetes.io/serviceaccount/token","sysFs":"/opt","sysRun":"/var/run"}},"resource":{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}}` | xnet |
+| fsm.fsmXnetwork.xnet.image.name | string | `"xnet"` | xnet image name |
+| fsm.fsmXnetwork.xnet.image.registry | string | `"cybwan"` | Registry for xnet image |
+| fsm.fsmXnetwork.xnet.image.tag | string | `"0.9.1"` | xnet image tag |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |
@@ -436,11 +434,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.remoteLogging.port | int | `30514` | Port of the remote logging service |
 | fsm.remoteLogging.sampledFraction | string | `"1.0"` | Sampled Fraction |
 | fsm.remoteLogging.secretName | string | `"fsm-remote-logging-secret"` | Secret Name |
-| fsm.repoServer | object | `{"codebase":"","image":{"name":"pipy-repo","registry":"flomesh","tag":"1.5.3"},"ipaddr":"127.0.0.1","port":6060,"standalone":false}` | Pipy RepoServer |
+| fsm.repoServer | object | `{"codebase":"","image":{"name":"pipy-repo","registry":"flomesh","tag":"1.5.5"},"ipaddr":"127.0.0.1","port":6060,"standalone":false}` | Pipy RepoServer |
 | fsm.repoServer.codebase | string | `""` | codebase is the folder used by fsmController. |
 | fsm.repoServer.image.name | string | `"pipy-repo"` | Repo server image name |
 | fsm.repoServer.image.registry | string | `"flomesh"` | Registry for repo server image |
-| fsm.repoServer.image.tag | string | `"1.5.3"` | Repo server image tag |
+| fsm.repoServer.image.tag | string | `"1.5.5"` | Repo server image tag |
 | fsm.repoServer.ipaddr | string | `"127.0.0.1"` | ipaddr of host/service where Pipy RepoServer is installed |
 | fsm.repoServer.port | int | `6060` | port of pipy RepoServer |
 | fsm.repoServer.standalone | bool | `false` | if false , Pipy RepoServer is installed within fsmController pod. |
@@ -449,11 +447,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.serviceLB.image.name | string | `"mirrored-klipper-lb"` | service-lb image name |
 | fsm.serviceLB.image.registry | string | `"flomesh"` | Registry for service-lb image |
 | fsm.serviceLB.image.tag | string | `"v0.4.7"` | service-lb image tag |
-| fsm.sidecar | object | `{"compressConfig":true,"image":{"name":"pipy","registry":"flomesh","tag":"1.5.3"},"sidecarDisabledMTLS":false,"sidecarLogLevel":"error","sidecarTimeout":60}` | Sidecar supported by fsm |
+| fsm.sidecar | object | `{"compressConfig":true,"image":{"name":"pipy","registry":"flomesh","tag":"1.5.5"},"sidecarDisabledMTLS":false,"sidecarLogLevel":"error","sidecarTimeout":60}` | Sidecar supported by fsm |
 | fsm.sidecar.compressConfig | bool | `true` | Sidecar compresses config.json |
 | fsm.sidecar.image.name | string | `"pipy"` | Sidecar image name |
 | fsm.sidecar.image.registry | string | `"flomesh"` | Registry for sidecar image |
-| fsm.sidecar.image.tag | string | `"1.5.3"` | Sidecar image tag |
+| fsm.sidecar.image.tag | string | `"1.5.5"` | Sidecar image tag |
 | fsm.sidecar.sidecarDisabledMTLS | bool | `false` | Sidecar runs without mTLS |
 | fsm.sidecar.sidecarLogLevel | string | `"error"` | Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error` |
 | fsm.sidecar.sidecarTimeout | int | `60` | Sets connect/idle/read/write timeout |
