@@ -11,7 +11,6 @@ import (
 	"dubbo.apache.org/dubbo-go/v3/common/constant"
 	"github.com/dubbogo/go-zookeeper/zk"
 	"github.com/pkg/errors"
-	uatomic "go.uber.org/atomic"
 )
 
 const (
@@ -31,19 +30,18 @@ type EventType int
 
 type Event struct {
 	Path    string
-	Action  EventType
 	Content string
+	Action  EventType
 }
 
 type DataListener interface {
 	DataChange(event Event) bool
 }
 
-// nolint
 type EventListener struct {
-	Client      *Client
+	client      *Client
 	pathMapLock sync.Mutex
-	pathMap     map[string]*uatomic.Int32
+	pathMap     map[string]*Int32
 	wg          sync.WaitGroup
 	exit        chan struct{}
 }
@@ -51,8 +49,8 @@ type EventListener struct {
 // NewEventListener returns a EventListener instance
 func NewEventListener(client *Client) *EventListener {
 	return &EventListener{
-		Client:  client,
-		pathMap: make(map[string]*uatomic.Int32),
+		client:  client,
+		pathMap: make(map[string]*Int32),
 		exit:    make(chan struct{}),
 	}
 }
@@ -77,7 +75,7 @@ func (l *EventListener) ListenConfigurationEvent(zkPath string, listener DataLis
 	l.wg.Add(1)
 	go func(zkPath string, listener DataListener) {
 		var eventChan = make(chan zk.Event, 16)
-		l.Client.RegisterEvent(zkPath, eventChan)
+		l.client.RegisterEvent(zkPath, eventChan)
 		for {
 			select {
 			case event := <-eventChan:
@@ -86,7 +84,7 @@ func (l *EventListener) ListenConfigurationEvent(zkPath string, listener DataLis
 					continue
 				}
 				// 1. Re-set watcher for the zk node
-				_, _, _, err := l.Client.Conn.ExistsW(event.Path)
+				_, _, _, err := l.client.conn.ExistsW(event.Path)
 				if err != nil {
 					log.Warn().Msgf("[EventListener]Re-set watcher error, the reason is %+v", err)
 					continue
@@ -101,7 +99,7 @@ func (l *EventListener) ListenConfigurationEvent(zkPath string, listener DataLis
 					// Notice: The order of step 1 and step 2 cannot be swapped, if you get value(with timestamp t1)
 					// before re-set the watcher(with timestamp t2), and some one change the data of the zk node after
 					// t2 but before t1, you may get the old value, and the new value will not trigger the event.
-					contentBytes, _, err := l.Client.Conn.Get(event.Path)
+					contentBytes, _, err := l.client.conn.Get(event.Path)
 					if err != nil {
 						log.Warn().Msgf("[ListenConfigurationEvent]Get config value error, the reason is %+v", err)
 						continue
@@ -122,7 +120,6 @@ func (l *EventListener) ListenConfigurationEvent(zkPath string, listener DataLis
 	}(zkPath, listener)
 }
 
-// nolint
 func (l *EventListener) listenServiceNodeEvent(zkPath string, listener ...DataListener) bool {
 	l.pathMapLock.Lock()
 	a, ok := l.pathMap[zkPath]
@@ -135,7 +132,7 @@ func (l *EventListener) listenServiceNodeEvent(zkPath string, listener ...DataLi
 	defer a.Dec()
 	var zkEvent zk.Event
 	for {
-		keyEventCh, err := l.Client.ExistW(zkPath)
+		keyEventCh, err := l.client.ExistW(zkPath)
 		if err != nil {
 			log.Warn().Msgf("existW{key:%s} = error{%v}", zkPath, err)
 			return false
@@ -148,7 +145,7 @@ func (l *EventListener) listenServiceNodeEvent(zkPath string, listener ...DataLi
 			case zk.EventNodeDataChanged:
 				log.Warn().Msgf("zk.ExistW(key{%s}) = event{EventNodeDataChanged}", zkPath)
 				if len(listener) > 0 {
-					content, _, err := l.Client.Conn.Get(zkEvent.Path)
+					content, _, err := l.client.conn.Get(zkEvent.Path)
 					if err != nil {
 						log.Warn().Msgf("zk.Conn.Get{key:%s} = error{%v}", zkPath, err)
 						return false
@@ -158,7 +155,7 @@ func (l *EventListener) listenServiceNodeEvent(zkPath string, listener ...DataLi
 			case zk.EventNodeCreated:
 				log.Warn().Msgf("[EventListener][listenServiceNodeEvent]Get a EventNodeCreated event for path {%s}", zkPath)
 				if len(listener) > 0 {
-					content, _, err := l.Client.Conn.Get(zkEvent.Path)
+					content, _, err := l.client.conn.Get(zkEvent.Path)
 					if err != nil {
 						log.Warn().Msgf("zk.Conn.Get{key:%s} = error{%v}", zkPath, err)
 						return false
@@ -186,7 +183,7 @@ func (l *EventListener) handleNodeEvent(zkPath string, children []string, listen
 		}
 		return false
 	}
-	newChildren, err := l.Client.GetChildren(zkPath)
+	newChildren, err := l.client.GetChildren(zkPath)
 	if err != nil {
 		log.Error().Msgf("[EventListener handleNodeEvent]Path{%s} child nodes changed, zk.Children() = error{%v}", zkPath, errors.WithStack(err))
 		return
@@ -198,7 +195,7 @@ func (l *EventListener) handleNodeEvent(zkPath string, children []string, listen
 	for _, n := range newChildren {
 		newNode = path.Join(zkPath, n)
 		log.Debug().Msgf("[Zookeeper Listener] add zkNode{%s}", newNode)
-		content, _, connErr := l.Client.Conn.Get(newNode)
+		content, _, connErr := l.client.conn.Get(newNode)
 		if connErr != nil {
 			log.Error().Msgf("Get new node path {%v} 's content error,message is  {%v}",
 				newNode, errors.WithStack(connErr))
@@ -254,7 +251,7 @@ func (l *EventListener) listenAllDirEvents(conf *common.URL, listener DataListen
 	rootPath := path.Join(constant.PathSeparator, constant.Dubbo)
 	for {
 		// get all interfaces
-		children, childEventCh, err := l.Client.GetChildrenW(rootPath)
+		children, childEventCh, err := l.client.GetChildrenW(rootPath)
 		if err != nil {
 			failTimes++
 			if MaxFailTimes <= failTimes {
@@ -284,7 +281,7 @@ func (l *EventListener) listenAllDirEvents(conf *common.URL, listener DataListen
 				l.pathMapLock.Unlock()
 				continue
 			} else {
-				l.pathMap[zkRootPath] = uatomic.NewInt32(0)
+				l.pathMap[zkRootPath] = NewInt32(0)
 			}
 			l.pathMapLock.Unlock()
 			log.Debug().Msgf("[Zookeeper EventListener][listenDirEvent] listen dubbo interface key{%s}", zkRootPath)
@@ -330,7 +327,7 @@ func (l *EventListener) listenDirEvent(conf *common.URL, zkRootPath string, list
 	}
 	for {
 		// Get current children with watcher for the zkRootPath
-		children, childEventCh, err := l.Client.GetChildrenW(zkRootPath)
+		children, childEventCh, err := l.client.GetChildrenW(zkRootPath)
 		if err != nil {
 			failTimes++
 			if MaxFailTimes <= failTimes {
@@ -367,18 +364,18 @@ func (l *EventListener) listenDirEvent(conf *common.URL, zkRootPath string, list
 			l.pathMapLock.Lock()
 			_, ok := l.pathMap[zkNodePath]
 			if !ok {
-				l.pathMap[zkNodePath] = uatomic.NewInt32(0)
+				l.pathMap[zkNodePath] = NewInt32(0)
 			}
 			l.pathMapLock.Unlock()
 			if ok {
 				log.Warn().Msgf("[Zookeeper EventListener][listenDirEvent] The child with zk path {%s} has already been listened.", zkNodePath)
-				l.Client.RLock()
-				if l.Client.Conn == nil {
-					l.Client.RUnlock()
+				l.client.RLock()
+				if l.client.conn == nil {
+					l.client.RUnlock()
 					break
 				}
-				content, _, err := l.Client.Conn.Get(zkNodePath)
-				l.Client.RUnlock()
+				content, _, err := l.client.conn.Get(zkNodePath)
+				l.client.RUnlock()
 				if err != nil {
 					log.Error().Msgf("[Zookeeper EventListener][listenDirEvent] Get content of the child node {%v} failed, the error is %+v", zkNodePath, errors.WithStack(err))
 				}
@@ -386,13 +383,13 @@ func (l *EventListener) listenDirEvent(conf *common.URL, zkRootPath string, list
 				continue
 			}
 			// When Zk disconnected, the Conn will be set to nil, so here need check the value of Conn
-			l.Client.RLock()
-			if l.Client.Conn == nil {
-				l.Client.RUnlock()
+			l.client.RLock()
+			if l.client.conn == nil {
+				l.client.RUnlock()
 				break
 			}
-			content, _, err := l.Client.Conn.Get(zkNodePath)
-			l.Client.RUnlock()
+			content, _, err := l.client.conn.Get(zkNodePath)
+			l.client.RUnlock()
 			if err != nil {
 				log.Error().Msgf("[Zookeeper EventListener][listenDirEvent] Get content of the child node {%v} failed, the error is %+v", zkNodePath, errors.WithStack(err))
 			}
