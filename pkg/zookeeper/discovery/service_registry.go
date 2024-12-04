@@ -10,7 +10,7 @@ import (
 // DataChange implement DataListener's DataChange function
 func (sd *ServiceDiscovery) DataChange(eventType zookeeper.Event) bool {
 	instancePath := eventType.Path
-	name, id, err := sd.serviceInstanceIdFunc(sd.basePath, instancePath)
+	name, id, err := sd.ops.ServiceInstanceId(sd.basePath, instancePath)
 	if err != nil {
 		log.Error().Msgf("[ServiceDiscovery] data change error = {%v}", err)
 		return true
@@ -21,7 +21,7 @@ func (sd *ServiceDiscovery) DataChange(eventType zookeeper.Event) bool {
 
 // registerService register service to zookeeper
 func (sd *ServiceDiscovery) registerService(instance ServiceInstance) error {
-	instancePath := sd.pathForInstanceFunc(sd.basePath, instance.ServiceName(), instance.InstanceId())
+	instancePath := sd.ops.PathForInstance(sd.basePath, instance.ServiceName(), instance.InstanceId())
 	data, err := instance.Marshal()
 	if err != nil {
 		return err
@@ -51,8 +51,8 @@ func (sd *ServiceDiscovery) registerService(instance ServiceInstance) error {
 
 // RegisterService register service to zookeeper, and ensure cache is consistent with zookeeper
 func (sd *ServiceDiscovery) RegisterService(instance ServiceInstance) error {
-	value, loaded := sd.services.LoadOrStore(instance.InstanceId(), &Entry{})
-	entry, ok := value.(*Entry)
+	value, loaded := sd.services.LoadOrStore(instance.InstanceId(), &entry{})
+	entry, ok := value.(*entry)
 	if !ok {
 		return errors.New("[ServiceDiscovery] services value not entry")
 	}
@@ -75,7 +75,7 @@ func (sd *ServiceDiscovery) UpdateService(instance ServiceInstance) error {
 	if !ok {
 		return errors.Errorf("[ServiceDiscovery] Service{%s} not registered", instance.InstanceId())
 	}
-	entry, ok := value.(*Entry)
+	entry, ok := value.(*entry)
 	if !ok {
 		return errors.New("[ServiceDiscovery] services value not entry")
 	}
@@ -89,7 +89,7 @@ func (sd *ServiceDiscovery) UpdateService(instance ServiceInstance) error {
 	defer entry.Unlock()
 
 	entry.instance = instance
-	instancePath := sd.pathForInstanceFunc(sd.basePath, instance.ServiceName(), instance.InstanceId())
+	instancePath := sd.ops.PathForInstance(sd.basePath, instance.ServiceName(), instance.InstanceId())
 
 	if _, err = sd.client.SetContent(instancePath, data, -1); err != nil {
 		return err
@@ -103,7 +103,7 @@ func (sd *ServiceDiscovery) updateInternalService(name, id string) {
 	if !ok {
 		return
 	}
-	entry, ok := value.(*Entry)
+	entry, ok := value.(*entry)
 	if !ok {
 		return
 	}
@@ -129,14 +129,14 @@ func (sd *ServiceDiscovery) UnregisterService(instance ServiceInstance) error {
 
 // unregisterService un-register service in zookeeper
 func (sd *ServiceDiscovery) unregisterService(instance ServiceInstance) error {
-	instancePath := sd.pathForInstanceFunc(sd.basePath, instance.ServiceName(), instance.InstanceId())
+	instancePath := sd.ops.PathForInstance(sd.basePath, instance.ServiceName(), instance.InstanceId())
 	return sd.client.Delete(instancePath)
 }
 
 // ReRegisterServices re-register all cache services to zookeeper
 func (sd *ServiceDiscovery) ReRegisterServices() {
 	sd.services.Range(func(key, value interface{}) bool {
-		entry, ok := value.(*Entry)
+		entry, ok := value.(*entry)
 		if !ok {
 			return true
 		}

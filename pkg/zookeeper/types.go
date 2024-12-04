@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.New("zookeeper_client")
+	log = logger.New("fsm-zookeeper")
 )

@@ -19,7 +19,7 @@ func main() {
 		panic(err)
 	}
 	basePath := "/Application/grpc"
-	sd := discovery.NewServiceDiscovery(client, basePath, nil, nil, nil, nil)
+	sd := discovery.NewServiceDiscovery(client, basePath, nil)
 	fmt.Println(sd.QueryForNames())
 	serviceInstances, err := sd.QueryForInstances("com.orientsec.demo.Greeter/providers")
 	fmt.Println(serviceInstances)

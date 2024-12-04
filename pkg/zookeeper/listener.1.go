@@ -22,7 +22,7 @@ const (
 var defaultTTL = 10 * time.Minute
 
 // nolint
-type ZkEventListener struct {
+type EventListener struct {
 	Client      *Client
 	pathMapLock sync.Mutex
 	pathMap     map[string]*uatomic.Int32
@@ -30,9 +30,9 @@ type ZkEventListener struct {
 	exit        chan struct{}
 }
 
-// NewZkEventListener returns a EventListener instance
-func NewZkEventListener(client *Client) *ZkEventListener {
-	return &ZkEventListener{
+// NewEventListener returns a EventListener instance
+func NewEventListener(client *Client) *EventListener {
+	return &EventListener{
 		Client:  client,
 		pathMap: make(map[string]*uatomic.Int32),
 		exit:    make(chan struct{}),
@@ -40,7 +40,7 @@ func NewZkEventListener(client *Client) *ZkEventListener {
 }
 
 // ListenServiceNodeEvent listen a path node event
-func (l *ZkEventListener) ListenServiceNodeEvent(zkPath string, listener DataListener) {
+func (l *EventListener) ListenServiceNodeEvent(zkPath string, listener DataListener) {
 	l.wg.Add(1)
 	go func(zkPath string, listener DataListener) {
 		defer l.wg.Done()
@@ -55,7 +55,7 @@ func (l *ZkEventListener) ListenServiceNodeEvent(zkPath string, listener DataLis
 }
 
 // ListenConfigurationEvent listen a path node event
-func (l *ZkEventListener) ListenConfigurationEvent(zkPath string, listener DataListener) {
+func (l *EventListener) ListenConfigurationEvent(zkPath string, listener DataListener) {
 	l.wg.Add(1)
 	go func(zkPath string, listener DataListener) {
 		var eventChan = make(chan zk.Event, 16)
@@ -63,14 +63,14 @@ func (l *ZkEventListener) ListenConfigurationEvent(zkPath string, listener DataL
 		for {
 			select {
 			case event := <-eventChan:
-				log.Info().Msgf("[ZkEventListener]Receive configuration change event:%#v", event)
+				log.Info().Msgf("[EventListener]Receive configuration change event:%#v", event)
 				if event.Type == zk.EventNodeChildrenChanged || event.Type == zk.EventNotWatching {
 					continue
 				}
 				// 1. Re-set watcher for the zk node
 				_, _, _, err := l.Client.Conn.ExistsW(event.Path)
 				if err != nil {
-					log.Warn().Msgf("[ZkEventListener]Re-set watcher error, the reason is %+v", err)
+					log.Warn().Msgf("[EventListener]Re-set watcher error, the reason is %+v", err)
 					continue
 				}
 
@@ -89,7 +89,7 @@ func (l *ZkEventListener) ListenConfigurationEvent(zkPath string, listener DataL
 						continue
 					}
 					content = string(contentBytes)
-					log.Debug().Msgf("[ZkEventListener]Successfully get new config value: %s", string(content))
+					log.Debug().Msgf("[EventListener]Successfully get new config value: %s", string(content))
 				}
 
 				listener.DataChange(Event{
@@ -105,7 +105,7 @@ func (l *ZkEventListener) ListenConfigurationEvent(zkPath string, listener DataL
 }
 
 // nolint
-func (l *ZkEventListener) listenServiceNodeEvent(zkPath string, listener ...DataListener) bool {
+func (l *EventListener) listenServiceNodeEvent(zkPath string, listener ...DataListener) bool {
 	l.pathMapLock.Lock()
 	a, ok := l.pathMap[zkPath]
 	if !ok || a.Load() > 1 {
@@ -138,7 +138,7 @@ func (l *ZkEventListener) listenServiceNodeEvent(zkPath string, listener ...Data
 					listener[0].DataChange(Event{Path: zkEvent.Path, Action: EventTypeUpdate, Content: string(content)})
 				}
 			case zk.EventNodeCreated:
-				log.Warn().Msgf("[ZkEventListener][listenServiceNodeEvent]Get a EventNodeCreated event for path {%s}", zkPath)
+				log.Warn().Msgf("[EventListener][listenServiceNodeEvent]Get a EventNodeCreated event for path {%s}", zkPath)
 				if len(listener) > 0 {
 					content, _, err := l.Client.Conn.Get(zkEvent.Path)
 					if err != nil {
@@ -148,9 +148,9 @@ func (l *ZkEventListener) listenServiceNodeEvent(zkPath string, listener ...Data
 					listener[0].DataChange(Event{Path: zkEvent.Path, Action: EventTypeAdd, Content: string(content)})
 				}
 			case zk.EventNotWatching:
-				log.Info().Msgf("[ZkEventListener][listenServiceNodeEvent]Get a EventNotWatching event for path {%s}", zkPath)
+				log.Info().Msgf("[EventListener][listenServiceNodeEvent]Get a EventNotWatching event for path {%s}", zkPath)
 			case zk.EventNodeDeleted:
-				log.Info().Msgf("[ZkEventListener][listenServiceNodeEvent]Get a EventNodeDeleted event for path {%s}", zkPath)
+				log.Info().Msgf("[EventListener][listenServiceNodeEvent]Get a EventNodeDeleted event for path {%s}", zkPath)
 				return true
 			}
 		case <-l.exit:
@@ -159,7 +159,7 @@ func (l *ZkEventListener) listenServiceNodeEvent(zkPath string, listener ...Data
 	}
 }
 
-func (l *ZkEventListener) handleZkNodeEvent(zkPath string, children []string, listener DataListener) {
+func (l *EventListener) handleNodeEvent(zkPath string, children []string, listener DataListener) {
 	contains := func(s []string, e string) bool {
 		for _, a := range s {
 			if a == e {
@@ -170,7 +170,7 @@ func (l *ZkEventListener) handleZkNodeEvent(zkPath string, children []string, li
 	}
 	newChildren, err := l.Client.GetChildren(zkPath)
 	if err != nil {
-		log.Error().Msgf("[ZkEventListener handleZkNodeEvent]Path{%s} child nodes changed, zk.Children() = error{%v}", zkPath, errors.WithStack(err))
+		log.Error().Msgf("[EventListener handleNodeEvent]Path{%s} child nodes changed, zk.Children() = error{%v}", zkPath, errors.WithStack(err))
 		return
 	}
 	// a node was added -- listen the new node
@@ -199,7 +199,7 @@ func (l *ZkEventListener) handleZkNodeEvent(zkPath string, children []string, li
 			l.pathMapLock.Lock()
 			delete(l.pathMap, zkPath)
 			l.pathMapLock.Unlock()
-			log.Debug().Msgf("handleZkNodeEvent->listenSelf(zk path{%s}) goroutine exit now", node)
+			log.Debug().Msgf("handleNodeEvent->listenSelf(zk path{%s}) goroutine exit now", node)
 		}(newNode, listener)
 	}
 
@@ -216,7 +216,7 @@ func (l *ZkEventListener) handleZkNodeEvent(zkPath string, children []string, li
 }
 
 // listenerAllDirEvents listens all services when conf.InterfaceKey = "*"
-func (l *ZkEventListener) listenAllDirEvents(conf *common.URL, listener DataListener) {
+func (l *EventListener) listenAllDirEvents(conf *common.URL, listener DataListener) {
 	var (
 		failTimes int
 		ttl       time.Duration
@@ -291,7 +291,7 @@ func (l *ZkEventListener) listenAllDirEvents(conf *common.URL, listener DataList
 	}
 }
 
-func (l *ZkEventListener) listenDirEvent(conf *common.URL, zkRootPath string, listener DataListener, intf string) {
+func (l *EventListener) listenDirEvent(conf *common.URL, zkRootPath string, listener DataListener, intf string) {
 	defer l.wg.Done()
 	if intf == constant.AnyValue {
 		l.listenAllDirEvents(conf, listener)
@@ -402,7 +402,7 @@ func (l *ZkEventListener) listenDirEvent(conf *common.URL, zkRootPath string, li
 }
 
 // startScheduleWatchTask periodically update provider information, return true when receive exit signal
-func (l *ZkEventListener) startScheduleWatchTask(
+func (l *EventListener) startScheduleWatchTask(
 	zkRootPath string, children []string, ttl time.Duration,
 	listener DataListener, childEventCh <-chan zk.Event) bool {
 	tickerTTL := ttl
@@ -413,7 +413,7 @@ func (l *ZkEventListener) startScheduleWatchTask(
 	for {
 		select {
 		case <-ticker.C:
-			l.handleZkNodeEvent(zkRootPath, children, listener)
+			l.handleNodeEvent(zkRootPath, children, listener)
 			if tickerTTL < ttl {
 				tickerTTL *= 2
 				if tickerTTL > ttl {
@@ -427,7 +427,7 @@ func (l *ZkEventListener) startScheduleWatchTask(
 				zkEvent.Type.String(), zkEvent.Server, zkEvent.Path, zkEvent.State, StateToString(zkEvent.State), zkEvent.Err)
 			ticker.Stop()
 			if zkEvent.Type == zk.EventNodeChildrenChanged {
-				l.handleZkNodeEvent(zkEvent.Path, children, listener)
+				l.handleNodeEvent(zkEvent.Path, children, listener)
 			}
 			return false
 		case <-l.exit:
@@ -445,7 +445,7 @@ func timeSecondDuration(sec int) time.Duration {
 // ListenServiceEvent is invoked by ZkConsumerRegistry::Register/ZkConsumerRegistry::get/ZkConsumerRegistry::getListener
 // registry.go:Listen -> listenServiceEvent -> listenDirEvent -> listenServiceNodeEvent
 // registry.go:Listen -> listenServiceEvent -> listenServiceNodeEvent
-func (l *ZkEventListener) ListenServiceEvent(conf *common.URL, zkPath string, listener DataListener) {
+func (l *EventListener) ListenServiceEvent(conf *common.URL, zkPath string, listener DataListener) {
 	log.Info().Msgf("[Zookeeper Listener] listen dubbo path{%s}", zkPath)
 	l.wg.Add(1)
 	go func(zkPath string, listener DataListener) {
@@ -459,7 +459,7 @@ func (l *ZkEventListener) ListenServiceEvent(conf *common.URL, zkPath string, li
 }
 
 // Close will let client listen exit
-func (l *ZkEventListener) Close() {
+func (l *EventListener) Close() {
 	close(l.exit)
 	l.wg.Wait()
 }

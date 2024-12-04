@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	log = logger.New("curator_discovery")
+	log = logger.New("fsm-zookeeper-discovery")
 )
 
 type ServiceDiscovery struct {
@@ -16,18 +16,8 @@ type ServiceDiscovery struct {
 	mutex    *sync.Mutex
 	basePath string
 	services *sync.Map
-	listener *zookeeper.ZkEventListener
-
-	newInstanceFunc       func(serviceName, instanceId string) ServiceInstance
-	pathForServiceFunc    func(basePath, serviceName string) (servicePath string)
-	pathForInstanceFunc   func(basePath, serviceName, instanceId string) (instancePath string)
-	serviceInstanceIdFunc func(basePath, instancePath string) (serviceName, instanceId string, err error)
-}
-
-// Entry contain a service instance
-type Entry struct {
-	sync.Mutex
-	instance ServiceInstance
+	listener *zookeeper.EventListener
+	ops      FuncOps
 }
 
 type ServiceInstance interface {
@@ -36,6 +26,19 @@ type ServiceInstance interface {
 
 	Marshal() ([]byte, error)
 	Unmarshal(data []byte) error
+}
+
+// entry contain a service instance
+type entry struct {
+	sync.Mutex
+	instance ServiceInstance
+}
+
+type FuncOps interface {
+	NewInstance(serviceName, instanceId string) ServiceInstance
+	PathForService(basePath, serviceName string) (servicePath string)
+	PathForInstance(basePath, serviceName, instanceId string) (instancePath string)
+	ServiceInstanceId(basePath, instancePath string) (serviceName, instanceId string, err error)
 }
 
 type ServiceInstanceA struct {
