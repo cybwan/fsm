@@ -143,6 +143,7 @@ func (z *ZookeeperClient) createZookeeperConn() error {
 }
 
 // HandleZkEvent handles zookeeper events
+// nolint
 func (d *DefaultHandler) HandleZkEvent(z *ZookeeperClient) {
 	var (
 		ok    bool
@@ -233,10 +234,7 @@ func (z *ZookeeperClient) UnregisterEvent(zkPath string, event chan zk.Event) {
 
 // ZkConnValid validates zookeeper connection
 func (z *ZookeeperClient) ZkConnValid() bool {
-	if atomic.LoadUint32(&z.valid) == 1 {
-		return true
-	}
-	return false
+	return atomic.LoadUint32(&z.valid) == 1
 }
 
 // Create will create the node recursively, which means that if the parent node is absent,

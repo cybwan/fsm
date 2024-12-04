@@ -101,7 +101,6 @@ func (l *ZkEventListener) ListenConfigurationEvent(zkPath string, listener DataL
 				return
 			}
 		}
-
 	}(zkPath, listener)
 }
 
