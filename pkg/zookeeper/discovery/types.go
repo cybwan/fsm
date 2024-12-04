@@ -17,9 +17,28 @@ type ServiceDiscovery struct {
 	basePath string
 	services *sync.Map
 	listener *zookeeper.ZkEventListener
+
+	newInstanceFunc       func(serviceName, instanceId string) ServiceInstance
+	pathForServiceFunc    func(basePath, serviceName string) (servicePath string)
+	pathForInstanceFunc   func(basePath, serviceName, instanceId string) (instancePath string)
+	serviceInstanceIdFunc func(basePath, instancePath string) (serviceName, instanceId string, err error)
 }
 
-type ServiceInstance struct {
+// Entry contain a service instance
+type Entry struct {
+	sync.Mutex
+	instance ServiceInstance
+}
+
+type ServiceInstance interface {
+	ServiceName() string
+	InstanceId() string
+
+	Marshal() ([]byte, error)
+	Unmarshal(data []byte) error
+}
+
+type ServiceInstanceA struct {
 	Name                string      `json:"name,omitempty"`
 	ID                  string      `json:"id,omitempty"`
 	Address             string      `json:"address,omitempty"`
