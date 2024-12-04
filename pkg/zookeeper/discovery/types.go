@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/flomesh-io/fsm/pkg/logger"
-	"github.com/flomesh-io/fsm/pkg/zookeeper/zk/kv"
+	"github.com/flomesh-io/fsm/pkg/zookeeper"
 )
 
 var (
@@ -12,11 +12,11 @@ var (
 )
 
 type ServiceDiscovery struct {
-	client   *kv.ZookeeperClient
+	client   *zookeeper.Client
 	mutex    *sync.Mutex
 	basePath string
 	services *sync.Map
-	listener *kv.ZkEventListener
+	listener *zookeeper.ZkEventListener
 }
 
 type ServiceInstance struct {

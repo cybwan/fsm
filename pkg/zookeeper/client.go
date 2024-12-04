@@ -1,6 +1,7 @@
-package kv
+package zookeeper
 
 import (
+	"os"
 	"path"
 	"strings"
 	"sync"
@@ -11,12 +12,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	SLASH = "/"
-)
-
 var (
-	zkClientPool   zookeeperClientPool
+	zkClientPool   clientPool
 	clientPoolOnce sync.Once
 
 	// ErrNilZkClientConn no conn error
@@ -24,8 +21,8 @@ var (
 	ErrStatIsNil       = errors.New("Stat of the node is nil")
 )
 
-// ZookeeperClient represents zookeeper Client Configuration
-type ZookeeperClient struct {
+// Client represents zookeeper Client Configuration
+type Client struct {
 	name              string
 	ZkAddrs           []string
 	sync.RWMutex      // for conn
@@ -39,18 +36,18 @@ type ZookeeperClient struct {
 	reconnectCh       chan struct{}
 	eventRegistry     map[string][]chan zk.Event
 	eventRegistryLock sync.RWMutex
-	zkEventHandler    ZkEventHandler
+	zkEventHandler    EventHandler
 	Session           <-chan zk.Event
 }
 
-type zookeeperClientPool struct {
+type clientPool struct {
 	sync.Mutex
-	zkClient map[string]*ZookeeperClient
+	zkClient map[string]*Client
 }
 
-// ZkEventHandler interface
-type ZkEventHandler interface {
-	HandleZkEvent(z *ZookeeperClient)
+// EventHandler interface
+type EventHandler interface {
+	HandleEvent(z *Client)
 }
 
 // DefaultHandler is default handler for zk event
@@ -82,16 +79,16 @@ func StateToString(state zk.State) string {
 	}
 }
 
-func initZookeeperClientPool() {
-	zkClientPool.zkClient = make(map[string]*ZookeeperClient)
+func initClientPool() {
+	zkClientPool.zkClient = make(map[string]*Client)
 }
 
-// NewZookeeperClient will create a ZookeeperClient
-func NewZookeeperClient(name string, zkAddrs []string, share bool, opts ...zkClientOption) (*ZookeeperClient, error) {
+// NewClient will create a Client
+func NewClient(name string, zkAddrs []string, share bool, opts ...zkClientOption) (*Client, error) {
 	if !share {
 		return newClient(name, zkAddrs, share, opts...)
 	}
-	clientPoolOnce.Do(initZookeeperClientPool)
+	clientPoolOnce.Do(initClientPool)
 	zkClientPool.Lock()
 	defer zkClientPool.Unlock()
 	if zkClient, ok := zkClientPool.zkClient[name]; ok {
@@ -106,8 +103,8 @@ func NewZookeeperClient(name string, zkAddrs []string, share bool, opts ...zkCli
 	return newZkClient, nil
 }
 
-func newClient(name string, zkAddrs []string, share bool, opts ...zkClientOption) (*ZookeeperClient, error) {
-	newZkClient := &ZookeeperClient{
+func newClient(name string, zkAddrs []string, share bool, opts ...zkClientOption) (*Client, error) {
+	newZkClient := &Client{
 		name:           name,
 		ZkAddrs:        zkAddrs,
 		activeNumber:   0,
@@ -120,7 +117,7 @@ func newClient(name string, zkAddrs []string, share bool, opts ...zkClientOption
 	for _, opt := range opts {
 		opt(newZkClient)
 	}
-	err := newZkClient.createZookeeperConn()
+	err := newZkClient.createConn()
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +126,7 @@ func newClient(name string, zkAddrs []string, share bool, opts ...zkClientOption
 }
 
 // nolint
-func (z *ZookeeperClient) createZookeeperConn() error {
+func (z *Client) createConn() error {
 	var err error
 
 	// connect to zookeeper
@@ -138,13 +135,13 @@ func (z *ZookeeperClient) createZookeeperConn() error {
 		return err
 	}
 	atomic.StoreUint32(&z.valid, 1)
-	go z.zkEventHandler.HandleZkEvent(z)
+	go z.zkEventHandler.HandleEvent(z)
 	return nil
 }
 
-// HandleZkEvent handles zookeeper events
+// HandleEvent handles zookeeper events
 // nolint
-func (d *DefaultHandler) HandleZkEvent(z *ZookeeperClient) {
+func (d *DefaultHandler) HandleEvent(z *Client) {
 	var (
 		ok    bool
 		state int
@@ -196,7 +193,7 @@ func (d *DefaultHandler) HandleZkEvent(z *ZookeeperClient) {
 }
 
 // RegisterEvent registers zookeeper events
-func (z *ZookeeperClient) RegisterEvent(zkPath string, event chan zk.Event) {
+func (z *Client) RegisterEvent(zkPath string, event chan zk.Event) {
 	if zkPath == "" {
 		return
 	}
@@ -209,7 +206,7 @@ func (z *ZookeeperClient) RegisterEvent(zkPath string, event chan zk.Event) {
 }
 
 // UnregisterEvent unregisters zookeeper events
-func (z *ZookeeperClient) UnregisterEvent(zkPath string, event chan zk.Event) {
+func (z *Client) UnregisterEvent(zkPath string, event chan zk.Event) {
 	if zkPath == "" {
 		return
 	}
@@ -232,36 +229,36 @@ func (z *ZookeeperClient) UnregisterEvent(zkPath string, event chan zk.Event) {
 	}
 }
 
-// ZkConnValid validates zookeeper connection
-func (z *ZookeeperClient) ZkConnValid() bool {
+// ConnValid validates zookeeper connection
+func (z *Client) ConnValid() bool {
 	return atomic.LoadUint32(&z.valid) == 1
 }
 
 // Create will create the node recursively, which means that if the parent node is absent,
 // it will create parent node first.
 // And the value for the basePath is ""
-func (z *ZookeeperClient) Create(basePath string) error {
+func (z *Client) Create(basePath string) error {
 	return z.CreateWithValue(basePath, []byte{})
 }
 
 // CreateWithValue will create the node recursively, which means that if the parent node is absent,
 // it will create parent node first.
 // basePath should start with "/"
-func (z *ZookeeperClient) CreateWithValue(basePath string, value []byte) error {
+func (z *Client) CreateWithValue(basePath string, value []byte) error {
 	conn := z.getConn()
 	if conn == nil {
 		return ErrNilZkClientConn
 	}
 
-	if !strings.HasPrefix(basePath, SLASH) {
-		basePath = SLASH + basePath
+	if !strings.HasPrefix(basePath, string(os.PathSeparator)) {
+		basePath = string(os.PathSeparator) + basePath
 	}
-	paths := strings.Split(basePath, SLASH)
+	paths := strings.Split(basePath, string(os.PathSeparator))
 	// Check the ancestor's path
 	for idx := 2; idx < len(paths); idx++ {
-		tmpPath := strings.Join(paths[:idx], SLASH)
+		tmpPath := strings.Join(paths[:idx], string(os.PathSeparator))
 		_, err := conn.Create(tmpPath, []byte{}, 0, zk.WorldACL(zk.PermAll))
-		if err != nil && err != zk.ErrNodeExists {
+		if err != nil && !errors.Is(err, zk.ErrNodeExists) {
 			return errors.WithMessagef(err, "Error while invoking zk.Create(path:%s), the reason maybe is: ", tmpPath)
 		}
 	}
@@ -276,7 +273,7 @@ func (z *ZookeeperClient) CreateWithValue(basePath string, value []byte) error {
 // CreateTempWithValue will create the node recursively, which means that if the parent node is absent,
 // it will create parent node first，and set value in last child path
 // If the path exist, it will update data
-func (z *ZookeeperClient) CreateTempWithValue(basePath string, value []byte) error {
+func (z *Client) CreateTempWithValue(basePath string, value []byte) error {
 	var (
 		err     error
 		tmpPath string
@@ -287,13 +284,13 @@ func (z *ZookeeperClient) CreateTempWithValue(basePath string, value []byte) err
 		return ErrNilZkClientConn
 	}
 
-	if !strings.HasPrefix(basePath, SLASH) {
-		basePath = SLASH + basePath
+	if !strings.HasPrefix(basePath, string(os.PathSeparator)) {
+		basePath = string(os.PathSeparator) + basePath
 	}
-	pathSlice := strings.Split(basePath, SLASH)[1:]
+	pathSlice := strings.Split(basePath, string(os.PathSeparator))[1:]
 	length := len(pathSlice)
 	for i, str := range pathSlice {
-		tmpPath = path.Join(tmpPath, SLASH, str)
+		tmpPath = path.Join(tmpPath, string(os.PathSeparator), str)
 		// last child need be ephemeral
 		if i == length-1 {
 			_, err = conn.Create(tmpPath, value, zk.FlagEphemeral, zk.WorldACL(zk.PermAll))
@@ -304,7 +301,7 @@ func (z *ZookeeperClient) CreateTempWithValue(basePath string, value []byte) err
 		}
 		// we need ignore node exists error for those parent node
 		_, err = conn.Create(tmpPath, []byte{}, 0, zk.WorldACL(zk.PermAll))
-		if err != nil && err != zk.ErrNodeExists {
+		if err != nil && !errors.Is(err, zk.ErrNodeExists) {
 			return errors.WithMessagef(err, "Error while invoking zk.Create(path:%s), the reason maybe is: ", tmpPath)
 		}
 	}
@@ -313,7 +310,7 @@ func (z *ZookeeperClient) CreateTempWithValue(basePath string, value []byte) err
 }
 
 // Delete will delete basePath
-func (z *ZookeeperClient) Delete(basePath string) error {
+func (z *Client) Delete(basePath string) error {
 	conn := z.getConn()
 	if conn == nil {
 		return ErrNilZkClientConn
@@ -322,8 +319,8 @@ func (z *ZookeeperClient) Delete(basePath string) error {
 }
 
 // RegisterTemp registers temporary node by @basePath and @node
-func (z *ZookeeperClient) RegisterTemp(basePath string, node string) (string, error) {
-	zkPath := path.Join(basePath) + SLASH + node
+func (z *Client) RegisterTemp(basePath string, node string) (string, error) {
+	zkPath := path.Join(basePath) + string(os.PathSeparator) + node
 	conn := z.getConn()
 	if conn == nil {
 		return "", ErrNilZkClientConn
@@ -338,7 +335,7 @@ func (z *ZookeeperClient) RegisterTemp(basePath string, node string) (string, er
 }
 
 // RegisterTempSeq register temporary sequence node by @basePath and @data
-func (z *ZookeeperClient) RegisterTempSeq(basePath string, data []byte) (string, error) {
+func (z *Client) RegisterTempSeq(basePath string, data []byte) (string, error) {
 	var (
 		err     error
 		tmpPath string
@@ -348,21 +345,20 @@ func (z *ZookeeperClient) RegisterTempSeq(basePath string, data []byte) (string,
 	conn := z.getConn()
 	if conn != nil {
 		tmpPath, err = conn.Create(
-			path.Join(basePath)+SLASH,
+			path.Join(basePath)+string(os.PathSeparator),
 			data,
 			zk.FlagEphemeral|zk.FlagSequence,
 			zk.WorldACL(zk.PermAll),
 		)
 	}
-
-	if err != nil && err != zk.ErrNodeExists {
+	if err != nil && !errors.Is(err, zk.ErrNodeExists) {
 		return "", errors.WithStack(err)
 	}
 	return tmpPath, nil
 }
 
 // GetChildrenW gets children watch by @path
-func (z *ZookeeperClient) GetChildrenW(path string) ([]string, <-chan zk.Event, error) {
+func (z *Client) GetChildrenW(path string) ([]string, <-chan zk.Event, error) {
 	conn := z.getConn()
 	if conn == nil {
 		return nil, nil, ErrNilZkClientConn
@@ -380,7 +376,7 @@ func (z *ZookeeperClient) GetChildrenW(path string) ([]string, <-chan zk.Event, 
 }
 
 // GetChildren gets children by @path
-func (z *ZookeeperClient) GetChildren(path string) ([]string, error) {
+func (z *Client) GetChildren(path string) ([]string, error) {
 	conn := z.getConn()
 	if conn == nil {
 		return nil, ErrNilZkClientConn
@@ -398,7 +394,7 @@ func (z *ZookeeperClient) GetChildren(path string) ([]string, error) {
 }
 
 // ExistW to judge watch whether it exists or not by @zkPath
-func (z *ZookeeperClient) ExistW(zkPath string) (<-chan zk.Event, error) {
+func (z *Client) ExistW(zkPath string) (<-chan zk.Event, error) {
 	conn := z.getConn()
 	if conn == nil {
 		return nil, ErrNilZkClientConn
@@ -413,17 +409,17 @@ func (z *ZookeeperClient) ExistW(zkPath string) (<-chan zk.Event, error) {
 }
 
 // GetContent gets content by @zkPath
-func (z *ZookeeperClient) GetContent(zkPath string) ([]byte, *zk.Stat, error) {
+func (z *Client) GetContent(zkPath string) ([]byte, *zk.Stat, error) {
 	return z.Conn.Get(zkPath)
 }
 
 // SetContent set content of zkPath
-func (z *ZookeeperClient) SetContent(zkPath string, content []byte, version int32) (*zk.Stat, error) {
+func (z *Client) SetContent(zkPath string, content []byte, version int32) (*zk.Stat, error) {
 	return z.Conn.Set(zkPath, content, version)
 }
 
 // getConn gets zookeeper connection safely
-func (z *ZookeeperClient) getConn() *zk.Conn {
+func (z *Client) getConn() *zk.Conn {
 	if z == nil {
 		return nil
 	}
@@ -433,16 +429,16 @@ func (z *ZookeeperClient) getConn() *zk.Conn {
 }
 
 // Reconnect gets zookeeper reconnect event
-func (z *ZookeeperClient) Reconnect() <-chan struct{} {
+func (z *Client) Reconnect() <-chan struct{} {
 	return z.reconnectCh
 }
 
 // GetEventHandler gets zookeeper event handler
-func (z *ZookeeperClient) GetEventHandler() ZkEventHandler {
+func (z *Client) GetEventHandler() EventHandler {
 	return z.zkEventHandler
 }
 
-func (z *ZookeeperClient) Close() {
+func (z *Client) Close() {
 	if z.share {
 		zkClientPool.Lock()
 		defer zkClientPool.Unlock()

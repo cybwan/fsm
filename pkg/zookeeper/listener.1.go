@@ -1,4 +1,4 @@
-package kv
+package zookeeper
 
 import (
 	"net/url"
@@ -23,7 +23,7 @@ var defaultTTL = 10 * time.Minute
 
 // nolint
 type ZkEventListener struct {
-	Client      *ZookeeperClient
+	Client      *Client
 	pathMapLock sync.Mutex
 	pathMap     map[string]*uatomic.Int32
 	wg          sync.WaitGroup
@@ -31,7 +31,7 @@ type ZkEventListener struct {
 }
 
 // NewZkEventListener returns a EventListener instance
-func NewZkEventListener(client *ZookeeperClient) *ZkEventListener {
+func NewZkEventListener(client *Client) *ZkEventListener {
 	return &ZkEventListener{
 		Client:  client,
 		pathMap: make(map[string]*uatomic.Int32),

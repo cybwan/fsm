@@ -9,9 +9,9 @@ import (
 	"strings"
 	"sync"
 
-	perrors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 
-	"github.com/flomesh-io/fsm/pkg/zookeeper/zk/kv"
+	"github.com/flomesh-io/fsm/pkg/zookeeper"
 )
 
 // Entry contain a service instance
@@ -21,13 +21,13 @@ type Entry struct {
 }
 
 // NewServiceDiscovery the constructor of service discovery
-func NewServiceDiscovery(client *kv.ZookeeperClient, basePath string) *ServiceDiscovery {
+func NewServiceDiscovery(client *zookeeper.Client, basePath string) *ServiceDiscovery {
 	return &ServiceDiscovery{
 		client:   client,
 		mutex:    &sync.Mutex{},
 		basePath: basePath,
 		services: &sync.Map{},
-		listener: kv.NewZkEventListener(client),
+		listener: zookeeper.NewZkEventListener(client),
 	}
 }
 
@@ -75,12 +75,12 @@ func (sd *ServiceDiscovery) QueryForNames() ([]string, error) {
 }
 
 // ListenServiceEvent add a listener in a service
-func (sd *ServiceDiscovery) ListenServiceEvent(name string, listener kv.DataListener) {
+func (sd *ServiceDiscovery) ListenServiceEvent(name string, listener zookeeper.DataListener) {
 	sd.listener.ListenServiceEvent(nil, sd.pathForName(name), listener)
 }
 
 // ListenServiceInstanceEvent add a listener in an instance
-func (sd *ServiceDiscovery) ListenServiceInstanceEvent(name, id string, listener kv.DataListener) {
+func (sd *ServiceDiscovery) ListenServiceInstanceEvent(name, id string, listener zookeeper.DataListener) {
 	sd.listener.ListenServiceNodeEvent(sd.pathForInstance(name, id), listener)
 }
 
@@ -90,7 +90,7 @@ func (sd *ServiceDiscovery) getNameAndID(path string) (string, string, error) {
 	path = strings.TrimPrefix(path, string(os.PathSeparator))
 	pathSlice := strings.Split(path, string(os.PathSeparator))
 	if len(pathSlice) < 2 {
-		return "", "", perrors.Errorf("[ServiceDiscovery] path{%s} dont contain name and id", path)
+		return "", "", errors.Errorf("[ServiceDiscovery] path{%s} dont contain name and id", path)
 	}
 	name := pathSlice[0]
 	id := pathSlice[1]

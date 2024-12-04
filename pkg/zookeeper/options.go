@@ -1,4 +1,4 @@
-package kv
+package zookeeper
 
 import (
 	"time"
@@ -9,7 +9,7 @@ import (
 // nolint
 type options struct {
 	ZkName string
-	Client *ZookeeperClient
+	Client *Client
 	Ts     *zk.TestCluster
 }
 
@@ -23,18 +23,18 @@ func WithZkName(name string) Option {
 	}
 }
 
-type zkClientOption func(*ZookeeperClient)
+type zkClientOption func(*Client)
 
 // WithZkEventHandler sets zk Client event
-func WithZkEventHandler(handler ZkEventHandler) zkClientOption {
-	return func(opt *ZookeeperClient) {
+func WithZkEventHandler(handler EventHandler) zkClientOption {
+	return func(opt *Client) {
 		opt.zkEventHandler = handler
 	}
 }
 
 // WithZkTimeOut sets zk Client timeout
 func WithZkTimeOut(t time.Duration) zkClientOption {
-	return func(opt *ZookeeperClient) {
+	return func(opt *Client) {
 		opt.Timeout = t
 	}
 }

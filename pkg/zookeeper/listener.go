@@ -1,4 +1,4 @@
-package kv
+package zookeeper
 
 import (
 	"fmt"

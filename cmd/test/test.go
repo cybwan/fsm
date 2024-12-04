@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/zookeeper"
 	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery"
-	"github.com/flomesh-io/fsm/pkg/zookeeper/zk/kv"
 )
 
 func main() {
-	client, err := kv.NewZookeeperClient(
+	client, err := zookeeper.NewClient(
 		"zookeeperMetadataReport",
 		[]string{"127.0.0.1:2181"},
 		true,
-		kv.WithZkTimeOut(time.Duration(time.Second*15)),
+		zookeeper.WithZkTimeOut(time.Duration(time.Second*15)),
 	)
 	if err != nil {
 		panic(err)

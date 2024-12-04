@@ -1,4 +1,4 @@
-package kv
+package zookeeper
 
 import (
 	"github.com/flomesh-io/fsm/pkg/logger"

@@ -6,11 +6,11 @@ import (
 	"github.com/dubbogo/go-zookeeper/zk"
 	"github.com/pkg/errors"
 
-	"github.com/flomesh-io/fsm/pkg/zookeeper/zk/kv"
+	"github.com/flomesh-io/fsm/pkg/zookeeper"
 )
 
 // DataChange implement DataListener's DataChange function
-func (sd *ServiceDiscovery) DataChange(eventType kv.Event) bool {
+func (sd *ServiceDiscovery) DataChange(eventType zookeeper.Event) bool {
 	path := eventType.Path
 	name, id, err := sd.getNameAndID(path)
 	if err != nil {
