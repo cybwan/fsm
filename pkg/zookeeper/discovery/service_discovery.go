@@ -1,4 +1,4 @@
-package curator_discovery
+package discovery
 
 import (
 	"encoding/json"
@@ -12,8 +12,6 @@ import (
 	perrors "github.com/pkg/errors"
 
 	"github.com/flomesh-io/fsm/pkg/zookeeper/zk/kv"
-	"github.com/flomesh-io/fsm/pkg/zookeeper/zk/remoting"
-	"github.com/flomesh-io/fsm/pkg/zookeeper/zk/zookeeper"
 )
 
 // Entry contain a service instance
@@ -29,7 +27,7 @@ func NewServiceDiscovery(client *kv.ZookeeperClient, basePath string) *ServiceDi
 		mutex:    &sync.Mutex{},
 		basePath: basePath,
 		services: &sync.Map{},
-		listener: zookeeper.NewZkEventListener(client),
+		listener: kv.NewZkEventListener(client),
 	}
 }
 
@@ -77,25 +75,13 @@ func (sd *ServiceDiscovery) QueryForNames() ([]string, error) {
 }
 
 // ListenServiceEvent add a listener in a service
-func (sd *ServiceDiscovery) ListenServiceEvent(name string, listener remoting.DataListener) {
+func (sd *ServiceDiscovery) ListenServiceEvent(name string, listener kv.DataListener) {
 	sd.listener.ListenServiceEvent(nil, sd.pathForName(name), listener)
 }
 
 // ListenServiceInstanceEvent add a listener in an instance
-func (sd *ServiceDiscovery) ListenServiceInstanceEvent(name, id string, listener remoting.DataListener) {
+func (sd *ServiceDiscovery) ListenServiceInstanceEvent(name, id string, listener kv.DataListener) {
 	sd.listener.ListenServiceNodeEvent(sd.pathForInstance(name, id), listener)
-}
-
-// DataChange implement DataListener's DataChange function
-func (sd *ServiceDiscovery) DataChange(eventType remoting.Event) bool {
-	path := eventType.Path
-	name, id, err := sd.getNameAndID(path)
-	if err != nil {
-		log.Error().Msgf("[ServiceDiscovery] data change error = {%v}", err)
-		return true
-	}
-	sd.updateInternalService(name, id)
-	return true
 }
 
 // getNameAndID get service name and instance id by path

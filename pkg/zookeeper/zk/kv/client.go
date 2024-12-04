@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/dubbogo/go-zookeeper/zk"
-	perrors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -20,8 +20,8 @@ var (
 	clientPoolOnce sync.Once
 
 	// ErrNilZkClientConn no conn error
-	ErrNilZkClientConn = perrors.New("Zookeeper Client{conn} is nil")
-	ErrStatIsNil       = perrors.New("Stat of the node is nil")
+	ErrNilZkClientConn = errors.New("Zookeeper Client{conn} is nil")
+	ErrStatIsNil       = errors.New("Stat of the node is nil")
 )
 
 // ZookeeperClient represents zookeeper Client Configuration
@@ -264,7 +264,7 @@ func (z *ZookeeperClient) CreateWithValue(basePath string, value []byte) error {
 		tmpPath := strings.Join(paths[:idx], SLASH)
 		_, err := conn.Create(tmpPath, []byte{}, 0, zk.WorldACL(zk.PermAll))
 		if err != nil && err != zk.ErrNodeExists {
-			return perrors.WithMessagef(err, "Error while invoking zk.Create(path:%s), the reason maybe is: ", tmpPath)
+			return errors.WithMessagef(err, "Error while invoking zk.Create(path:%s), the reason maybe is: ", tmpPath)
 		}
 	}
 
@@ -300,14 +300,14 @@ func (z *ZookeeperClient) CreateTempWithValue(basePath string, value []byte) err
 		if i == length-1 {
 			_, err = conn.Create(tmpPath, value, zk.FlagEphemeral, zk.WorldACL(zk.PermAll))
 			if err != nil {
-				return perrors.WithMessagef(err, "Error while invoking zk.Create(path:%s), the reason maybe is: ", tmpPath)
+				return errors.WithMessagef(err, "Error while invoking zk.Create(path:%s), the reason maybe is: ", tmpPath)
 			}
 			break
 		}
 		// we need ignore node exists error for those parent node
 		_, err = conn.Create(tmpPath, []byte{}, 0, zk.WorldACL(zk.PermAll))
 		if err != nil && err != zk.ErrNodeExists {
-			return perrors.WithMessagef(err, "Error while invoking zk.Create(path:%s), the reason maybe is: ", tmpPath)
+			return errors.WithMessagef(err, "Error while invoking zk.Create(path:%s), the reason maybe is: ", tmpPath)
 		}
 	}
 
@@ -320,7 +320,7 @@ func (z *ZookeeperClient) Delete(basePath string) error {
 	if conn == nil {
 		return ErrNilZkClientConn
 	}
-	return perrors.WithMessagef(conn.Delete(basePath, -1), "Delete(basePath:%s)", basePath)
+	return errors.WithMessagef(conn.Delete(basePath, -1), "Delete(basePath:%s)", basePath)
 }
 
 // RegisterTemp registers temporary node by @basePath and @node
@@ -333,7 +333,7 @@ func (z *ZookeeperClient) RegisterTemp(basePath string, node string) (string, er
 	tmpPath, err := conn.Create(zkPath, []byte(""), zk.FlagEphemeral, zk.WorldACL(zk.PermAll))
 
 	if err != nil {
-		return zkPath, perrors.WithStack(err)
+		return zkPath, errors.WithStack(err)
 	}
 
 	return tmpPath, nil
@@ -358,7 +358,7 @@ func (z *ZookeeperClient) RegisterTempSeq(basePath string, data []byte) (string,
 	}
 
 	if err != nil && err != zk.ErrNodeExists {
-		return "", perrors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 	return tmpPath, nil
 }
@@ -372,10 +372,10 @@ func (z *ZookeeperClient) GetChildrenW(path string) ([]string, <-chan zk.Event, 
 	children, stat, watcher, err := conn.ChildrenW(path)
 
 	if err != nil {
-		return nil, nil, perrors.WithMessagef(err, "Error while invoking zk.ChildrenW(path:%s), the reason maybe is: ", path)
+		return nil, nil, errors.WithMessagef(err, "Error while invoking zk.ChildrenW(path:%s), the reason maybe is: ", path)
 	}
 	if stat == nil {
-		return nil, nil, perrors.WithMessagef(ErrStatIsNil, "Error while invokeing zk.ChildrenW(path:%s), the reason is: ", path)
+		return nil, nil, errors.WithMessagef(ErrStatIsNil, "Error while invokeing zk.ChildrenW(path:%s), the reason is: ", path)
 	}
 
 	return children, watcher.EvtCh, nil
@@ -390,10 +390,10 @@ func (z *ZookeeperClient) GetChildren(path string) ([]string, error) {
 	children, stat, err := conn.Children(path)
 
 	if err != nil {
-		return nil, perrors.WithMessagef(err, "Error while invoking zk.Children(path:%s), the reason maybe is: ", path)
+		return nil, errors.WithMessagef(err, "Error while invoking zk.Children(path:%s), the reason maybe is: ", path)
 	}
 	if stat == nil {
-		return nil, perrors.Errorf("Error while invokeing zk.Children(path:%s), the reason is that the stat is nil", path)
+		return nil, errors.Errorf("Error while invokeing zk.Children(path:%s), the reason is that the stat is nil", path)
 	}
 
 	return children, nil
@@ -408,7 +408,7 @@ func (z *ZookeeperClient) ExistW(zkPath string) (<-chan zk.Event, error) {
 	_, _, watcher, err := conn.ExistsW(zkPath)
 
 	if err != nil {
-		return nil, perrors.WithMessagef(err, "zk.ExistsW(path:%s)", zkPath)
+		return nil, errors.WithMessagef(err, "zk.ExistsW(path:%s)", zkPath)
 	}
 
 	return watcher.EvtCh, nil

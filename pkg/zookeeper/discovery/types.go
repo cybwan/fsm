@@ -1,7 +1,24 @@
-package curator_discovery
+package discovery
 
-// ServiceInstance which define in curator-x-discovery, please refer to
-// https://github.com/apache/curator/blob/master/curator-x-discovery/src/main/java/org/apache/curator/x/discovery/ServiceInstance.java
+import (
+	"sync"
+
+	"github.com/flomesh-io/fsm/pkg/logger"
+	"github.com/flomesh-io/fsm/pkg/zookeeper/zk/kv"
+)
+
+var (
+	log = logger.New("curator_discovery")
+)
+
+type ServiceDiscovery struct {
+	client   *kv.ZookeeperClient
+	mutex    *sync.Mutex
+	basePath string
+	services *sync.Map
+	listener *kv.ZkEventListener
+}
+
 type ServiceInstance struct {
 	Name                string      `json:"name,omitempty"`
 	ID                  string      `json:"id,omitempty"`

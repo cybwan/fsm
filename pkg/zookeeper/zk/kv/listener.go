@@ -1,4 +1,4 @@
-package remoting
+package kv
 
 import (
 	"fmt"

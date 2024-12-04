@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery"
 	"github.com/flomesh-io/fsm/pkg/zookeeper/zk/kv"
-	"github.com/flomesh-io/fsm/pkg/zookeeper/zk/zookeeper/curator_discovery"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 		panic(err)
 	}
 	basePath := "/Application/grpc"
-	sd := curator_discovery.NewServiceDiscovery(client, basePath)
+	sd := discovery.NewServiceDiscovery(client, basePath)
 	fmt.Println(sd.QueryForNames())
 	serviceInstances, err := sd.QueryForInstances("com.orientsec.demo.Greeter/providers")
 	fmt.Println(serviceInstances)

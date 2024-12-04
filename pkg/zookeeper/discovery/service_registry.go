@@ -1,12 +1,25 @@
-package curator_discovery
+package discovery
 
 import (
 	"encoding/json"
-	"errors"
 
 	"github.com/dubbogo/go-zookeeper/zk"
-	perrors "github.com/pkg/errors"
+	"github.com/pkg/errors"
+
+	"github.com/flomesh-io/fsm/pkg/zookeeper/zk/kv"
 )
+
+// DataChange implement DataListener's DataChange function
+func (sd *ServiceDiscovery) DataChange(eventType kv.Event) bool {
+	path := eventType.Path
+	name, id, err := sd.getNameAndID(path)
+	if err != nil {
+		log.Error().Msgf("[ServiceDiscovery] data change error = {%v}", err)
+		return true
+	}
+	sd.updateInternalService(name, id)
+	return true
+}
 
 // registerService register service to zookeeper
 func (sd *ServiceDiscovery) registerService(instance *ServiceInstance) error {
@@ -45,7 +58,7 @@ func (sd *ServiceDiscovery) RegisterService(instance *ServiceInstance) error {
 	value, loaded := sd.services.LoadOrStore(instance.ID, &Entry{})
 	entry, ok := value.(*Entry)
 	if !ok {
-		return perrors.New("[ServiceDiscovery] services value not entry")
+		return errors.New("[ServiceDiscovery] services value not entry")
 	}
 	entry.Lock()
 	defer entry.Unlock()
@@ -64,11 +77,11 @@ func (sd *ServiceDiscovery) RegisterService(instance *ServiceInstance) error {
 func (sd *ServiceDiscovery) UpdateService(instance *ServiceInstance) error {
 	value, ok := sd.services.Load(instance.ID)
 	if !ok {
-		return perrors.Errorf("[ServiceDiscovery] Service{%s} not registered", instance.ID)
+		return errors.Errorf("[ServiceDiscovery] Service{%s} not registered", instance.ID)
 	}
 	entry, ok := value.(*Entry)
 	if !ok {
-		return perrors.New("[ServiceDiscovery] services value not entry")
+		return errors.New("[ServiceDiscovery] services value not entry")
 	}
 	data, err := json.Marshal(instance)
 	if err != nil {
@@ -135,7 +148,7 @@ func (sd *ServiceDiscovery) ReRegisterServices() {
 		instance := entry.instance
 		err := sd.registerService(instance)
 		if err != nil {
-			log.Error().Msgf("[zkServiceDiscovery] registerService{%s} error = err{%v}", instance.ID, perrors.WithStack(err))
+			log.Error().Msgf("[zkServiceDiscovery] registerService{%s} error = err{%v}", instance.ID, errors.WithStack(err))
 			return true
 		}
 		sd.ListenServiceInstanceEvent(instance.Name, instance.ID, sd)
