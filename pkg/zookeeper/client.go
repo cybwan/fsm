@@ -138,6 +138,7 @@ func (c *Client) createConn() error {
 }
 
 // HandleEvent handles zookeeper events
+// nolint
 func (d *DefaultHandler) HandleEvent(z *Client) {
 	var (
 		ok    bool
