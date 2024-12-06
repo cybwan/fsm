@@ -20,38 +20,30 @@ func NewServiceDiscovery(client *zookeeper.Client, basePath string, ops FuncOps)
 
 // QueryForInstances query instances in zookeeper by name
 func (sd *ServiceDiscovery) QueryForInstances(serviceName string) ([]ServiceInstance, error) {
-	instanceIds, err := sd.client.GetChildren(sd.ops.PathForService(sd.basePath, serviceName))
-	if err != nil {
+	if instanceIds, err := sd.client.GetChildren(sd.ops.PathForService(sd.basePath, serviceName)); err != nil {
 		return nil, err
-	}
-	var (
-		instance  ServiceInstance
-		instances []ServiceInstance
-	)
-	for _, instanceId := range instanceIds {
-		instance, err = sd.QueryForInstance(serviceName, instanceId)
-		if err != nil {
-			return nil, err
+	} else {
+		var instance ServiceInstance
+		var instances []ServiceInstance
+		for _, instanceId := range instanceIds {
+			if instance, err = sd.QueryForInstance(serviceName, instanceId); err != nil {
+				return nil, err
+			}
+			instances = append(instances, instance)
 		}
-		instances = append(instances, instance)
+		return instances, nil
 	}
-	return instances, nil
 }
 
 // QueryForInstance query instances in zookeeper by name and id
 func (sd *ServiceDiscovery) QueryForInstance(serviceName, instanceId string) (ServiceInstance, error) {
 	instance := sd.ops.NewInstance(serviceName, instanceId)
 	instancePath := sd.ops.PathForInstance(sd.basePath, serviceName, instanceId)
-
-	data, _, err := sd.client.GetContent(instancePath)
-	if err != nil {
+	if data, _, err := sd.client.GetContent(instancePath); err != nil {
+		return nil, err
+	} else if err = instance.Unmarshal(instancePath, data); err != nil {
 		return nil, err
 	}
-
-	if err = instance.Unmarshal(instancePath, data); err != nil {
-		return nil, err
-	}
-
 	return instance, nil
 }
 

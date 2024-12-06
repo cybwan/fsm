@@ -10,13 +10,13 @@ import (
 // DataChange implement DataListener's DataChange function
 func (sd *ServiceDiscovery) DataChange(eventType zookeeper.Event) bool {
 	instancePath := eventType.Path
-	name, id, err := sd.ops.ServiceInstanceId(sd.basePath, instancePath)
-	if err != nil {
+	if name, id, err := sd.ops.ServiceInstanceId(sd.basePath, instancePath); err != nil {
 		log.Error().Msgf("[ServiceDiscovery] data change error = {%v}", err)
 		return true
+	} else {
+		sd.updateInternalService(name, id)
+		return true
 	}
-	sd.updateInternalService(name, id)
-	return true
 }
 
 // registerService register service to zookeeper
@@ -56,11 +56,12 @@ func (sd *ServiceDiscovery) RegisterService(instance ServiceInstance) error {
 	if !ok {
 		return errors.New("[ServiceDiscovery] services value not entry")
 	}
+
 	entry.Lock()
 	defer entry.Unlock()
+
 	entry.instance = instance
-	err := sd.registerService(instance)
-	if err != nil {
+	if err := sd.registerService(instance); err != nil {
 		return err
 	}
 	if !loaded {
@@ -119,8 +120,7 @@ func (sd *ServiceDiscovery) updateInternalService(name, id string) {
 
 // UnregisterService un-register service in zookeeper and delete service in cache
 func (sd *ServiceDiscovery) UnregisterService(instance ServiceInstance) error {
-	_, ok := sd.services.Load(instance.InstanceId())
-	if !ok {
+	if _, ok := sd.services.Load(instance.InstanceId()); !ok {
 		return nil
 	}
 	sd.services.Delete(instance.InstanceId())
