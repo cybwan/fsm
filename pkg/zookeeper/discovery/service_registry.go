@@ -7,18 +7,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/zookeeper"
 )
 
-// DataChange implement DataListener's DataChange function
-func (sd *ServiceDiscovery) DataChange(eventType zookeeper.Event) bool {
-	instancePath := eventType.Path
-	if serviceName, instanceId, err := sd.ops.ServiceInstanceId(sd.basePath, instancePath); err != nil {
-		log.Error().Msgf("[ServiceDiscovery] data change error = {%v}", err)
-		return true
-	} else {
-		sd.updateInternalService(serviceName, instanceId)
-		return true
-	}
-}
-
 // registerService register service to zookeeper
 func (sd *ServiceDiscovery) registerService(instance ServiceInstance) error {
 	instancePath := sd.ops.PathForInstance(sd.basePath, instance.ServiceName(), instance.InstanceId())
@@ -51,7 +39,7 @@ func (sd *ServiceDiscovery) registerService(instance ServiceInstance) error {
 
 // RegisterService register service to zookeeper, and ensure cache is consistent with zookeeper
 func (sd *ServiceDiscovery) RegisterService(instance ServiceInstance) error {
-	value, loaded := sd.services.LoadOrStore(instance.InstanceId(), &entry{})
+	value, _ := sd.services.LoadOrStore(instance.InstanceId(), &entry{})
 	entry, ok := value.(*entry)
 	if !ok {
 		return errors.New("[ServiceDiscovery] services value not entry")
@@ -63,9 +51,6 @@ func (sd *ServiceDiscovery) RegisterService(instance ServiceInstance) error {
 	entry.instance = instance
 	if err := sd.registerService(instance); err != nil {
 		return err
-	}
-	if !loaded {
-		sd.ListenServiceInstanceEvent(instance.ServiceName(), instance.InstanceId(), sd)
 	}
 	return nil
 }
@@ -147,7 +132,6 @@ func (sd *ServiceDiscovery) ReRegisterServices() {
 			log.Error().Msgf("[zkServiceDiscovery] registerService{%s} error = err{%v}", instance.InstanceId(), errors.WithStack(err))
 			return true
 		}
-		sd.ListenServiceInstanceEvent(instance.ServiceName(), instance.InstanceId(), sd)
 		return true
 	})
 }

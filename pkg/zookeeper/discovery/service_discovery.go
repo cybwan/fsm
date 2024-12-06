@@ -14,7 +14,6 @@ func NewServiceDiscovery(client *zookeeper.Client, basePath string, ops FuncOps)
 		mutex:    &sync.Mutex{},
 		basePath: basePath,
 		services: &sync.Map{},
-		listener: zookeeper.NewEventListener(client),
 		ops:      ops,
 	}
 }
@@ -55,20 +54,7 @@ func (sd *ServiceDiscovery) QueryForNames() ([]string, error) {
 	return sd.client.GetChildren(sd.basePath)
 }
 
-// ListenServiceEvent add a listener in a service
-func (sd *ServiceDiscovery) ListenServiceEvent(serviceName string, listener zookeeper.DataListener) {
-	sd.listener.ListenServiceEvent(nil, sd.ops.PathForService(sd.basePath, serviceName), listener)
-}
-
-// ListenServiceInstanceEvent add a listener in an instance
-func (sd *ServiceDiscovery) ListenServiceInstanceEvent(serviceName, instanceId string, listener zookeeper.DataListener) {
-	sd.listener.ListenServiceNodeEvent(sd.ops.PathForInstance(sd.basePath, serviceName, instanceId), listener)
-}
-
 func (sd *ServiceDiscovery) Close() {
-	if sd.listener != nil {
-		sd.listener.Close()
-	}
 	if sd.client != nil {
 		sd.client.Close()
 	}

@@ -16,7 +16,6 @@ type ServiceDiscovery struct {
 	mutex    *sync.Mutex
 	basePath string
 	services *sync.Map
-	listener *zookeeper.EventListener
 	ops      FuncOps
 }
 

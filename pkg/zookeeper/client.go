@@ -53,32 +53,6 @@ type EventHandler interface {
 // DefaultHandler is default handler for zk event
 type DefaultHandler struct{}
 
-// StateToString will transfer zk state to string
-func StateToString(state zk.State) string {
-	switch state {
-	case zk.StateDisconnected:
-		return "zookeeper disconnected"
-	case zk.StateConnecting:
-		return "zookeeper connecting"
-	case zk.StateAuthFailed:
-		return "zookeeper auth failed"
-	case zk.StateConnectedReadOnly:
-		return "zookeeper connect readonly"
-	case zk.StateSaslAuthenticated:
-		return "zookeeper sasl authenticated"
-	case zk.StateExpired:
-		return "zookeeper connection expired"
-	case zk.StateConnected:
-		return "zookeeper connected"
-	case zk.StateHasSession:
-		return "zookeeper has Session"
-	case zk.StateUnknown:
-		return "zookeeper unknown state"
-	default:
-		return state.String()
-	}
-}
-
 func initClientPool() {
 	zkClientPool.zkClient = make(map[string]*Client)
 }
