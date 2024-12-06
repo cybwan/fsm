@@ -82,26 +82,6 @@ func (sd *ServiceDiscovery) UpdateService(category zookeeper.Category, instance 
 	return nil
 }
 
-// updateInternalService update service in cache
-func (sd *ServiceDiscovery) updateInternalService(serviceName, instanceId string) {
-	value, ok := sd.services.Load(instanceId)
-	if !ok {
-		return
-	}
-	entry, ok := value.(*entry)
-	if !ok {
-		return
-	}
-	entry.Lock()
-	defer entry.Unlock()
-	instance, err := sd.QueryForInstance(serviceName, instanceId)
-	if err != nil {
-		log.Info().Msgf("[zkServiceDiscovery] UpdateInternalService{%s} error = err{%v}", instanceId, err)
-		return
-	}
-	entry.instance = instance
-}
-
 // UnregisterService un-register service in zookeeper and delete service in cache
 func (sd *ServiceDiscovery) UnregisterService(instance ServiceInstance) error {
 	if _, ok := sd.services.Load(instance.InstanceId()); !ok {
