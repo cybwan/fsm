@@ -93,6 +93,7 @@ require (
 	github.com/go-logr/zerologr v1.2.3
 	github.com/go-resty/resty/v2 v2.14.0
 	github.com/gobwas/glob v0.2.3
+	github.com/gorilla/schema v1.4.1
 	github.com/hashicorp/consul/api v1.27.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/hudl/fargo v1.4.0

@@ -25,7 +25,7 @@ type ServiceInstance interface {
 	InstanceId() string
 
 	Marshal() ([]byte, error)
-	Unmarshal(data []byte) error
+	Unmarshal(string, []byte) error
 }
 
 // entry contain a service instance
@@ -39,14 +39,4 @@ type FuncOps interface {
 	PathForService(basePath, serviceName string) (servicePath string)
 	PathForInstance(basePath, serviceName, instanceId string) (instancePath string)
 	ServiceInstanceId(basePath, instancePath string) (serviceName, instanceId string, err error)
-}
-
-type ServiceInstanceA struct {
-	Name                string      `json:"name,omitempty"`
-	ID                  string      `json:"id,omitempty"`
-	Address             string      `json:"address,omitempty"`
-	Port                int         `json:"port,omitempty"`
-	Payload             interface{} `json:"payload,omitempty"`
-	RegistrationTimeUTC int64       `json:"registrationTimeUTC,omitempty"`
-	Tag                 string      `json:"tag,omitempty"`
 }

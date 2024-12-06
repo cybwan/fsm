@@ -48,7 +48,7 @@ func (sd *ServiceDiscovery) QueryForInstance(serviceName, instanceId string) (Se
 		return nil, err
 	}
 
-	if err = instance.Unmarshal(data); err != nil {
+	if err = instance.Unmarshal(instancePath, data); err != nil {
 		return nil, err
 	}
 

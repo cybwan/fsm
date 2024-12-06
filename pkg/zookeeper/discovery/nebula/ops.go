@@ -13,11 +13,7 @@ type Ops struct {
 }
 
 func (op *Ops) NewInstance(serviceName, instanceId string) discovery.ServiceInstance {
-	serviceInstance := ServiceInstance{
-		serviceName: serviceName,
-		instanceId:  instanceId,
-	}
-	return &serviceInstance
+	return NewServiceInstance(serviceName, instanceId)
 }
 
 func (op *Ops) PathForService(basePath, serviceName string) string {

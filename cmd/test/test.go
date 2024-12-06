@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -22,7 +23,12 @@ func main() {
 	basePath := "/Application/grpc"
 	sd := discovery.NewServiceDiscovery(client, basePath, new(nebula.Ops))
 	fmt.Println(sd.QueryForNames())
-	serviceInstances, err := sd.QueryForInstances("com.orientsec.demo.Greeter/providers")
-	fmt.Println(serviceInstances)
-	fmt.Println(err)
+	if serviceInstances, err := sd.QueryForInstances("com.orientsec.demo.Greeter/providers"); err == nil {
+		for _, serviceInstance := range serviceInstances {
+			bytes, _ := json.MarshalIndent(serviceInstance, "", " ")
+			fmt.Println(string(bytes))
+		}
+	} else {
+		fmt.Println(err.Error())
+	}
 }

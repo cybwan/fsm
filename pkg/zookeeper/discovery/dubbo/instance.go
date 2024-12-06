@@ -17,6 +17,6 @@ func (ins *ServiceInstance) Marshal() ([]byte, error) {
 	return nil, nil
 }
 
-func (ins *ServiceInstance) Unmarshal(data []byte) error {
+func (ins *ServiceInstance) Unmarshal(instancePath string, data []byte) error {
 	return nil
 }
