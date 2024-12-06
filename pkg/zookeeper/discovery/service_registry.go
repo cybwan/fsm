@@ -10,11 +10,11 @@ import (
 // DataChange implement DataListener's DataChange function
 func (sd *ServiceDiscovery) DataChange(eventType zookeeper.Event) bool {
 	instancePath := eventType.Path
-	if name, id, err := sd.ops.ServiceInstanceId(sd.basePath, instancePath); err != nil {
+	if serviceName, instanceId, err := sd.ops.ServiceInstanceId(sd.basePath, instancePath); err != nil {
 		log.Error().Msgf("[ServiceDiscovery] data change error = {%v}", err)
 		return true
 	} else {
-		sd.updateInternalService(name, id)
+		sd.updateInternalService(serviceName, instanceId)
 		return true
 	}
 }
@@ -71,7 +71,7 @@ func (sd *ServiceDiscovery) RegisterService(instance ServiceInstance) error {
 }
 
 // UpdateService update service in zookeeper, and ensure cache is consistent with zookeeper
-func (sd *ServiceDiscovery) UpdateService(instance ServiceInstance) error {
+func (sd *ServiceDiscovery) UpdateService(category zookeeper.Category, instance ServiceInstance) error {
 	value, ok := sd.services.Load(instance.InstanceId())
 	if !ok {
 		return errors.Errorf("[ServiceDiscovery] Service{%s} not registered", instance.InstanceId())
@@ -91,7 +91,6 @@ func (sd *ServiceDiscovery) UpdateService(instance ServiceInstance) error {
 
 	entry.instance = instance
 	instancePath := sd.ops.PathForInstance(sd.basePath, instance.ServiceName(), instance.InstanceId())
-
 	if _, err = sd.client.SetContent(instancePath, data, -1); err != nil {
 		return err
 	}
@@ -99,8 +98,8 @@ func (sd *ServiceDiscovery) UpdateService(instance ServiceInstance) error {
 }
 
 // updateInternalService update service in cache
-func (sd *ServiceDiscovery) updateInternalService(name, id string) {
-	value, ok := sd.services.Load(id)
+func (sd *ServiceDiscovery) updateInternalService(serviceName, instanceId string) {
+	value, ok := sd.services.Load(instanceId)
 	if !ok {
 		return
 	}
@@ -110,9 +109,9 @@ func (sd *ServiceDiscovery) updateInternalService(name, id string) {
 	}
 	entry.Lock()
 	defer entry.Unlock()
-	instance, err := sd.QueryForInstance(name, id)
+	instance, err := sd.QueryForInstance(serviceName, instanceId)
 	if err != nil {
-		log.Info().Msgf("[zkServiceDiscovery] UpdateInternalService{%s} error = err{%v}", id, err)
+		log.Info().Msgf("[zkServiceDiscovery] UpdateInternalService{%s} error = err{%v}", instanceId, err)
 		return
 	}
 	entry.instance = instance

@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"path"
 	"sync"
 
 	"github.com/flomesh-io/fsm/pkg/zookeeper"
@@ -20,7 +21,8 @@ func NewServiceDiscovery(client *zookeeper.Client, basePath string, ops FuncOps)
 
 // QueryForInstances query instances in zookeeper by name
 func (sd *ServiceDiscovery) QueryForInstances(serviceName string) ([]ServiceInstance, error) {
-	if instanceIds, err := sd.client.GetChildren(sd.ops.PathForService(sd.basePath, serviceName)); err != nil {
+	categoryServiceName := path.Join(serviceName, string(zookeeper.ProviderCategory))
+	if instanceIds, err := sd.client.GetChildren(sd.ops.PathForService(sd.basePath, categoryServiceName)); err != nil {
 		return nil, err
 	} else {
 		var instance ServiceInstance
@@ -37,8 +39,9 @@ func (sd *ServiceDiscovery) QueryForInstances(serviceName string) ([]ServiceInst
 
 // QueryForInstance query instances in zookeeper by name and id
 func (sd *ServiceDiscovery) QueryForInstance(serviceName, instanceId string) (ServiceInstance, error) {
-	instance := sd.ops.NewInstance(serviceName, instanceId)
-	instancePath := sd.ops.PathForInstance(sd.basePath, serviceName, instanceId)
+	categoryServiceName := path.Join(serviceName, string(zookeeper.ProviderCategory))
+	instance := sd.ops.NewInstance(categoryServiceName, instanceId)
+	instancePath := sd.ops.PathForInstance(sd.basePath, categoryServiceName, instanceId)
 	if data, _, err := sd.client.GetContent(instancePath); err != nil {
 		return nil, err
 	} else if err = instance.Unmarshal(instancePath, data); err != nil {

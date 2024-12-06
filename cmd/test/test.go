@@ -23,7 +23,7 @@ func main() {
 	basePath := "/Application/grpc"
 	sd := discovery.NewServiceDiscovery(client, basePath, new(nebula.Ops))
 	fmt.Println(sd.QueryForNames())
-	if serviceInstances, err := sd.QueryForInstances("com.orientsec.demo.Greeter/providers"); err == nil {
+	if serviceInstances, err := sd.QueryForInstances("com.orientsec.demo.Greeter"); err == nil {
 		for _, serviceInstance := range serviceInstances {
 			bytes, _ := json.MarshalIndent(serviceInstance, "", " ")
 			fmt.Println(string(bytes))
