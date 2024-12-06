@@ -109,8 +109,9 @@ func (ins *ServiceInstance) Marshal() ([]byte, error) {
 	return nil, nil
 }
 
-func (ins *ServiceInstance) Unmarshal(instancePath string, data []byte) error {
+func (ins *ServiceInstance) Unmarshal(_ string, data []byte) error {
 	var err error
+	var instancePath string
 	var instanceUrl *url.URL
 	decoder := schema.NewDecoder()
 	if instancePath, err = url.QueryUnescape(ins.instanceId); err != nil {
