@@ -5,8 +5,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/schema"
-
-	"github.com/flomesh-io/fsm/pkg/zookeeper"
 )
 
 const (
@@ -19,26 +17,26 @@ const (
 type LoadBalance string
 
 type InstanceSetting struct {
-	Async       bool        `json:"async"`
-	Cluster     string      `json:"cluster"`
-	LoadBalance LoadBalance `json:"loadbalance,omitempty"`
-	Connections uint32      `json:"connections,omitempty"`
-	Requests    uint32      `json:"requests,omitempty"`
-	Reties      uint32      `json:"reties,omitempty"`
-	Timeout     uint32      `json:"timeout,omitempty"`
+	Async       bool
+	Cluster     string
+	LoadBalance LoadBalance
+	Connections uint32
+	Requests    uint32
+	Reties      uint32
+	Timeout     uint32
 }
 
 type InstanceService struct {
-	Type string `json:"type"`
+	Type string
 }
 
 type InstanceReal struct {
-	IP   string `json:"ip"`
-	Port uint16 `json:"port"`
+	IP   string
+	Port uint16
 }
 
 type InstanceAccess struct {
-	Protected bool `json:"protected"`
+	Protected bool
 }
 
 type ServiceInstance struct {
@@ -51,32 +49,32 @@ type ServiceInstance struct {
 	Port     int
 	Node     string
 
-	Application string             `json:"application"`
-	Project     string             `json:"project"`
-	Owner       string             `json:"owner"`
-	Ops         string             `json:"ops,omitempty"`
-	Category    zookeeper.Category `json:"category"`
-	Timestamp   uint64             `json:"timestamp"`
-	GRPC        string             `json:"grpc"`
-	PID         uint32             `json:"pid"`
-	Interface   string             `json:"interface"`
-	Methods     []string           `json:"methods"`
-	Group       bool               `json:"group,omitempty"`
-	Weight      uint32             `json:"weight,omitempty"`
-	Deprecated  bool               `json:"deprecated"`
-	Master      bool               `json:"master"`
+	Application string
+	Project     string
+	Owner       string
+	Ops         string
+	Category    string
+	Timestamp   uint64
+	GRPC        string
+	PID         uint32
+	Interface   string
+	Methods     []string
+	Group       bool
+	Weight      uint32
+	Deprecated  bool
+	Master      bool
 
-	Default InstanceSetting `json:"default"`
-	Service InstanceService `json:"service,omitempty"`
-	Real    InstanceReal    `json:"real"`
-	Access  InstanceAccess  `json:"access,omitempty"`
+	Default InstanceSetting
+	Service InstanceService
+	Real    InstanceReal
+	Access  InstanceAccess
 
-	Accesslog bool   `json:"accesslog"`
-	Anyhost   bool   `json:"anyhost"`
-	Dynamic   bool   `json:"dynamic"`
-	Token     bool   `json:"token"`
-	Side      string `json:"side"`
-	Version   string `json:"version"`
+	Accesslog bool
+	Anyhost   bool
+	Dynamic   bool
+	Token     bool
+	Side      string
+	Version   string
 }
 
 func NewServiceInstance(serviceName, instanceId string) *ServiceInstance {
