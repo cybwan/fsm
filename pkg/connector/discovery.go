@@ -101,6 +101,10 @@ type AgentService struct {
 	Weights     AgentWeights
 	Tags        []string
 	Meta        map[string]interface{}
+
+	Interface string
+	Methods   []string
+
 	HealthCheck bool
 }
 

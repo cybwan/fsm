@@ -15,6 +15,7 @@ type ServiceDiscovery struct {
 	client   *zookeeper.Client
 	mutex    *sync.Mutex
 	basePath string
+	category string
 	services *sync.Map
 	ops      FuncOps
 }

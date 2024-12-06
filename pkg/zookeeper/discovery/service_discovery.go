@@ -8,11 +8,12 @@ import (
 )
 
 // NewServiceDiscovery the constructor of service discovery
-func NewServiceDiscovery(client *zookeeper.Client, basePath string, ops FuncOps) *ServiceDiscovery {
+func NewServiceDiscovery(client *zookeeper.Client, basePath, category string, ops FuncOps) *ServiceDiscovery {
 	return &ServiceDiscovery{
 		client:   client,
 		mutex:    &sync.Mutex{},
 		basePath: basePath,
+		category: category,
 		services: &sync.Map{},
 		ops:      ops,
 	}
@@ -20,7 +21,7 @@ func NewServiceDiscovery(client *zookeeper.Client, basePath string, ops FuncOps)
 
 // QueryForInstances query instances in zookeeper by name
 func (sd *ServiceDiscovery) QueryForInstances(serviceName string) ([]ServiceInstance, error) {
-	categoryServiceName := path.Join(serviceName, string(zookeeper.ProviderCategory))
+	categoryServiceName := path.Join(serviceName, sd.category)
 	if instanceIds, err := sd.client.GetChildren(sd.ops.PathForService(sd.basePath, categoryServiceName)); err != nil {
 		return nil, err
 	} else {
@@ -38,7 +39,7 @@ func (sd *ServiceDiscovery) QueryForInstances(serviceName string) ([]ServiceInst
 
 // QueryForInstance query instances in zookeeper by name and id
 func (sd *ServiceDiscovery) QueryForInstance(serviceName, instanceId string) (ServiceInstance, error) {
-	categoryServiceName := path.Join(serviceName, string(zookeeper.ProviderCategory))
+	categoryServiceName := path.Join(serviceName, sd.category)
 	instance := sd.ops.NewInstance(categoryServiceName, instanceId)
 	instancePath := sd.ops.PathForInstance(sd.basePath, categoryServiceName, instanceId)
 	if data, _, err := sd.client.GetContent(instancePath); err != nil {

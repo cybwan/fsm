@@ -21,7 +21,8 @@ func main() {
 		panic(err)
 	}
 	basePath := "/Application/grpc"
-	sd := discovery.NewServiceDiscovery(client, basePath, new(nebula.Ops))
+	category := "providers"
+	sd := discovery.NewServiceDiscovery(client, basePath, category, new(nebula.Ops))
 	fmt.Println(sd.QueryForNames())
 	if serviceInstances, err := sd.QueryForInstances("com.orientsec.demo.Greeter"); err == nil {
 		for _, serviceInstance := range serviceInstances {

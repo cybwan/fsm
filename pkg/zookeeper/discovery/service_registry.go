@@ -3,8 +3,6 @@ package discovery
 import (
 	"github.com/dubbogo/go-zookeeper/zk"
 	"github.com/pkg/errors"
-
-	"github.com/flomesh-io/fsm/pkg/zookeeper"
 )
 
 // registerService register service to zookeeper
@@ -56,7 +54,7 @@ func (sd *ServiceDiscovery) RegisterService(instance ServiceInstance) error {
 }
 
 // UpdateService update service in zookeeper, and ensure cache is consistent with zookeeper
-func (sd *ServiceDiscovery) UpdateService(category zookeeper.Category, instance ServiceInstance) error {
+func (sd *ServiceDiscovery) UpdateService(instance ServiceInstance) error {
 	value, ok := sd.services.Load(instance.InstanceId())
 	if !ok {
 		return errors.Errorf("[ServiceDiscovery] Service{%s} not registered", instance.InstanceId())
