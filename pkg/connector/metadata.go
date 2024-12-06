@@ -99,6 +99,8 @@ func (m *MicroEndpointMeta) Init(controller ConnectController, discClient Servic
 type MicroSvcMeta struct {
 	Ports       map[MicroSvcPort]MicroSvcAppProtocol
 	Endpoints   map[MicroEndpointAddr]*MicroEndpointMeta
+	Interface   string
+	Methods     []string
 	HealthCheck bool
 }
 
