@@ -101,6 +101,10 @@ type ConnectController interface {
 	GetNacosGroupId() string
 	GetNacosClusterId() string
 
+	GetZookeeperBasePath() string
+	GetZookeeperCategory() string
+	GetZookeeperAdaptor() string
+
 	/* config for ktog source */
 
 	GetK2GDefaultSync() bool

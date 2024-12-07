@@ -5,6 +5,8 @@ import (
 	"strconv"
 
 	"github.com/gorilla/schema"
+
+	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
 const (
@@ -46,7 +48,7 @@ type ServiceInstance struct {
 	Schema   string
 	HostName string
 	IPAddr   string
-	Port     int
+	Port     uint16
 	Node     string
 
 	Application string
@@ -75,6 +77,19 @@ type ServiceInstance struct {
 	Token     bool
 	Side      string
 	Version   string
+
+	Fsm struct {
+		Connector struct {
+			Service struct {
+				Cluster struct {
+					Set string
+				}
+				Connector struct {
+					Uid string
+				}
+			}
+		}
+	}
 }
 
 func NewServiceInstance(serviceName, instanceId string) *ServiceInstance {
@@ -103,6 +118,14 @@ func (ins *ServiceInstance) InstanceId() string {
 	return ins.instanceId
 }
 
+func (ins *ServiceInstance) InstanceAddr() string {
+	return ins.IPAddr
+}
+
+func (ins *ServiceInstance) InstancePort() uint16 {
+	return ins.Port
+}
+
 func (ins *ServiceInstance) Marshal() ([]byte, error) {
 	return nil, nil
 }
@@ -125,8 +148,20 @@ func (ins *ServiceInstance) Unmarshal(_ string, data []byte) error {
 	ins.Schema = instanceUrl.Scheme
 	ins.HostName = instanceUrl.Hostname()
 	ins.IPAddr = instanceUrl.Host
-	ins.Port, _ = strconv.Atoi(instanceUrl.Port())
+	port, _ := strconv.Atoi(instanceUrl.Port())
+	ins.Port = uint16(port)
 	ins.Node = string(data)
 
 	return nil
+}
+
+func (ins *ServiceInstance) GetMetadata(key string) (string, bool) {
+	switch key {
+	case connector.ClusterSetKey:
+		return ins.Fsm.Connector.Service.Cluster.Set, true
+	case connector.ConnectUIDKey:
+		return ins.Fsm.Connector.Service.Connector.Uid, true
+	default:
+		return "", false
+	}
 }

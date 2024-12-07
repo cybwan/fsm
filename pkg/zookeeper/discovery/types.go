@@ -24,8 +24,13 @@ type ServiceInstance interface {
 	ServiceName() string
 	InstanceId() string
 
+	InstanceAddr() string
+	InstancePort() uint16
+
 	Marshal() ([]byte, error)
 	Unmarshal(string, []byte) error
+
+	Metadata(key string) (string, bool)
 }
 
 // entry contain a service instance

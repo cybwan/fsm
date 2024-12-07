@@ -85,19 +85,7 @@ spec:
                 description: ZookeeperAuthSpec is the type used to represent the Zookeeper
                   auth specification.
                 properties:
-                  accessKey:
-                    default: ""
-                    type: string
-                  namespaceId:
-                    default: public
-                    type: string
                   password:
-                    default: ""
-                    type: string
-                  secretKey:
-                    default: ""
-                    type: string
-                  username:
                     default: ""
                     type: string
                 type: object
@@ -231,9 +219,6 @@ spec:
                       - value
                       type: object
                     type: array
-                  clusterId:
-                    default: DEFAULT
-                    type: string
                   defaultSync:
                     default: true
                     type: boolean
@@ -254,9 +239,6 @@ spec:
                     items:
                       type: string
                     type: array
-                  groupId:
-                    default: DEFAULT_GROUP
-                    type: string
                   nodePortSyncType:
                     default: ExternalOnly
                     enum:
@@ -305,13 +287,6 @@ spec:
                   clusterId:
                     default: ""
                     type: string
-                  clusterSet:
-                    default:
-                    - DEFAULT
-                    items:
-                      type: string
-                    minItems: 1
-                    type: array
                   enable:
                     type: boolean
                   excludeIpRanges:
@@ -352,16 +327,6 @@ spec:
                   fixedHttpServicePort:
                     format: int32
                     type: integer
-                  groupSet:
-                    default:
-                    - DEFAULT_GROUP
-                    items:
-                      type: string
-                    minItems: 1
-                    type: array
-                  passingOnly:
-                    default: true
-                    type: boolean
                   prefixMetadata:
                     type: string
                   suffixMetadata:
