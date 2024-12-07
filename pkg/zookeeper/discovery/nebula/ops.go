@@ -24,6 +24,20 @@ func (op *Ops) PathForInstance(basePath, serviceName, instanceId string) string 
 	return path.Join(basePath, serviceName, instanceId)
 }
 
+func (op *Ops) KtoCName(serviceName string) string {
+	if strings.EqualFold(serviceName, "greeter") {
+		return "com.orientsec.demo.Greeter"
+	}
+	return ""
+}
+
+func (op *Ops) CToKName(serviceName string) string {
+	if strings.EqualFold(serviceName, "com.orientsec.demo.Greeter") {
+		return "greeter"
+	}
+	return ""
+}
+
 func (op *Ops) ServiceInstanceId(basePath, instancePath string) (string, string, error) {
 	instancePath = strings.TrimPrefix(instancePath, basePath)
 	instancePath = strings.TrimPrefix(instancePath, string(os.PathSeparator))

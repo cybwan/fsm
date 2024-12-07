@@ -20,7 +20,11 @@ func NewServiceDiscovery(client *zookeeper.Client, basePath, category string, op
 }
 
 // QueryForInstances query instances in zookeeper by name
-func (sd *ServiceDiscovery) QueryForInstances(serviceName string) ([]ServiceInstance, error) {
+func (sd *ServiceDiscovery) QueryForInstances(k8sServiceName string) ([]ServiceInstance, error) {
+	serviceName := sd.ops.KtoCName(k8sServiceName)
+	if len(serviceName) == 0 {
+		return nil, nil
+	}
 	categoryServiceName := path.Join(serviceName, sd.category)
 	if instanceIds, err := sd.client.GetChildren(sd.ops.PathForService(sd.basePath, categoryServiceName)); err != nil {
 		return nil, err
@@ -28,7 +32,7 @@ func (sd *ServiceDiscovery) QueryForInstances(serviceName string) ([]ServiceInst
 		var instance ServiceInstance
 		var instances []ServiceInstance
 		for _, instanceId := range instanceIds {
-			if instance, err = sd.QueryForInstance(serviceName, instanceId); err != nil {
+			if instance, err = sd.queryForInstance(k8sServiceName, serviceName, instanceId); err != nil {
 				return nil, err
 			}
 			instances = append(instances, instance)
@@ -37,10 +41,10 @@ func (sd *ServiceDiscovery) QueryForInstances(serviceName string) ([]ServiceInst
 	}
 }
 
-// QueryForInstance query instances in zookeeper by name and id
-func (sd *ServiceDiscovery) QueryForInstance(serviceName, instanceId string) (ServiceInstance, error) {
+// queryForInstance query instances in zookeeper by name and id
+func (sd *ServiceDiscovery) queryForInstance(k8sServiceName, serviceName, instanceId string) (ServiceInstance, error) {
 	categoryServiceName := path.Join(serviceName, sd.category)
-	instance := sd.ops.NewInstance(categoryServiceName, instanceId)
+	instance := sd.ops.NewInstance(k8sServiceName, instanceId)
 	instancePath := sd.ops.PathForInstance(sd.basePath, categoryServiceName, instanceId)
 	if data, _, err := sd.client.GetContent(instancePath); err != nil {
 		return nil, err
@@ -52,7 +56,19 @@ func (sd *ServiceDiscovery) QueryForInstance(serviceName, instanceId string) (Se
 
 // QueryForNames query all service name in zookeeper
 func (sd *ServiceDiscovery) QueryForNames() ([]string, error) {
-	return sd.client.GetChildren(sd.basePath)
+	serviceNames, err := sd.client.GetChildren(sd.basePath)
+	if err != nil {
+		return nil, err
+	}
+	var k8sServiceNames []string
+	if len(serviceNames) > 0 {
+		for _, cName := range serviceNames {
+			if kName := sd.ops.CToKName(cName); len(kName) > 0 {
+				k8sServiceNames = append(k8sServiceNames, kName)
+			}
+		}
+	}
+	return k8sServiceNames, nil
 }
 
 func (sd *ServiceDiscovery) Close() {

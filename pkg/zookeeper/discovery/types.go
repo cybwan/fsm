@@ -23,9 +23,11 @@ type ServiceDiscovery struct {
 type ServiceInstance interface {
 	ServiceSchema() string
 	ServiceName() string
+	ServiceInterface() string
+	ServiceMethods() []string
 	InstanceId() string
 
-	InstanceAddr() string
+	InstanceIP() string
 	InstancePort() int
 
 	Metadata(key string) (string, bool)
@@ -46,4 +48,6 @@ type FuncOps interface {
 	PathForService(basePath, serviceName string) (servicePath string)
 	PathForInstance(basePath, serviceName, instanceId string) (instancePath string)
 	ServiceInstanceId(basePath, instancePath string) (serviceName, instanceId string, err error)
+	KtoCName(serviceName string) string
+	CToKName(serviceName string) string
 }

@@ -101,7 +101,7 @@ type MicroSvcMeta struct {
 	Endpoints map[MicroEndpointAddr]*MicroEndpointMeta
 
 	Interface string
-	Methods   []string
+	Methods   map[string][]string
 
 	HealthCheck bool
 }

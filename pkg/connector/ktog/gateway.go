@@ -193,7 +193,7 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 				} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) {
 					if svcMeta != nil && len(svcMeta.Interface) > 0 && len(svcMeta.Methods) > 0 {
 						var grpcRouteMatches []gwv1.GRPCRouteMatch
-						for _, method := range svcMeta.Methods {
+						for method := range svcMeta.Methods {
 							method := method
 							grpcRouteMatches = append(grpcRouteMatches, gwv1.GRPCRouteMatch{
 								Method: &gwv1.GRPCMethodMatch{

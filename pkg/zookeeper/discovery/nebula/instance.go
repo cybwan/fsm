@@ -45,11 +45,13 @@ type ServiceInstance struct {
 	serviceName string
 	instanceId  string
 
-	Schema   string
-	HostName string
-	IPAddr   string
-	Port     int
-	Node     string
+	Schema    string
+	Addr      string
+	IP        string
+	Port      int
+	Interface string
+	Methods   []string
+	Node      string
 
 	Application string
 	Project     string
@@ -59,8 +61,6 @@ type ServiceInstance struct {
 	Timestamp   uint64
 	GRPC        string
 	PID         uint32
-	Interface   string
-	Methods     []string
 	Group       bool
 	Weight      uint32
 	Deprecated  bool
@@ -118,12 +118,20 @@ func (ins *ServiceInstance) ServiceSchema() string {
 	return ins.Schema
 }
 
+func (ins *ServiceInstance) ServiceInterface() string {
+	return ins.Interface
+}
+
+func (ins *ServiceInstance) ServiceMethods() []string {
+	return ins.Methods
+}
+
 func (ins *ServiceInstance) InstanceId() string {
 	return ins.instanceId
 }
 
-func (ins *ServiceInstance) InstanceAddr() string {
-	return ins.IPAddr
+func (ins *ServiceInstance) InstanceIP() string {
+	return ins.IP
 }
 
 func (ins *ServiceInstance) InstancePort() int {
@@ -165,8 +173,8 @@ func (ins *ServiceInstance) Unmarshal(_ string, data []byte) error {
 	}
 
 	ins.Schema = instanceUrl.Scheme
-	ins.HostName = instanceUrl.Hostname()
-	ins.IPAddr = instanceUrl.Host
+	ins.Addr = instanceUrl.Host
+	ins.IP = instanceUrl.Hostname()
 	ins.Port, _ = strconv.Atoi(instanceUrl.Port())
 	ins.Node = string(data)
 

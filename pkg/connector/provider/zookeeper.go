@@ -5,8 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/validation"
-
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/zookeeper"
@@ -28,31 +26,31 @@ func (dc *ZookeeperDiscoveryClient) zookeeperClient() *discovery.ServiceDiscover
 	dc.lock.Lock()
 	defer dc.lock.Unlock()
 
-	if dc.namingClient != nil {
-		zkAddr := dc.connectController.GetHTTPAddr()
-		basePath := dc.connectController.GetZookeeperBasePath()
-		category := dc.connectController.GetZookeeperCategory()
-		adaptor := dc.connectController.GetZookeeperAdaptor()
+	zkAddr := dc.connectController.GetHTTPAddr()
+	basePath := dc.connectController.GetZookeeperBasePath()
+	category := dc.connectController.GetZookeeperCategory()
+	adaptor := dc.connectController.GetZookeeperAdaptor()
 
-		if !strings.EqualFold(dc.zkAddr, zkAddr) ||
-			!strings.EqualFold(dc.basePath, basePath) ||
-			!strings.EqualFold(dc.category, category) ||
-			!strings.EqualFold(dc.adaptor, adaptor) {
+	if !strings.EqualFold(dc.zkAddr, zkAddr) ||
+		!strings.EqualFold(dc.basePath, basePath) ||
+		!strings.EqualFold(dc.category, category) ||
+		!strings.EqualFold(dc.adaptor, adaptor) {
+		if dc.namingClient != nil {
 			dc.namingClient.Close()
-			dc.namingClient = nil
-
-			dc.zkAddr = zkAddr
-			dc.basePath = basePath
-			dc.category = category
-			dc.adaptor = adaptor
 		}
+		dc.namingClient = nil
+
+		dc.zkAddr = zkAddr
+		dc.basePath = basePath
+		dc.category = category
+		dc.adaptor = adaptor
 	}
 
 	if dc.namingClient == nil {
 		client, err := zookeeper.NewClient(
-			"zookeeperClient",
+			"fsm",
 			[]string{dc.zkAddr},
-			true,
+			false,
 			zookeeper.WithZkTimeOut(time.Second*15))
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to connect zookeeper")
@@ -131,7 +129,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogInstances(service string, _ *connecto
 			if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
 				include := false
 				for _, cidr := range filterIPRanges {
-					if cidr.Contains(ins.InstanceAddr()) {
+					if cidr.Contains(ins.InstanceIP()) {
 						include = true
 						break
 					}
@@ -143,7 +141,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogInstances(service string, _ *connecto
 			if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
 				exclude := false
 				for _, cidr := range excludeIPRanges {
-					if cidr.Contains(ins.InstanceAddr()) {
+					if cidr.Contains(ins.InstanceIP()) {
 						exclude = true
 						break
 					}
@@ -169,10 +167,6 @@ func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]
 	var catalogServices []connector.MicroService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
-			if errMsgs := validation.IsDNS1035Label(svc); len(errMsgs) > 0 {
-				log.Info().Msgf("invalid format, ignore service: %s, errors:%s", svc, strings.Join(errMsgs, "; "))
-				continue
-			}
 			instances, _ := dc.selectInstances(svc)
 			if len(instances) == 0 {
 				continue
@@ -217,7 +211,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]
 				if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
 					include := false
 					for _, cidr := range filterIPRanges {
-						if cidr.Contains(svcIns.InstanceAddr()) {
+						if cidr.Contains(svcIns.InstanceIP()) {
 							include = true
 							break
 						}
@@ -229,7 +223,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]
 				if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
 					exclude := false
 					for _, cidr := range excludeIPRanges {
-						if cidr.Contains(svcIns.InstanceAddr()) {
+						if cidr.Contains(svcIns.InstanceIP()) {
 							exclude = true
 							break
 						}
@@ -366,9 +360,5 @@ func (dc *ZookeeperDiscoveryClient) Close() {
 func GetZookeeperDiscoveryClient(connectController connector.ConnectController) (*ZookeeperDiscoveryClient, error) {
 	zookeeperDiscoveryClient := new(ZookeeperDiscoveryClient)
 	zookeeperDiscoveryClient.connectController = connectController
-	zookeeperDiscoveryClient.zkAddr = connectController.GetHTTPAddr()
-	zookeeperDiscoveryClient.basePath = connectController.GetZookeeperBasePath()
-	zookeeperDiscoveryClient.category = connectController.GetZookeeperCategory()
-	zookeeperDiscoveryClient.adaptor = connectController.GetZookeeperAdaptor()
 	return zookeeperDiscoveryClient, nil
 }

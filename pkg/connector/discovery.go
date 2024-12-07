@@ -211,9 +211,10 @@ func (as *AgentService) FromZookeeper(ins discovery.ServiceInstance) {
 	}
 	as.ID = ins.InstanceId()
 	as.Service = ins.ServiceName()
+	as.Interface = ins.ServiceInterface()
+	as.Methods = append(as.Methods, ins.ServiceMethods()...)
 	as.InstanceId = ins.InstanceId()
-	as.Address = ins.InstanceAddr()
-	//as.HTTPPort = ins.InstancePort()
+	as.Address = ins.InstanceIP()
 	as.GRPCPort = ins.InstancePort()
 	if metadata := ins.Metadatas(); len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
