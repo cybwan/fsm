@@ -1272,16 +1272,6 @@ func (in *ZookeeperSyncToK8SSpec) DeepCopyInto(out *ZookeeperSyncToK8SSpec) {
 		*out = new(uint32)
 		**out = **in
 	}
-	if in.ClusterSet != nil {
-		in, out := &in.ClusterSet, &out.ClusterSet
-		*out = make([]string, len(*in))
-		copy(*out, *in)
-	}
-	if in.GroupSet != nil {
-		in, out := &in.GroupSet, &out.GroupSet
-		*out = make([]string, len(*in))
-		copy(*out, *in)
-	}
 	out.WithGateway = in.WithGateway
 	return
 }

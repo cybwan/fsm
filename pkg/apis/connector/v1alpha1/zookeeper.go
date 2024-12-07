@@ -64,10 +64,6 @@ type ZookeeperSyncToK8SSpec struct {
 	// +optional
 	ClusterId string `json:"clusterId,omitempty"`
 
-	// +kubebuilder:default=true
-	// +optional
-	PassingOnly bool `json:"passingOnly,omitempty"`
-
 	// +optional
 	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
 
@@ -92,16 +88,6 @@ type ZookeeperSyncToK8SSpec struct {
 	// +optional
 	FixedGRPCServicePort *uint32 `json:"fixedGrpcServicePort,omitempty"`
 
-	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:default={"DEFAULT"}
-	// +optional
-	ClusterSet []string `json:"clusterSet,omitempty"`
-
-	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:default={"DEFAULT_GROUP"}
-	// +optional
-	GroupSet []string `json:"groupSet,omitempty"`
-
 	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
@@ -110,14 +96,6 @@ type ZookeeperSyncToK8SSpec struct {
 // ZookeeperSyncFromK8SSpec is the type used to represent the sync from K8S to Zookeeper specification.
 type ZookeeperSyncFromK8SSpec struct {
 	Enable bool `json:"enable"`
-
-	// +kubebuilder:default=DEFAULT
-	// +optional
-	ClusterId string `json:"clusterId,omitempty"`
-
-	// +kubebuilder:default=DEFAULT_GROUP
-	// +optional
-	GroupId string `json:"groupId,omitempty"`
 
 	// +kubebuilder:default=true
 	// +optional
@@ -236,23 +214,7 @@ type ZookeeperSpec struct {
 type ZookeeperAuthSpec struct {
 	// +kubebuilder:default=""
 	// +optional
-	Username string `json:"username,omitempty"`
-
-	// +kubebuilder:default=""
-	// +optional
 	Password string `json:"password,omitempty"`
-
-	// +kubebuilder:default=""
-	// +optional
-	AccessKey string `json:"accessKey,omitempty"`
-
-	// +kubebuilder:default=""
-	// +optional
-	SecretKey string `json:"secretKey,omitempty"`
-
-	// +kubebuilder:default=public
-	// +optional
-	NamespaceId string `json:"namespaceId,omitempty"`
 }
 
 // ZookeeperStatus is the type used to represent the status of a Zookeeper Connector resource.
