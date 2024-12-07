@@ -153,8 +153,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogInstances(service string, _ *connecto
 				}
 			}
 			agentService := new(connector.AgentService)
-			// todo
-			//agentService.FromZookeeper(&ins)
+			agentService.FromZookeeper(ins)
 			agentService.ClusterId = dc.connectController.GetClusterId()
 			agentServices = append(agentServices, agentService)
 		}

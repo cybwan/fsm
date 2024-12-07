@@ -48,7 +48,7 @@ type ServiceInstance struct {
 	Schema   string
 	HostName string
 	IPAddr   string
-	Port     uint16
+	Port     int
 	Node     string
 
 	Application string
@@ -114,6 +114,10 @@ func (ins *ServiceInstance) ServiceName() string {
 	return ins.serviceName
 }
 
+func (ins *ServiceInstance) ServiceSchema() string {
+	return ins.Schema
+}
+
 func (ins *ServiceInstance) InstanceId() string {
 	return ins.instanceId
 }
@@ -122,8 +126,23 @@ func (ins *ServiceInstance) InstanceAddr() string {
 	return ins.IPAddr
 }
 
-func (ins *ServiceInstance) InstancePort() uint16 {
+func (ins *ServiceInstance) InstancePort() int {
 	return ins.Port
+}
+
+func (ins *ServiceInstance) Metadata(key string) (string, bool) {
+	switch key {
+	case connector.ClusterSetKey:
+		return ins.Fsm.Connector.Service.Cluster.Set, true
+	case connector.ConnectUIDKey:
+		return ins.Fsm.Connector.Service.Connector.Uid, true
+	default:
+		return "", false
+	}
+}
+
+func (ins *ServiceInstance) Metadatas() map[string]string {
+	return nil
 }
 
 func (ins *ServiceInstance) Marshal() ([]byte, error) {
@@ -148,20 +167,8 @@ func (ins *ServiceInstance) Unmarshal(_ string, data []byte) error {
 	ins.Schema = instanceUrl.Scheme
 	ins.HostName = instanceUrl.Hostname()
 	ins.IPAddr = instanceUrl.Host
-	port, _ := strconv.Atoi(instanceUrl.Port())
-	ins.Port = uint16(port)
+	ins.Port, _ = strconv.Atoi(instanceUrl.Port())
 	ins.Node = string(data)
 
 	return nil
-}
-
-func (ins *ServiceInstance) GetMetadata(key string) (string, bool) {
-	switch key {
-	case connector.ClusterSetKey:
-		return ins.Fsm.Connector.Service.Cluster.Set, true
-	case connector.ConnectUIDKey:
-		return ins.Fsm.Connector.Service.Connector.Uid, true
-	default:
-		return "", false
-	}
 }

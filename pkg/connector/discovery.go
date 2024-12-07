@@ -15,6 +15,7 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery"
 )
 
 const (
@@ -199,6 +200,24 @@ func (as *AgentService) FromNacos(ins *nacos.Instance) {
 					as.GRPCPort = int(grpcPort)
 				}
 			}
+			as.Meta[k] = v
+		}
+	}
+}
+
+func (as *AgentService) FromZookeeper(ins discovery.ServiceInstance) {
+	if ins == nil {
+		return
+	}
+	as.ID = ins.InstanceId()
+	as.Service = ins.ServiceName()
+	as.InstanceId = ins.InstanceId()
+	as.Address = ins.InstanceAddr()
+	//as.HTTPPort = ins.InstancePort()
+	as.GRPCPort = ins.InstancePort()
+	if metadata := ins.Metadatas(); len(metadata) > 0 {
+		as.Meta = make(map[string]interface{})
+		for k, v := range metadata {
 			as.Meta[k] = v
 		}
 	}

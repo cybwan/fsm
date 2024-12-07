@@ -21,16 +21,18 @@ type ServiceDiscovery struct {
 }
 
 type ServiceInstance interface {
+	ServiceSchema() string
 	ServiceName() string
 	InstanceId() string
 
 	InstanceAddr() string
-	InstancePort() uint16
+	InstancePort() int
+
+	Metadata(key string) (string, bool)
+	Metadatas() map[string]string
 
 	Marshal() ([]byte, error)
 	Unmarshal(string, []byte) error
-
-	Metadata(key string) (string, bool)
 }
 
 // entry contain a service instance
