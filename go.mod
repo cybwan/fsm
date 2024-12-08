@@ -80,6 +80,7 @@ require (
 	github.com/cert-manager/cert-manager v1.12.14
 	github.com/cilium/ebpf v0.9.1
 	github.com/deckarep/golang-set v1.8.0
+	github.com/dubbogo/go-zookeeper v1.0.3
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-co-op/gocron v1.31.0
@@ -87,6 +88,7 @@ require (
 	github.com/go-logr/zerologr v1.2.3
 	github.com/go-resty/resty/v2 v2.14.0
 	github.com/gobwas/glob v0.2.3
+	github.com/gorilla/schema v1.4.1
 	github.com/hashicorp/consul/api v1.29.1
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/hudl/fargo v1.4.0

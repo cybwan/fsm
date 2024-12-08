@@ -97,8 +97,12 @@ func (m *MicroEndpointMeta) Init(controller ConnectController, discClient Servic
 
 // MicroSvcMeta defines micro service meta
 type MicroSvcMeta struct {
-	Ports       map[MicroSvcPort]MicroSvcAppProtocol
-	Endpoints   map[MicroEndpointAddr]*MicroEndpointMeta
+	Ports     map[MicroSvcPort]MicroSvcAppProtocol
+	Endpoints map[MicroEndpointAddr]*MicroEndpointMeta
+
+	Interface string
+	Methods   map[string][]string
+
 	HealthCheck bool
 }
 
