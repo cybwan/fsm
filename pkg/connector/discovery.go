@@ -15,6 +15,7 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery"
 )
 
@@ -209,13 +210,20 @@ func (as *AgentService) FromZookeeper(ins discovery.ServiceInstance) {
 	if ins == nil {
 		return
 	}
+	switch strings.ToLower(ins.ServiceSchema()) {
+	case constants.ProtocolHTTP:
+		as.HTTPPort = ins.InstancePort()
+	case constants.ProtocolGRPC:
+		as.GRPCPort = ins.InstancePort()
+	default:
+		as.HTTPPort = ins.InstancePort()
+	}
 	as.ID = ins.InstanceId()
 	as.Service = ins.ServiceName()
 	as.Interface = ins.ServiceInterface()
 	as.Methods = append(as.Methods, ins.ServiceMethods()...)
 	as.InstanceId = ins.InstanceId()
 	as.Address = ins.InstanceIP()
-	as.GRPCPort = ins.InstancePort()
 	if metadata := ins.Metadatas(); len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
 		for k, v := range metadata {
