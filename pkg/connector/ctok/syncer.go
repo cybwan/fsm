@@ -452,6 +452,9 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 	enc, hash := connector.Encode(svcMeta)
 	createSvc.ObjectMeta.Annotations[connector.AnnotationMeshEndpointAddr] = enc
 	createSvc.ObjectMeta.Annotations[constants.AnnotationMeshEndpointHash] = fmt.Sprintf("%d", hash)
+	if len(svcMeta.Interface) > 0 {
+		createSvc.ObjectMeta.Labels[constants.GRPCServiceInterfaceLabel] = svcMeta.Interface
+	}
 }
 
 func (s *CtoKSyncer) existPort(svc *apiv1.Service, port connector.MicroSvcPort, appProtocol connector.MicroSvcAppProtocol) bool {
