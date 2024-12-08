@@ -55,7 +55,14 @@ func (dc *ZookeeperDiscoveryClient) zookeeperClient() *discovery.ServiceDiscover
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to connect zookeeper")
 		}
-		dc.namingClient = discovery.NewServiceDiscovery(client, dc.basePath, dc.category, new(nebula.Ops))
+
+		var ops discovery.FuncOps
+		if strings.EqualFold(dc.adaptor, `nebula`) {
+			ops = nebula.NewAdaptor()
+		} else {
+			log.Fatal().Msgf("invalid grpc adaptor: %s", dc.adaptor)
+		}
+		dc.namingClient = discovery.NewServiceDiscovery(client, dc.basePath, dc.category, ops)
 	}
 
 	dc.connectController.WaitLimiter()
