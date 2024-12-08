@@ -248,11 +248,6 @@ func (in *ConsulSyncToK8SSpec) DeepCopyInto(out *ConsulSyncToK8SSpec) {
 		*out = new(uint32)
 		**out = **in
 	}
-	if in.FixedGRPCServicePort != nil {
-		in, out := &in.FixedGRPCServicePort, &out.FixedGRPCServicePort
-		*out = new(uint32)
-		**out = **in
-	}
 	out.WithGateway = in.WithGateway
 	return
 }
@@ -468,11 +463,6 @@ func (in *EurekaSyncToK8SSpec) DeepCopyInto(out *EurekaSyncToK8SSpec) {
 	}
 	if in.FixedHTTPServicePort != nil {
 		in, out := &in.FixedHTTPServicePort, &out.FixedHTTPServicePort
-		*out = new(uint32)
-		**out = **in
-	}
-	if in.FixedGRPCServicePort != nil {
-		in, out := &in.FixedGRPCServicePort, &out.FixedGRPCServicePort
 		*out = new(uint32)
 		**out = **in
 	}
@@ -1007,11 +997,6 @@ func (in *NacosSyncToK8SSpec) DeepCopyInto(out *NacosSyncToK8SSpec) {
 		*out = new(uint32)
 		**out = **in
 	}
-	if in.FixedGRPCServicePort != nil {
-		in, out := &in.FixedGRPCServicePort, &out.FixedGRPCServicePort
-		*out = new(uint32)
-		**out = **in
-	}
 	if in.ClusterSet != nil {
 		in, out := &in.ClusterSet, &out.ClusterSet
 		*out = make([]string, len(*in))
@@ -1264,11 +1249,6 @@ func (in *ZookeeperSyncToK8SSpec) DeepCopyInto(out *ZookeeperSyncToK8SSpec) {
 	}
 	if in.FixedHTTPServicePort != nil {
 		in, out := &in.FixedHTTPServicePort, &out.FixedHTTPServicePort
-		*out = new(uint32)
-		**out = **in
-	}
-	if in.FixedGRPCServicePort != nil {
-		in, out := &in.FixedGRPCServicePort, &out.FixedGRPCServicePort
 		*out = new(uint32)
 		**out = **in
 	}

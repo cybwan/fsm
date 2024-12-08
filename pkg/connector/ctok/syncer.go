@@ -329,13 +329,6 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 					continue
 				}
 			}
-			if fixedPort := s.controller.GetFixedGRPCServicePort(); fixedPort != nil {
-				s.mergeFixedGRPCServiceEndpoints(svcMeta)
-				if len(svcMeta.Endpoints) == 0 {
-					deleteSvcs = append(deleteSvcs, string(microSvcName))
-					continue
-				}
-			}
 			if !strings.EqualFold(string(microSvcName), k8sSvcName) {
 				extendServices[string(microSvcName)] = cloudSvcName
 			}
@@ -438,9 +431,6 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 			}
 			if appProtocol == constants.ProtocolGRPC {
 				specPort.AppProtocol = &protocolGRPC
-				if port := s.controller.GetFixedGRPCServicePort(); port != nil {
-					specPort.Port = int32(*port)
-				}
 			}
 			createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 		}
@@ -552,49 +542,6 @@ func (s *CtoKSyncer) mergeFixedHTTPServiceEndpoints(meta *connector.MicroSvcMeta
 		}
 		meta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
 		meta.Ports[valley] = constants.ProtocolHTTP
-		meta.Endpoints = stats[valley]
-	}
-}
-
-func (s *CtoKSyncer) mergeFixedGRPCServiceEndpoints(meta *connector.MicroSvcMeta) {
-	stats := make(map[connector.MicroSvcPort]map[connector.MicroEndpointAddr]*connector.MicroEndpointMeta)
-	for addr, ep := range meta.Endpoints {
-		for port, protocol := range ep.Ports {
-			if strings.EqualFold(string(protocol), constants.ProtocolGRPC) {
-				epsCache, exists := stats[port]
-				if !exists {
-					epsCache = make(map[connector.MicroEndpointAddr]*connector.MicroEndpointMeta)
-					stats[port] = epsCache
-				}
-				epsCache[addr] = ep
-			}
-		}
-	}
-
-	var peak = 0
-	var targetPorts map[connector.MicroSvcPort]int
-	for port, epsCache := range stats {
-		cnt := len(epsCache)
-		if cnt == 0 {
-			continue
-		} else if cnt == peak {
-			targetPorts[port] = cnt
-		} else if cnt > peak {
-			peak = cnt
-			targetPorts = make(map[connector.MicroSvcPort]int)
-			targetPorts[port] = cnt
-		}
-	}
-
-	if len(targetPorts) > 0 {
-		valley := connector.MicroSvcPort(0)
-		for port := range targetPorts {
-			if port > valley {
-				valley = port
-			}
-		}
-		meta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
-		meta.Ports[valley] = constants.ProtocolGRPC
 		meta.Endpoints = stats[valley]
 	}
 }

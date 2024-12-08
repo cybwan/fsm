@@ -98,9 +98,6 @@ type ConsulSyncToK8SSpec struct {
 	// +optional
 	FixedHTTPServicePort *uint32 `json:"fixedHttpServicePort,omitempty"`
 
-	// +optional
-	FixedGRPCServicePort *uint32 `json:"fixedGrpcServicePort,omitempty"`
-
 	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
 	WithGateway C2KGateway `json:"withGateway,omitempty"`

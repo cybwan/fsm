@@ -57,7 +57,6 @@ type ConnectController interface {
 	GetSuffixMetadata() string
 
 	GetFixedHTTPServicePort() *uint32
-	GetFixedGRPCServicePort() *uint32
 
 	GetC2KWithGateway() bool
 	GetC2KMultiGateways() bool
