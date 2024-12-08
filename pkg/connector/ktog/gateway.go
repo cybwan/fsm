@@ -126,67 +126,7 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 				protocol = *portSpec.AppProtocol
 			}
 			protocol = strings.ToUpper(protocol)
-
-			var parentRefs []gwv1.ParentReference
-			for _, gatewayEntry := range gatewayList {
-				gateway := gatewayEntry.(*gwv1.Gateway)
-				for _, gatewayListener := range gateway.Spec.Listeners {
-					if internalSource {
-						if httpPort := gw.serviceResource.controller.GetViaIngressHTTPPort(); httpPort > 0 &&
-							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
-							uint(gatewayListener.Port) == httpPort {
-							gatewayNs := gwv1.Namespace(gateway.Namespace)
-							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1.ParentReference{
-								Group:     &gatewayGroup,
-								Kind:      &gatewayKind,
-								Namespace: &gatewayNs,
-								Name:      gwv1.ObjectName(gateway.Name),
-								Port:      &gatewayPort})
-						}
-						if grpcPort := gw.serviceResource.controller.GetViaIngressGRPCPort(); grpcPort > 0 &&
-							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
-							uint(gatewayListener.Port) == grpcPort {
-							gatewayNs := gwv1.Namespace(gateway.Namespace)
-							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1.ParentReference{
-								Group:     &gatewayGroup,
-								Kind:      &gatewayKind,
-								Namespace: &gatewayNs,
-								Name:      gwv1.ObjectName(gateway.Name),
-								Port:      &gatewayPort})
-						}
-					}
-					if externalSource ||
-						(internalSource && gw.InterceptionMode == constants.TrafficInterceptionModeNodeLevel) {
-						if httpPort := gw.serviceResource.controller.GetViaEgressHTTPPort(); httpPort > 0 &&
-							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
-							uint(gatewayListener.Port) == httpPort {
-							gatewayNs := gwv1.Namespace(gateway.Namespace)
-							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1.ParentReference{
-								Group:     &gatewayGroup,
-								Kind:      &gatewayKind,
-								Namespace: &gatewayNs,
-								Name:      gwv1.ObjectName(gateway.Name),
-								Port:      &gatewayPort})
-						}
-						if grpcPort := gw.serviceResource.controller.GetViaEgressGRPCPort(); grpcPort > 0 &&
-							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
-							uint(gatewayListener.Port) == grpcPort {
-							gatewayNs := gwv1.Namespace(gateway.Namespace)
-							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1.ParentReference{
-								Group:     &gatewayGroup,
-								Kind:      &gatewayKind,
-								Namespace: &gatewayNs,
-								Name:      gwv1.ObjectName(gateway.Name),
-								Port:      &gatewayPort})
-						}
-					}
-				}
-			}
-
+			parentRefs := gw.findParentRefs(gatewayList, internalSource, protocol, externalSource)
 			if len(parentRefs) > 0 {
 				if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
 					gw.updateGatewayHTTPRoute(k8sSvc, portSpec, parentRefs)
@@ -214,6 +154,69 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 		}
 		return nil
 	})
+}
+
+func (gw *GatewaySource) findParentRefs(gatewayList []interface{}, internalSource bool, protocol string, externalSource bool) []gwv1.ParentReference {
+	var parentRefs []gwv1.ParentReference
+	for _, gatewayEntry := range gatewayList {
+		gateway := gatewayEntry.(*gwv1.Gateway)
+		for _, gatewayListener := range gateway.Spec.Listeners {
+			if internalSource {
+				if httpPort := gw.serviceResource.controller.GetViaIngressHTTPPort(); httpPort > 0 &&
+					strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
+					uint(gatewayListener.Port) == httpPort {
+					gatewayNs := gwv1.Namespace(gateway.Namespace)
+					gatewayPort := gatewayListener.Port
+					parentRefs = append(parentRefs, gwv1.ParentReference{
+						Group:     &gatewayGroup,
+						Kind:      &gatewayKind,
+						Namespace: &gatewayNs,
+						Name:      gwv1.ObjectName(gateway.Name),
+						Port:      &gatewayPort})
+				}
+				if grpcPort := gw.serviceResource.controller.GetViaIngressGRPCPort(); grpcPort > 0 &&
+					strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
+					uint(gatewayListener.Port) == grpcPort {
+					gatewayNs := gwv1.Namespace(gateway.Namespace)
+					gatewayPort := gatewayListener.Port
+					parentRefs = append(parentRefs, gwv1.ParentReference{
+						Group:     &gatewayGroup,
+						Kind:      &gatewayKind,
+						Namespace: &gatewayNs,
+						Name:      gwv1.ObjectName(gateway.Name),
+						Port:      &gatewayPort})
+				}
+			}
+			if externalSource ||
+				(internalSource && gw.InterceptionMode == constants.TrafficInterceptionModeNodeLevel) {
+				if httpPort := gw.serviceResource.controller.GetViaEgressHTTPPort(); httpPort > 0 &&
+					strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
+					uint(gatewayListener.Port) == httpPort {
+					gatewayNs := gwv1.Namespace(gateway.Namespace)
+					gatewayPort := gatewayListener.Port
+					parentRefs = append(parentRefs, gwv1.ParentReference{
+						Group:     &gatewayGroup,
+						Kind:      &gatewayKind,
+						Namespace: &gatewayNs,
+						Name:      gwv1.ObjectName(gateway.Name),
+						Port:      &gatewayPort})
+				}
+				if grpcPort := gw.serviceResource.controller.GetViaEgressGRPCPort(); grpcPort > 0 &&
+					strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
+					uint(gatewayListener.Port) == grpcPort {
+					gatewayNs := gwv1.Namespace(gateway.Namespace)
+					gatewayPort := gatewayListener.Port
+					parentRefs = append(parentRefs, gwv1.ParentReference{
+						Group:     &gatewayGroup,
+						Kind:      &gatewayKind,
+						Namespace: &gatewayNs,
+						Name:      gwv1.ObjectName(gateway.Name),
+						Port:      &gatewayPort})
+				}
+			}
+		}
+	}
+	return parentRefs
 }
 
 func (gw *GatewaySource) checkServiceType(k8sSvc *apiv1.Service) (internalSource, externalSource bool, svcMeta *connector.MicroSvcMeta) {
