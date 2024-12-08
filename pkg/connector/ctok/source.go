@@ -137,17 +137,20 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName connector.MicroSvcNa
 			if grpcPort > 0 && len(instance.Interface) > 0 && len(instance.Methods) > 0 {
 				svcMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
 				endpointMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
-				svcMeta.Interface = instance.Interface
-				if svcMeta.Methods == nil {
-					svcMeta.Methods = make(map[string][]string)
+				if svcMeta.GRPCMeta == nil {
+					svcMeta.GRPCMeta = new(connector.GRPCMeta)
+				}
+				svcMeta.GRPCMeta.Interface = instance.Interface
+				if svcMeta.GRPCMeta.Methods == nil {
+					svcMeta.GRPCMeta.Methods = make(map[string][]string)
 				}
 				for _, method := range instance.Methods {
-					eps, exists := svcMeta.Methods[method]
+					eps, exists := svcMeta.GRPCMeta.Methods[method]
 					if !exists {
 						eps = make([]string, 0)
 					}
 					eps = append(eps, instance.Address)
-					svcMeta.Methods[method] = eps
+					svcMeta.GRPCMeta.Methods[method] = eps
 				}
 			}
 			endpointMeta.Address = connector.MicroEndpointAddr(instance.Address)

@@ -131,14 +131,15 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 				if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
 					gw.updateGatewayHTTPRoute(k8sSvc, portSpec, parentRefs)
 				} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) {
-					if svcMeta != nil && len(svcMeta.Interface) > 0 && len(svcMeta.Methods) > 0 {
+					if svcMeta != nil && svcMeta.GRPCMeta != nil &&
+						len(svcMeta.GRPCMeta.Interface) > 0 && len(svcMeta.GRPCMeta.Methods) > 0 {
 						var grpcRouteMatches []gwv1.GRPCRouteMatch
-						for method := range svcMeta.Methods {
+						for method := range svcMeta.GRPCMeta.Methods {
 							method := method
 							grpcRouteMatches = append(grpcRouteMatches, gwv1.GRPCRouteMatch{
 								Method: &gwv1.GRPCMethodMatch{
 									Type:    &grpcMatchType,
-									Service: &svcMeta.Interface,
+									Service: &svcMeta.GRPCMeta.Interface,
 									Method:  &method,
 								},
 							})

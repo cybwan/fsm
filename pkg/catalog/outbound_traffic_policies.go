@@ -203,8 +203,8 @@ func (mc *MeshCatalog) getHostnamesForService(meshSvc service.MeshService, local
 		if k8sSvc != nil && len(k8sSvc.Annotations) > 0 {
 			if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 				svcMeta := connector.Decode(k8sSvc, v)
-				if len(svcMeta.Interface) > 0 {
-					httpHostNamesForServicePort = append(httpHostNamesForServicePort, svcMeta.Interface)
+				if svcMeta.GRPCMeta != nil && len(svcMeta.GRPCMeta.Interface) > 0 {
+					httpHostNamesForServicePort = append(httpHostNamesForServicePort, svcMeta.GRPCMeta.Interface)
 					return httpHostNamesForServicePort
 				}
 			}
