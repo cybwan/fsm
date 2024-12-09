@@ -109,8 +109,6 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName connector.MicroSvcNa
 
 	for _, instance := range instanceEntries {
 		instance.Service = strings.ToLower(instance.Service)
-		httpPort := instance.HTTPPort
-		grpcPort := instance.GRPCPort
 		svcNames := []connector.MicroSvcName{connector.MicroSvcName(instance.Service)}
 		if len(instance.Tags) > 0 {
 			svcNames = s.aggregateTag(svcName, instance, svcNames)
@@ -119,79 +117,85 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName connector.MicroSvcNa
 			svcNames = s.aggregateMetadata(svcName, instance, svcNames)
 		}
 		for _, serviceName := range svcNames {
-			svcMeta, exists := svcMetaMap[serviceName]
-			if !exists {
-				svcMeta = new(connector.MicroSvcMeta)
-				svcMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
-				svcMeta.Endpoints = make(map[connector.MicroEndpointAddr]*connector.MicroEndpointMeta)
-				svcMetaMap[serviceName] = svcMeta
-			}
-			svcMeta.HealthCheck = instance.HealthCheck
-
-			endpointMeta := new(connector.MicroEndpointMeta)
-			endpointMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
-			if httpPort > 0 {
-				svcMeta.Ports[connector.MicroSvcPort(httpPort)] = constants.ProtocolHTTP
-				endpointMeta.Ports[connector.MicroSvcPort(httpPort)] = constants.ProtocolHTTP
-			}
-			if grpcPort > 0 && len(instance.Interface) > 0 && len(instance.Methods) > 0 {
-				svcMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
-				endpointMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
-				if svcMeta.GRPCMeta == nil {
-					svcMeta.GRPCMeta = new(connector.GRPCMeta)
-				}
-				svcMeta.GRPCMeta.Interface = instance.Interface
-				if svcMeta.GRPCMeta.Methods == nil {
-					svcMeta.GRPCMeta.Methods = make(map[string][]string)
-				}
-				for _, method := range instance.Methods {
-					eps, exists := svcMeta.GRPCMeta.Methods[method]
-					if !exists {
-						eps = make([]string, 0)
-					}
-					eps = append(eps, instance.Address)
-					svcMeta.GRPCMeta.Methods[method] = eps
-				}
-			}
-			endpointMeta.Address = connector.MicroEndpointAddr(instance.Address)
-			endpointMeta.Native.ClusterId = instance.ClusterId
-			endpointMeta.Native.ViaGatewayMode = ctv1.Forward
-			if viaGatewayModeIf, ok := instance.Meta[connector.CloudViaGatewayMode]; ok {
-				if viaGatewayMode, str := viaGatewayModeIf.(string); str {
-					if len(viaGatewayMode) > 0 {
-						endpointMeta.Native.ViaGatewayMode = ctv1.WithGatewayMode(viaGatewayMode)
-					}
-				}
-			}
-			if httpViaGatewayIf, ok := instance.Meta[connector.CloudHTTPViaGateway]; ok {
-				if httpViaGateway, str := httpViaGatewayIf.(string); str {
-					if len(httpViaGateway) > 0 {
-						endpointMeta.Native.ViaGatewayHTTP = httpViaGateway
-					}
-				}
-			}
-			if grpcViaGatewayIf, ok := instance.Meta[connector.CloudGRPCViaGateway]; ok {
-				if grpcViaGateway, str := grpcViaGatewayIf.(string); str {
-					if len(grpcViaGateway) > 0 {
-						endpointMeta.Native.ViaGatewayGRPC = grpcViaGateway
-					}
-				}
-			}
-			if clusterSetIf, ok := instance.Meta[connector.ClusterSetKey]; ok {
-				if clusterSet, str := clusterSetIf.(string); str {
-					if len(clusterSet) > 0 {
-						endpointMeta.Native.ClusterSet = clusterSet
-						endpointMeta.Native.ClusterId = clusterSet
-					}
-				}
-			}
-			if len(endpointMeta.Native.ClusterSet) == 0 || len(endpointMeta.Native.ClusterId) > 0 {
-				endpointMeta.Native.ClusterSet = endpointMeta.Native.ClusterId
-			}
-			svcMeta.Endpoints[connector.MicroEndpointAddr(instance.Address)] = endpointMeta
+			s.aggregateMeta(svcMetaMap, serviceName, instance)
 		}
 	}
 	return svcMetaMap
+}
+
+func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.MicroSvcName]*connector.MicroSvcMeta, serviceName connector.MicroSvcName, instance *connector.AgentService) {
+	httpPort := instance.HTTPPort
+	grpcPort := instance.GRPCPort
+	svcMeta, exists := svcMetaMap[serviceName]
+	if !exists {
+		svcMeta = new(connector.MicroSvcMeta)
+		svcMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
+		svcMeta.Endpoints = make(map[connector.MicroEndpointAddr]*connector.MicroEndpointMeta)
+		svcMetaMap[serviceName] = svcMeta
+	}
+	svcMeta.HealthCheck = instance.HealthCheck
+
+	endpointMeta := new(connector.MicroEndpointMeta)
+	endpointMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
+	if httpPort > 0 {
+		svcMeta.Ports[connector.MicroSvcPort(httpPort)] = constants.ProtocolHTTP
+		endpointMeta.Ports[connector.MicroSvcPort(httpPort)] = constants.ProtocolHTTP
+	}
+	if grpcPort > 0 && len(instance.Interface) > 0 && len(instance.Methods) > 0 {
+		svcMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
+		endpointMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
+		if svcMeta.GRPCMeta == nil {
+			svcMeta.GRPCMeta = new(connector.GRPCMeta)
+		}
+		svcMeta.GRPCMeta.Interface = instance.Interface
+		if svcMeta.GRPCMeta.Methods == nil {
+			svcMeta.GRPCMeta.Methods = make(map[string][]string)
+		}
+		for _, method := range instance.Methods {
+			eps, exists := svcMeta.GRPCMeta.Methods[method]
+			if !exists {
+				eps = make([]string, 0)
+			}
+			eps = append(eps, instance.Address)
+			svcMeta.GRPCMeta.Methods[method] = eps
+		}
+	}
+	endpointMeta.Address = connector.MicroEndpointAddr(instance.Address)
+	endpointMeta.Native.ClusterId = instance.ClusterId
+	endpointMeta.Native.ViaGatewayMode = ctv1.Forward
+	if viaGatewayModeIf, ok := instance.Meta[connector.CloudViaGatewayMode]; ok {
+		if viaGatewayMode, str := viaGatewayModeIf.(string); str {
+			if len(viaGatewayMode) > 0 {
+				endpointMeta.Native.ViaGatewayMode = ctv1.WithGatewayMode(viaGatewayMode)
+			}
+		}
+	}
+	if httpViaGatewayIf, ok := instance.Meta[connector.CloudHTTPViaGateway]; ok {
+		if httpViaGateway, str := httpViaGatewayIf.(string); str {
+			if len(httpViaGateway) > 0 {
+				endpointMeta.Native.ViaGatewayHTTP = httpViaGateway
+			}
+		}
+	}
+	if grpcViaGatewayIf, ok := instance.Meta[connector.CloudGRPCViaGateway]; ok {
+		if grpcViaGateway, str := grpcViaGatewayIf.(string); str {
+			if len(grpcViaGateway) > 0 {
+				endpointMeta.Native.ViaGatewayGRPC = grpcViaGateway
+			}
+		}
+	}
+	if clusterSetIf, ok := instance.Meta[connector.ClusterSetKey]; ok {
+		if clusterSet, str := clusterSetIf.(string); str {
+			if len(clusterSet) > 0 {
+				endpointMeta.Native.ClusterSet = clusterSet
+				endpointMeta.Native.ClusterId = clusterSet
+			}
+		}
+	}
+	if len(endpointMeta.Native.ClusterSet) == 0 || len(endpointMeta.Native.ClusterId) > 0 {
+		endpointMeta.Native.ClusterSet = endpointMeta.Native.ClusterId
+	}
+	svcMeta.Endpoints[connector.MicroEndpointAddr(instance.Address)] = endpointMeta
 }
 
 func (s *CtoKSource) aggregateTag(svcName connector.MicroSvcName, svc *connector.AgentService, svcNames []connector.MicroSvcName) []connector.MicroSvcName {
