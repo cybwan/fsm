@@ -1,113 +1,83 @@
 package nebula
 
 import (
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/gorilla/schema"
-
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery/nebula/urlenc"
 )
 
 const (
-	PickFirstLoadBalance        LoadBalance = "pick_first"
-	RoundRobinLoadBalance       LoadBalance = "round_robin"
-	WeightRoundRobinLoadBalance LoadBalance = "weight_round_robin"
-	ConsistentHashLoadBalance   LoadBalance = "consistent_hash"
+	PickFirstLoadBalance        = "pick_first"
+	RoundRobinLoadBalance       = "round_robin"
+	WeightRoundRobinLoadBalance = "weight_round_robin"
+	ConsistentHashLoadBalance   = "consistent_hash"
 )
-
-type LoadBalance string
-
-type InstanceSetting struct {
-	Async       bool
-	Cluster     string
-	LoadBalance LoadBalance
-	Connections uint32
-	Requests    uint32
-	Reties      uint32
-	Timeout     uint32
-}
-
-type InstanceService struct {
-	Type string
-}
-
-type InstanceReal struct {
-	IP   string
-	Port uint16
-}
-
-type InstanceAccess struct {
-	Protected bool
-}
 
 type ServiceInstance struct {
 	serviceName string
 	instanceId  string
 
-	Schema    string
-	Addr      string
-	IP        string
-	Port      int
-	Interface string
-	Methods   string
-	Node      string
+	Schema string `urlenc:"-"`
+	Addr   string `urlenc:"-"`
+	IP     string `urlenc:"-"`
+	Port   int    `urlenc:"-"`
+	Node   string `urlenc:"-"`
 
-	Application string
-	Project     string
-	Owner       string
-	Ops         string
-	Category    string
-	Timestamp   uint64
-	GRPC        string
-	PID         uint32
-	Group       bool
-	Weight      uint32
-	Deprecated  bool
-	Master      bool
+	Interface string `urlenc:"interface"`
+	Methods   string `urlenc:"methods"`
 
-	Default InstanceSetting
-	Service InstanceService
-	Real    InstanceReal
-	Access  InstanceAccess
+	Application string `urlenc:"application"`
+	Project     string `urlenc:"project"`
+	Owner       string `urlenc:"owner"`
+	Ops         string `urlenc:"ops,omitempty"`
+	Category    string `urlenc:"category"`
+	Timestamp   uint64 `urlenc:"timestamp"`
+	GRPC        string `urlenc:"grpc"`
+	PID         uint32 `urlenc:"pid"`
+	Group       bool   `urlenc:"group,omitempty"`
+	Weight      uint32 `urlenc:"weight"`
+	Deprecated  bool   `urlenc:"deprecated"`
+	Master      bool   `urlenc:"master"`
 
-	Accesslog bool
-	Anyhost   bool
-	Dynamic   bool
-	Token     bool
-	Side      string
-	Version   string
+	DefaultAsync       bool   `urlenc:"default.async"`
+	DefaultCluster     string `urlenc:"default.cluster"`
+	DefaultConnections uint32 `urlenc:"default.connections"`
+	DefaultLoadBalance string `urlenc:"default.loadbalance"`
+	DefaultRequests    uint32 `urlenc:"default.requests"`
+	DefaultReties      uint32 `urlenc:"default.reties"`
+	DefaultTimeout     uint32 `urlenc:"default.timeout"`
 
-	Fsm struct {
-		Connector struct {
-			Service struct {
-				Cluster struct {
-					Set string
-				}
-				Connector struct {
-					Uid string
-				}
-			}
-		}
-	}
+	ServiceType     string `urlenc:"service.type"`
+	RealIP          string `urlenc:"real.ip"`
+	RealPort        uint16 `urlenc:"real.port"`
+	AccessProtected bool   `urlenc:"access.protected"`
+
+	Accesslog bool   `urlenc:"accesslog"`
+	Anyhost   bool   `urlenc:"anyhost"`
+	Dynamic   bool   `urlenc:"dynamic"`
+	Token     bool   `urlenc:"token"`
+	Side      string `urlenc:"side"`
+	Version   string `urlenc:"version"`
+
+	FsmConnectorServiceClusterSet   string `urlenc:"fsm.connector.service.cluster.set,omitempty"`
+	FsmConnectorServiceConnectorUid string `urlenc:"fsm.connector.service.connector.uid,omitempty"`
 }
 
 func NewServiceInstance(serviceName, instanceId string) *ServiceInstance {
 	return &ServiceInstance{
-		serviceName: serviceName,
-		instanceId:  instanceId,
-		Access: InstanceAccess{
-			Protected: false,
-		},
-		Default: InstanceSetting{
-			Connections: 20,
-			Requests:    2000,
-			LoadBalance: PickFirstLoadBalance,
-		},
-		Weight:     100,
-		Deprecated: false,
-		Master:     true,
+		serviceName:        serviceName,
+		instanceId:         instanceId,
+		AccessProtected:    false,
+		DefaultConnections: 20,
+		DefaultRequests:    2000,
+		DefaultLoadBalance: PickFirstLoadBalance,
+		Weight:             100,
+		Deprecated:         false,
+		Master:             true,
 	}
 }
 
@@ -153,9 +123,9 @@ func (ins *ServiceInstance) InstancePort() int {
 func (ins *ServiceInstance) Metadata(key string) (string, bool) {
 	switch key {
 	case connector.ClusterSetKey:
-		return ins.Fsm.Connector.Service.Cluster.Set, true
+		return ins.FsmConnectorServiceClusterSet, true
 	case connector.ConnectUIDKey:
-		return ins.Fsm.Connector.Service.Connector.Uid, true
+		return ins.FsmConnectorServiceConnectorUid, true
 	default:
 		return "", false
 	}
@@ -166,29 +136,40 @@ func (ins *ServiceInstance) Metadatas() map[string]string {
 }
 
 func (ins *ServiceInstance) Marshal() ([]byte, error) {
-	return nil, nil
+	if bytes, err := urlenc.Encode(ins); err != nil {
+		return nil, err
+	} else {
+		instanceUrl := url.URL{
+			Scheme:   ins.Schema,
+			Host:     ins.Addr,
+			RawQuery: string(bytes),
+		}
+		if len(instanceUrl.Host) == 0 {
+			instanceUrl.Host = fmt.Sprintf("%s:%d", ins.IP, ins.Port)
+		}
+		return []byte(url.QueryEscape(instanceUrl.String())), nil
+	}
 }
 
 func (ins *ServiceInstance) Unmarshal(_ string, data []byte) error {
 	var err error
 	var instancePath string
 	var instanceUrl *url.URL
-	decoder := schema.NewDecoder()
+
 	if instancePath, err = url.QueryUnescape(ins.instanceId); err != nil {
 		return err
 	}
 	if instanceUrl, err = url.Parse(instancePath); err != nil {
 		return err
 	}
-	if err = decoder.Decode(ins, instanceUrl.Query()); err != nil {
+	if err = urlenc.Decode([]byte(instanceUrl.RawQuery), ins); err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
-
 	ins.Schema = instanceUrl.Scheme
 	ins.Addr = instanceUrl.Host
 	ins.IP = instanceUrl.Hostname()
 	ins.Port, _ = strconv.Atoi(instanceUrl.Port())
 	ins.Node = string(data)
-
 	return nil
 }
