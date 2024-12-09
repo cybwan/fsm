@@ -3,6 +3,7 @@ package nebula
 import (
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/schema"
 
@@ -50,7 +51,7 @@ type ServiceInstance struct {
 	IP        string
 	Port      int
 	Interface string
-	Methods   []string
+	Methods   string
 	Node      string
 
 	Application string
@@ -123,7 +124,18 @@ func (ins *ServiceInstance) ServiceInterface() string {
 }
 
 func (ins *ServiceInstance) ServiceMethods() []string {
-	return ins.Methods
+	var methods []string
+	if len(ins.Methods) > 0 {
+		segs := strings.Split(ins.Methods, `,`)
+		if len(segs) > 0 {
+			for _, method := range segs {
+				if len(method) > 0 {
+					methods = append(methods, method)
+				}
+			}
+		}
+	}
+	return methods
 }
 
 func (ins *ServiceInstance) InstanceId() string {
