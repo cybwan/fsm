@@ -30,8 +30,9 @@ type ServiceInstance interface {
 	InstanceIP() string
 	InstancePort() int
 
-	Metadata(key string) (string, bool)
 	Metadatas() map[string]string
+	GetMetadata(key string) (string, bool)
+	SetMetadata(key, value string) bool
 
 	Marshal() ([]byte, error)
 	Unmarshal(string, []byte) error

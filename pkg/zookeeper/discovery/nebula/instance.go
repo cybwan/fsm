@@ -112,6 +112,55 @@ func (ins *ServiceInstance) InstanceId() string {
 	return ins.instanceId
 }
 
+func (ins *ServiceInstance) Marshal() ([]byte, error) {
+	if bytes, err := urlenc.Encode(ins); err != nil {
+		return nil, err
+	} else {
+		instanceUrl := url.URL{
+			Scheme:   ins.Schema,
+			Host:     ins.Addr,
+			RawQuery: string(bytes),
+		}
+		if len(instanceUrl.Host) == 0 {
+			instanceUrl.Host = fmt.Sprintf("%s:%d", ins.IP, ins.Port)
+		}
+		ins.instanceId = url.QueryEscape(instanceUrl.String())
+		return []byte(ins.instanceId), nil
+	}
+}
+
+func (ins *ServiceInstance) Unmarshal(instanceId string, data []byte) error {
+	var err error
+	var instancePath string
+	var instanceUrl *url.URL
+
+	if len(instanceId) > 0 {
+		if instancePath, err = url.QueryUnescape(instanceId); err != nil {
+			return err
+		}
+	} else {
+		if instancePath, err = url.QueryUnescape(ins.instanceId); err != nil {
+			return err
+		}
+	}
+
+	if instanceUrl, err = url.Parse(instancePath); err != nil {
+		return err
+	}
+	if len(instanceUrl.RawQuery) > 0 {
+		if err = urlenc.Decode([]byte(instanceUrl.RawQuery), ins); err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+	}
+	ins.Schema = instanceUrl.Scheme
+	ins.Addr = instanceUrl.Host
+	ins.IP = instanceUrl.Hostname()
+	ins.Port, _ = strconv.Atoi(instanceUrl.Port())
+	ins.Node = string(data)
+	return nil
+}
+
 func (ins *ServiceInstance) InstanceIP() string {
 	return ins.IP
 }
@@ -120,14 +169,250 @@ func (ins *ServiceInstance) InstancePort() int {
 	return ins.Port
 }
 
-func (ins *ServiceInstance) Metadata(key string) (string, bool) {
+func (ins *ServiceInstance) GetMetadata(key string) (string, bool) {
 	switch key {
 	case connector.ClusterSetKey:
 		return ins.FsmConnectorServiceClusterSet, true
 	case connector.ConnectUIDKey:
 		return ins.FsmConnectorServiceConnectorUid, true
+	case "interface":
+		return ins.Interface, true
+	case "methods":
+		return ins.Methods, true
+	case "application":
+		return ins.Application, true
+	case "project":
+		return ins.Project, true
+	case "owner":
+		return ins.Owner, true
+	case "ops":
+		return ins.Ops, true
+	case "category":
+		return ins.Category, true
+	case "timestamp":
+		return fmt.Sprintf("%d", ins.Timestamp), true
+	case "grpc":
+		return ins.GRPC, true
+	case "pid":
+		return fmt.Sprintf("%d", ins.PID), true
+	case "group":
+		return fmt.Sprintf("%t", ins.Group), true
+	case "weight":
+		return fmt.Sprintf("%d", ins.Weight), true
+	case "deprecated":
+		return fmt.Sprintf("%t", ins.Deprecated), true
+	case "master":
+		return fmt.Sprintf("%t", ins.Master), true
+	case "default.async":
+		return fmt.Sprintf("%t", ins.DefaultAsync), true
+	case "default.cluster":
+		return ins.DefaultCluster, true
+	case "default.connections":
+		return fmt.Sprintf("%d", ins.DefaultConnections), true
+	case "default.loadbalance":
+		return ins.DefaultLoadBalance, true
+	case "default.requests":
+		return fmt.Sprintf("%d", ins.DefaultRequests), true
+	case "default.reties":
+		return fmt.Sprintf("%d", ins.DefaultReties), true
+	case "default.timeout":
+		return fmt.Sprintf("%d", ins.DefaultTimeout), true
+	case "service.type":
+		return ins.ServiceType, true
+	case "real.ip":
+		return ins.RealIP, true
+	case "real.port":
+		return fmt.Sprintf("%d", ins.RealPort), true
+	case "access.protected":
+		return fmt.Sprintf("%t", ins.AccessProtected), true
+	case "accesslog":
+		return fmt.Sprintf("%t", ins.Accesslog), true
+	case "anyhost":
+		return fmt.Sprintf("%t", ins.Anyhost), true
+	case "dynamic":
+		return fmt.Sprintf("%t", ins.Dynamic), true
+	case "token":
+		return fmt.Sprintf("%t", ins.Token), true
+	case "side":
+		return ins.Side, true
+	case "version":
+		return ins.Version, true
 	default:
 		return "", false
+	}
+}
+
+func (ins *ServiceInstance) SetMetadata(key, value string) bool {
+	switch key {
+	case connector.ClusterSetKey:
+		ins.FsmConnectorServiceClusterSet = value
+		return true
+	case connector.ConnectUIDKey:
+		ins.FsmConnectorServiceConnectorUid = value
+		return true
+	case "interface":
+		ins.Interface = value
+		return true
+	case "methods":
+		ins.Methods = value
+		return true
+	case "application":
+		ins.Application = value
+		return true
+	case "project":
+		ins.Project = value
+		return true
+	case "owner":
+		ins.Owner = value
+		return true
+	case "ops":
+		ins.Ops = value
+		return true
+	case "category":
+		ins.Category = value
+		return true
+	case "timestamp":
+		if timestamp, err := strconv.ParseUint(value, 10, 64); err == nil {
+			ins.Timestamp = timestamp
+			return true
+		} else {
+			return false
+		}
+	case "grpc":
+		ins.GRPC = value
+		return true
+	case "pid":
+		if pid, err := strconv.Atoi(value); err == nil {
+			ins.PID = uint32(pid)
+			return true
+		} else {
+			return false
+		}
+	case "group":
+		if group, err := strconv.ParseBool(value); err == nil {
+			ins.Group = group
+			return true
+		} else {
+			return false
+		}
+	case "weight":
+		if weight, err := strconv.Atoi(value); err == nil {
+			ins.Weight = uint32(weight)
+			return true
+		} else {
+			return false
+		}
+	case "deprecated":
+		if deprecated, err := strconv.ParseBool(value); err == nil {
+			ins.Deprecated = deprecated
+			return true
+		} else {
+			return false
+		}
+	case "master":
+		if master, err := strconv.ParseBool(value); err == nil {
+			ins.Master = master
+			return true
+		} else {
+			return false
+		}
+	case "default.async":
+		if async, err := strconv.ParseBool(value); err == nil {
+			ins.DefaultAsync = async
+			return true
+		} else {
+			return false
+		}
+	case "default.cluster":
+		ins.DefaultCluster = value
+		return true
+	case "default.connections":
+		if connections, err := strconv.Atoi(value); err == nil {
+			ins.DefaultConnections = uint32(connections)
+			return true
+		} else {
+			return false
+		}
+	case "default.loadbalance":
+		ins.DefaultLoadBalance = value
+		return true
+	case "default.requests":
+		if requests, err := strconv.Atoi(value); err == nil {
+			ins.DefaultRequests = uint32(requests)
+			return true
+		} else {
+			return false
+		}
+	case "default.reties":
+		if reties, err := strconv.Atoi(value); err == nil {
+			ins.DefaultReties = uint32(reties)
+			return true
+		} else {
+			return false
+		}
+	case "default.timeout":
+		if timeout, err := strconv.Atoi(value); err == nil {
+			ins.DefaultTimeout = uint32(timeout)
+			return true
+		} else {
+			return false
+		}
+	case "service.type":
+		ins.ServiceType = value
+		return true
+	case "real.ip":
+		ins.RealIP = value
+		return true
+	case "real.port":
+		if port, err := strconv.Atoi(value); err == nil {
+			ins.RealPort = uint16(port)
+			return true
+		} else {
+			return false
+		}
+	case "access.protected":
+		if protected, err := strconv.ParseBool(value); err == nil {
+			ins.AccessProtected = protected
+			return true
+		} else {
+			return false
+		}
+	case "accesslog":
+		if accesslog, err := strconv.ParseBool(value); err == nil {
+			ins.Accesslog = accesslog
+			return true
+		} else {
+			return false
+		}
+	case "anyhost":
+		if anyhost, err := strconv.ParseBool(value); err == nil {
+			ins.Anyhost = anyhost
+			return true
+		} else {
+			return false
+		}
+	case "dynamic":
+		if dynamic, err := strconv.ParseBool(value); err == nil {
+			ins.Dynamic = dynamic
+			return true
+		} else {
+			return false
+		}
+	case "token":
+		if token, err := strconv.ParseBool(value); err == nil {
+			ins.Token = token
+			return true
+		} else {
+			return false
+		}
+	case "side":
+		ins.Side = value
+		return true
+	case "version":
+		ins.Version = value
+		return true
+	default:
+		return false
 	}
 }
 
@@ -168,48 +453,9 @@ func (ins *ServiceInstance) Metadatas() map[string]string {
 		"side":      ins.Side,
 		"version":   ins.Version,
 
-		"fsm.connector.service.cluster.set,omitempty":   ins.FsmConnectorServiceClusterSet,
-		"fsm.connector.service.connector.uid,omitempty": ins.FsmConnectorServiceConnectorUid,
+		"fsm.connector.service.cluster.set":   ins.FsmConnectorServiceClusterSet,
+		"fsm.connector.service.connector.uid": ins.FsmConnectorServiceConnectorUid,
 	}
 
 	return metadata
-}
-
-func (ins *ServiceInstance) Marshal() ([]byte, error) {
-	if bytes, err := urlenc.Encode(ins); err != nil {
-		return nil, err
-	} else {
-		instanceUrl := url.URL{
-			Scheme:   ins.Schema,
-			Host:     ins.Addr,
-			RawQuery: string(bytes),
-		}
-		if len(instanceUrl.Host) == 0 {
-			instanceUrl.Host = fmt.Sprintf("%s:%d", ins.IP, ins.Port)
-		}
-		return []byte(url.QueryEscape(instanceUrl.String())), nil
-	}
-}
-
-func (ins *ServiceInstance) Unmarshal(_ string, data []byte) error {
-	var err error
-	var instancePath string
-	var instanceUrl *url.URL
-
-	if instancePath, err = url.QueryUnescape(ins.instanceId); err != nil {
-		return err
-	}
-	if instanceUrl, err = url.Parse(instancePath); err != nil {
-		return err
-	}
-	if err = urlenc.Decode([]byte(instanceUrl.RawQuery), ins); err != nil {
-		fmt.Println(err.Error())
-		return err
-	}
-	ins.Schema = instanceUrl.Scheme
-	ins.Addr = instanceUrl.Host
-	ins.IP = instanceUrl.Hostname()
-	ins.Port, _ = strconv.Atoi(instanceUrl.Port())
-	ins.Node = string(data)
-	return nil
 }

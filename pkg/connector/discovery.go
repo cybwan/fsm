@@ -104,8 +104,9 @@ type AgentService struct {
 	Tags        []string
 	Meta        map[string]interface{}
 
-	GRPCInterface string
-	GRPCMethods   []string
+	GRPCInterface    string
+	GRPCMethods      []string
+	GRPCInstanceMeta map[string]interface{}
 
 	HealthCheck bool
 }
@@ -386,6 +387,30 @@ func (cr *CatalogRegistration) ToNacos(cluster, group string, weight float64) *v
 		}
 	}
 	return r
+}
+
+func (cr *CatalogRegistration) ToZookeeper(adaptor discovery.FuncOps) (discovery.ServiceInstance, error) {
+	r := adaptor.NewInstance(cr.Service.GRPCInterface, "")
+	if err := r.Unmarshal(
+		fmt.Sprintf("%s://%s:%d", constants.AppProtocolGRPC, cr.Service.Address, cr.Service.GRPCPort),
+		[]byte(cr.Service.Address)); err != nil {
+		return nil, err
+	}
+	if cr.Service.GRPCInstanceMeta != nil {
+		for k, v := range cr.Service.GRPCInstanceMeta {
+			r.SetMetadata(k, fmt.Sprintf("%v", v))
+		}
+	}
+	if cr.Service.Meta != nil {
+		if clusterSetKey, exists := cr.Service.Meta[ClusterSetKey]; exists {
+			r.SetMetadata(ClusterSetKey, fmt.Sprintf("%v", clusterSetKey))
+		}
+		if connectUIDKey, exists := cr.Service.Meta[ConnectUIDKey]; exists {
+			r.SetMetadata(ConnectUIDKey, fmt.Sprintf("%v", connectUIDKey))
+		}
+	}
+	_, _ = r.Marshal()
+	return r, nil
 }
 
 type CatalogService struct {

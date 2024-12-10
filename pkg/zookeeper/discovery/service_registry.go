@@ -1,13 +1,16 @@
 package discovery
 
 import (
+	"path"
+
 	"github.com/dubbogo/go-zookeeper/zk"
 	"github.com/pkg/errors"
 )
 
 // registerService register service to zookeeper
 func (sd *ServiceDiscovery) registerService(instance ServiceInstance) error {
-	instancePath := sd.ops.PathForInstance(sd.basePath, instance.ServiceName(), instance.InstanceId())
+	categoryServiceName := path.Join(instance.ServiceName(), sd.category)
+	instancePath := sd.ops.PathForInstance(sd.basePath, categoryServiceName, instance.InstanceId())
 	data, err := instance.Marshal()
 	if err != nil {
 		return err
@@ -53,33 +56,6 @@ func (sd *ServiceDiscovery) RegisterService(instance ServiceInstance) error {
 	return nil
 }
 
-// UpdateService update service in zookeeper, and ensure cache is consistent with zookeeper
-func (sd *ServiceDiscovery) UpdateService(instance ServiceInstance) error {
-	value, ok := sd.services.Load(instance.InstanceId())
-	if !ok {
-		return errors.Errorf("[ServiceDiscovery] Service{%s} not registered", instance.InstanceId())
-	}
-	entry, ok := value.(*entry)
-	if !ok {
-		return errors.New("[ServiceDiscovery] services value not entry")
-	}
-
-	data, err := instance.Marshal()
-	if err != nil {
-		return err
-	}
-
-	entry.Lock()
-	defer entry.Unlock()
-
-	entry.instance = instance
-	instancePath := sd.ops.PathForInstance(sd.basePath, instance.ServiceName(), instance.InstanceId())
-	if _, err = sd.client.SetContent(instancePath, data, -1); err != nil {
-		return err
-	}
-	return nil
-}
-
 // UnregisterService un-register service in zookeeper and delete service in cache
 func (sd *ServiceDiscovery) UnregisterService(instance ServiceInstance) error {
 	if _, ok := sd.services.Load(instance.InstanceId()); !ok {
@@ -93,23 +69,4 @@ func (sd *ServiceDiscovery) UnregisterService(instance ServiceInstance) error {
 func (sd *ServiceDiscovery) unregisterService(instance ServiceInstance) error {
 	instancePath := sd.ops.PathForInstance(sd.basePath, instance.ServiceName(), instance.InstanceId())
 	return sd.client.Delete(instancePath)
-}
-
-// ReRegisterServices re-register all cache services to zookeeper
-func (sd *ServiceDiscovery) ReRegisterServices() {
-	sd.services.Range(func(key, value interface{}) bool {
-		entry, ok := value.(*entry)
-		if !ok {
-			return true
-		}
-		entry.Lock()
-		defer entry.Unlock()
-		instance := entry.instance
-		err := sd.registerService(instance)
-		if err != nil {
-			log.Error().Msgf("[zkServiceDiscovery] registerService{%s} error = err{%v}", instance.InstanceId(), errors.WithStack(err))
-			return true
-		}
-		return true
-	})
 }

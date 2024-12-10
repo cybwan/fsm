@@ -102,7 +102,7 @@ func (c *Client) createConn() error {
 	var err error
 
 	// connect to zookeeper
-	c.conn, c.session, err = zk.Connect(c.zkAddrs, c.timeout)
+	c.conn, c.session, err = zk.Connect(c.zkAddrs, c.timeout, zk.WithLogInfo(false))
 	if err != nil {
 		return err
 	}

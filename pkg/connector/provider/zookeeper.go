@@ -21,7 +21,7 @@ type ZookeeperDiscoveryClient struct {
 	basePath          string
 	category          string
 	adaptor           string
-	ops               discovery.FuncOps
+	adaptorOps        discovery.FuncOps
 	lock              sync.Mutex
 }
 
@@ -60,11 +60,11 @@ func (dc *ZookeeperDiscoveryClient) zookeeperClient() *discovery.ServiceDiscover
 		}
 
 		if strings.EqualFold(dc.adaptor, `nebula`) {
-			dc.ops = nebula.NewAdaptor()
+			dc.adaptorOps = nebula.NewAdaptor()
 		} else {
 			log.Fatal().Msgf("invalid grpc adaptor: %s", dc.adaptor)
 		}
-		dc.namingClient = discovery.NewServiceDiscovery(client, dc.basePath, dc.category, dc.ops)
+		dc.namingClient = discovery.NewServiceDiscovery(client, dc.basePath, dc.category, dc.adaptorOps)
 	}
 
 	dc.connectController.WaitLimiter()
@@ -99,7 +99,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogInstances(service string, _ *connecto
 	if len(instances) > 0 {
 		for _, ins := range instances {
 			ins := ins
-			if clusterSet, clusterSetExist := ins.Metadata(connector.ClusterSetKey); clusterSetExist {
+			if clusterSet, clusterSetExist := ins.GetMetadata(connector.ClusterSetKey); clusterSetExist {
 				if strings.EqualFold(clusterSet, dc.connectController.GetClusterSet()) {
 					continue
 				}
@@ -107,7 +107,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogInstances(service string, _ *connecto
 			if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 				matched := true
 				for _, meta := range filterMetadatas {
-					if metaSet, metaExist := ins.Metadata(meta.Key); metaExist {
+					if metaSet, metaExist := ins.GetMetadata(meta.Key); metaExist {
 						if strings.EqualFold(metaSet, meta.Value) {
 							continue
 						}
@@ -124,7 +124,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogInstances(service string, _ *connecto
 			if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
 				matched := false
 				for _, meta := range excludeMetadatas {
-					if metaSet, metaExist := ins.Metadata(meta.Key); metaExist {
+					if metaSet, metaExist := ins.GetMetadata(meta.Key); metaExist {
 						if strings.EqualFold(metaSet, meta.Value) {
 							matched = true
 							break
@@ -181,7 +181,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]
 				continue
 			}
 			for _, svcIns := range instances {
-				if clusterSet, clusterSetExist := svcIns.Metadata(connector.ClusterSetKey); clusterSetExist {
+				if clusterSet, clusterSetExist := svcIns.GetMetadata(connector.ClusterSetKey); clusterSetExist {
 					if strings.EqualFold(clusterSet, dc.connectController.GetClusterSet()) {
 						continue
 					}
@@ -189,7 +189,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]
 				if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 					matched := true
 					for _, meta := range filterMetadatas {
-						if metaSet, metaExist := svcIns.Metadata(meta.Key); metaExist {
+						if metaSet, metaExist := svcIns.GetMetadata(meta.Key); metaExist {
 							if strings.EqualFold(metaSet, meta.Value) {
 								continue
 							}
@@ -206,7 +206,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]
 				if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
 					matched := false
 					for _, meta := range excludeMetadatas {
-						if metaSet, metaExist := svcIns.Metadata(meta.Key); metaExist {
+						if metaSet, metaExist := svcIns.GetMetadata(meta.Key); metaExist {
 							if strings.EqualFold(metaSet, meta.Value) {
 								matched = true
 								break
@@ -259,7 +259,7 @@ func (dc *ZookeeperDiscoveryClient) RegisteredInstances(service string, _ *conne
 	if len(instances) > 0 {
 		for _, instance := range instances {
 			instance := instance
-			if connectUID, connectUIDExist := instance.Metadata(connector.ConnectUIDKey); connectUIDExist {
+			if connectUID, connectUIDExist := instance.GetMetadata(connector.ConnectUIDKey); connectUIDExist {
 				if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
 					catalogService := new(connector.CatalogService)
 					catalogService.FromZookeeper(instance)
@@ -290,7 +290,7 @@ func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) 
 			}
 			for _, instance := range instances {
 				instance := instance
-				if connectUID, connectUIDExist := instance.Metadata(connector.ConnectUIDKey); connectUIDExist {
+				if connectUID, connectUIDExist := instance.GetMetadata(connector.ConnectUIDKey); connectUIDExist {
 					if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
 						registeredServices = append(registeredServices, connector.MicroService{Service: svc})
 						break
@@ -303,42 +303,36 @@ func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) 
 }
 
 func (dc *ZookeeperDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
-	ins := dereg.ToZookeeper(dc.ops)
+	ins := dereg.ToZookeeper(dc.adaptorOps)
 	if ins == nil {
 		return nil
 	}
-	return dc.connectController.CacheDeregisterInstance(ins.InstanceId(), func() error {
+	return dc.connectController.CacheDeregisterInstance(dereg.ServiceID, func() error {
 		return dc.zookeeperClient().UnregisterService(ins)
 	})
 }
 
 func (dc *ZookeeperDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
-	bytes, _ := json.Marshal(reg)
-	fmt.Println(reg.Service.Service, string(bytes))
-	//k2cGroupId := dc.connectController.GetZookeeperGroupId()
-	//if len(k2cGroupId) == 0 {
-	//	k2cGroupId = constant.DEFAULT_GROUP
-	//}
-	//
-	//k2cClusterId := dc.connectController.GetZookeeperClusterId()
-	//if len(k2cClusterId) == 0 {
-	//	k2cClusterId = connector.NACOS_DEFAULT_CLUSTER
-	//}
-	//ins := reg.ToZookeeper(k2cClusterId, k2cGroupId, float64(1))
-	//appendMetadataSet := dc.connectController.GetAppendMetadataSet().ToSlice()
-	//if len(appendMetadataSet) > 0 {
-	//	rMetadata := ins.Metadata
-	//	for _, item := range appendMetadataSet {
+	ins, err := reg.ToZookeeper(dc.adaptorOps)
+	if err != nil {
+		return err
+	}
+	if strings.EqualFold(reg.Service.Service, "greeter-demo-orientsec-com") {
+		bytes, _ := json.MarshalIndent(ins, "", " ")
+		fmt.Println(string(bytes))
+		fmt.Println("InstanceId:", ins.InstanceId())
+	}
+	//metadataSet := dc.connectController.GetAppendMetadataSet().ToSlice()
+	//if len(metadataSet) > 0 {
+	//	rMetadata := ins.Metadata.GetMap()
+	//	for _, item := range metadataSet {
 	//		metadata := item.(ctv1.Metadata)
 	//		rMetadata[metadata.Key] = metadata.Value
 	//	}
 	//}
-	//port, _ := strconv.Atoi(fmt.Sprintf("%d", ins.Port))
-	//return dc.connectController.CacheRegisterInstance(dc.getServiceInstanceID(ins.ServiceName, ins.Ip, port, 0), ins, func() error {
-	//	_, err := dc.zookeeperClient().RegisterInstance(*ins)
-	//	return err
-	//})
-	return nil
+	return dc.connectController.CacheRegisterInstance(reg.Service.ID, ins, func() error {
+		return dc.zookeeperClient().RegisterService(ins)
+	})
 }
 
 func (dc *ZookeeperDiscoveryClient) EnableNamespaces() bool {
@@ -367,5 +361,11 @@ func (dc *ZookeeperDiscoveryClient) Close() {
 func GetZookeeperDiscoveryClient(connectController connector.ConnectController) (*ZookeeperDiscoveryClient, error) {
 	zookeeperDiscoveryClient := new(ZookeeperDiscoveryClient)
 	zookeeperDiscoveryClient.connectController = connectController
+	adaptor := connectController.GetZookeeperAdaptor()
+	if strings.EqualFold(adaptor, `nebula`) {
+		zookeeperDiscoveryClient.adaptorOps = nebula.NewAdaptor()
+	} else {
+		log.Fatal().Msgf("invalid grpc adaptor: %s", adaptor)
+	}
 	return zookeeperDiscoveryClient, nil
 }
