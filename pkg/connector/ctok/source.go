@@ -141,23 +141,26 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.MicroSvcName]*connec
 		svcMeta.Ports[connector.MicroSvcPort(httpPort)] = constants.ProtocolHTTP
 		endpointMeta.Ports[connector.MicroSvcPort(httpPort)] = constants.ProtocolHTTP
 	}
-	if grpcPort > 0 && len(instance.Interface) > 0 && len(instance.Methods) > 0 {
+	if grpcPort > 0 {
 		svcMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
 		endpointMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
-		if svcMeta.GRPCMeta == nil {
-			svcMeta.GRPCMeta = new(connector.GRPCMeta)
-		}
-		svcMeta.GRPCMeta.Interface = instance.Interface
-		if svcMeta.GRPCMeta.Methods == nil {
-			svcMeta.GRPCMeta.Methods = make(map[string][]string)
-		}
-		for _, method := range instance.Methods {
-			eps, exists := svcMeta.GRPCMeta.Methods[method]
-			if !exists {
-				eps = make([]string, 0)
+		if len(instance.Interface) > 0 && len(instance.Methods) > 0 {
+			if svcMeta.GRPCMeta == nil {
+				svcMeta.GRPCMeta = new(connector.GRPCMeta)
 			}
-			eps = append(eps, instance.Address)
-			svcMeta.GRPCMeta.Methods[method] = eps
+			svcMeta.GRPCMeta.Interface = instance.Interface
+			if svcMeta.GRPCMeta.Methods == nil {
+				svcMeta.GRPCMeta.Methods = make(map[string][]string)
+			}
+			for _, method := range instance.Methods {
+				eps, exists := svcMeta.GRPCMeta.Methods[method]
+				if !exists {
+					eps = make([]string, 0)
+				}
+				eps = append(eps, instance.Address)
+				svcMeta.GRPCMeta.Methods[method] = eps
+			}
+			endpointMeta.GRPCMeta = instance.Meta
 		}
 	}
 	endpointMeta.Address = connector.MicroEndpointAddr(instance.Address)

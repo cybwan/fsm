@@ -132,7 +132,45 @@ func (ins *ServiceInstance) Metadata(key string) (string, bool) {
 }
 
 func (ins *ServiceInstance) Metadatas() map[string]string {
-	return nil
+	metadata := map[string]string{
+		"application": ins.Application,
+		"project":     ins.Project,
+		"owner":       ins.Owner,
+		"ops":         ins.Ops,
+		"category":    ins.Category,
+		"timestamp":   fmt.Sprintf("%d", ins.Timestamp),
+		"grpc":        ins.GRPC,
+		"pid":         fmt.Sprintf("%d", ins.PID),
+		"group":       fmt.Sprintf("%t", ins.Group),
+		"weight":      fmt.Sprintf("%d", ins.Weight),
+		"deprecated":  fmt.Sprintf("%t", ins.Deprecated),
+		"master":      fmt.Sprintf("%t", ins.Master),
+
+		"default.async":       fmt.Sprintf("%t", ins.DefaultAsync),
+		"default.cluster":     ins.DefaultCluster,
+		"default.connections": fmt.Sprintf("%d", ins.DefaultConnections),
+		"default.loadbalance": ins.DefaultLoadBalance,
+		"default.requests":    fmt.Sprintf("%d", ins.DefaultRequests),
+		"default.reties":      fmt.Sprintf("%d", ins.DefaultReties),
+		"default.timeout":     fmt.Sprintf("%d", ins.DefaultTimeout),
+
+		"service.type":     ins.ServiceType,
+		"real.ip":          ins.RealIP,
+		"real.port":        fmt.Sprintf("%d", ins.RealPort),
+		"access.protected": fmt.Sprintf("%t", ins.AccessProtected),
+
+		"accesslog": fmt.Sprintf("%t", ins.Accesslog),
+		"anyhost":   fmt.Sprintf("%t", ins.Anyhost),
+		"dynamic":   fmt.Sprintf("%t", ins.Dynamic),
+		"token":     fmt.Sprintf("%t", ins.Token),
+		"side":      ins.Side,
+		"version":   ins.Version,
+
+		"fsm.connector.service.cluster.set,omitempty":   ins.FsmConnectorServiceClusterSet,
+		"fsm.connector.service.connector.uid,omitempty": ins.FsmConnectorServiceConnectorUid,
+	}
+
+	return metadata
 }
 
 func (ins *ServiceInstance) Marshal() ([]byte, error) {

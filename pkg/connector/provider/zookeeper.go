@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +21,7 @@ type ZookeeperDiscoveryClient struct {
 	basePath          string
 	category          string
 	adaptor           string
+	ops               discovery.FuncOps
 	lock              sync.Mutex
 }
 
@@ -56,13 +59,12 @@ func (dc *ZookeeperDiscoveryClient) zookeeperClient() *discovery.ServiceDiscover
 			log.Fatal().Err(err).Msg("failed to connect zookeeper")
 		}
 
-		var ops discovery.FuncOps
 		if strings.EqualFold(dc.adaptor, `nebula`) {
-			ops = nebula.NewAdaptor()
+			dc.ops = nebula.NewAdaptor()
 		} else {
 			log.Fatal().Msgf("invalid grpc adaptor: %s", dc.adaptor)
 		}
-		dc.namingClient = discovery.NewServiceDiscovery(client, dc.basePath, dc.category, ops)
+		dc.namingClient = discovery.NewServiceDiscovery(client, dc.basePath, dc.category, dc.ops)
 	}
 
 	dc.connectController.WaitLimiter()
@@ -249,25 +251,24 @@ func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]
 
 // RegisteredInstances is used to query catalog entries for a given service
 func (dc *ZookeeperDiscoveryClient) RegisteredInstances(service string, _ *connector.QueryOptions) ([]*connector.CatalogService, error) {
-	//instances, err := dc.selectInstances(service)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//catalogServices := make([]*connector.CatalogService, 0)
-	//if len(instances) > 0 {
-	//	for _, instance := range instances {
-	//		instance := instance
-	//		if connectUID, connectUIDExist := instance.Metadata[connector.ConnectUIDKey]; connectUIDExist {
-	//			if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
-	//				catalogService := new(connector.CatalogService)
-	//				catalogService.FromZookeeper(&instance)
-	//				catalogServices = append(catalogServices, catalogService)
-	//			}
-	//		}
-	//	}
-	//}
-	//return catalogServices, nil
-	return nil, nil
+	instances, err := dc.selectInstances(service)
+	if err != nil {
+		return nil, err
+	}
+	catalogServices := make([]*connector.CatalogService, 0)
+	if len(instances) > 0 {
+		for _, instance := range instances {
+			instance := instance
+			if connectUID, connectUIDExist := instance.Metadata(connector.ConnectUIDKey); connectUIDExist {
+				if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
+					catalogService := new(connector.CatalogService)
+					catalogService.FromZookeeper(instance)
+					catalogServices = append(catalogServices, catalogService)
+				}
+			}
+		}
+	}
+	return catalogServices, nil
 }
 
 func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.MicroService, error) {
@@ -302,19 +303,18 @@ func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) 
 }
 
 func (dc *ZookeeperDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
-	//ins := dereg.ToZookeeper()
-	//if ins == nil {
-	//	return nil
-	//}
-	//port, _ := strconv.Atoi(fmt.Sprintf("%d", ins.Port))
-	//return dc.connectController.CacheDeregisterInstance(dc.getServiceInstanceID(ins.ServiceName, ins.Ip, port, 0), func() error {
-	//	_, err := dc.zookeeperClient().DeregisterInstance(*ins)
-	//	return err
-	//})
-	return nil
+	ins := dereg.ToZookeeper(dc.ops)
+	if ins == nil {
+		return nil
+	}
+	return dc.connectController.CacheDeregisterInstance(ins.InstanceId(), func() error {
+		return dc.zookeeperClient().UnregisterService(ins)
+	})
 }
 
 func (dc *ZookeeperDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
+	bytes, _ := json.MarshalIndent(reg, "", " ")
+	fmt.Println(string(bytes))
 	//k2cGroupId := dc.connectController.GetZookeeperGroupId()
 	//if len(k2cGroupId) == 0 {
 	//	k2cGroupId = constant.DEFAULT_GROUP

@@ -285,6 +285,10 @@ func (cdr *CatalogDeregistration) ToNacos() *vo.DeregisterInstanceParam {
 	return r
 }
 
+func (cdr *CatalogDeregistration) ToZookeeper(ops discovery.FuncOps) discovery.ServiceInstance {
+	return ops.NewInstance(cdr.Service, cdr.ServiceID)
+}
+
 type CatalogRegistration struct {
 	Node           string
 	Address        string
@@ -415,6 +419,15 @@ func (cs *CatalogService) FromNacos(svc *nacos.Instance) {
 	cs.Node = svc.ClusterName
 	cs.ServiceID = svc.InstanceId
 	cs.ServiceName = strings.ToLower(strings.Split(svc.ServiceName, constant.SERVICE_INFO_SPLITER)[1])
+}
+
+func (cs *CatalogService) FromZookeeper(svc discovery.ServiceInstance) {
+	if svc == nil {
+		return
+	}
+	cs.Node = svc.ServiceInterface()
+	cs.ServiceID = svc.InstanceId()
+	cs.ServiceName = svc.ServiceSchema()
 }
 
 // QueryOptions are used to parameterize a query

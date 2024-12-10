@@ -47,6 +47,8 @@ type MicroEndpointMeta struct {
 	Ports   map[MicroSvcPort]MicroSvcAppProtocol `json:"ports,omitempty"`
 	Address MicroEndpointAddr                    `json:"address,omitempty"`
 
+	GRPCMeta map[string]interface{} `json:"grpcMeta,omitempty"`
+
 	Native struct {
 		ClusterSet     string               `json:"clusterSet,omitempty"`
 		ClusterId      string               `json:"clusterId,omitempty"`
