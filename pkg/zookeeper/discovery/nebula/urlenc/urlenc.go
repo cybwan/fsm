@@ -27,10 +27,11 @@ type structfield struct {
 
 var t2f = &type2fields{
 	types: make(map[reflect.Type][]structfield),
+	lock:  new(sync.RWMutex),
 }
 
 type type2fields struct {
-	lock  sync.RWMutex
+	lock  *sync.RWMutex
 	types map[reflect.Type][]structfield
 }
 
