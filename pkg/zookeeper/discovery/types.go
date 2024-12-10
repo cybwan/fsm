@@ -32,14 +32,14 @@ type ServiceInstance interface {
 
 	Metadatas() map[string]string
 	GetMetadata(key string) (string, bool)
-	SetMetadata(key, value string) bool
+	SetMetadata(key, value string) error
 
 	Marshal() ([]byte, error)
 	Unmarshal(string, []byte) error
 }
 
-// entry contain a service instance
-type entry struct {
+// serviceEntry contain a service instance
+type serviceEntry struct {
 	sync.Mutex
 	instance ServiceInstance
 }

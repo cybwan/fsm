@@ -40,10 +40,10 @@ func (sd *ServiceDiscovery) registerService(instance ServiceInstance) error {
 
 // RegisterService register service to zookeeper, and ensure cache is consistent with zookeeper
 func (sd *ServiceDiscovery) RegisterService(instance ServiceInstance) error {
-	value, _ := sd.services.LoadOrStore(instance.InstanceId(), &entry{})
-	entry, ok := value.(*entry)
+	value, _ := sd.services.LoadOrStore(instance.InstanceId(), &serviceEntry{})
+	entry, ok := value.(*serviceEntry)
 	if !ok {
-		return errors.New("[ServiceDiscovery] services value not entry")
+		return errors.New("[ServiceDiscovery] services value not serviceEntry")
 	}
 
 	entry.Lock()
