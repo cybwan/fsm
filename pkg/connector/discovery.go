@@ -408,6 +408,12 @@ func (cr *CatalogRegistration) ToZookeeper(adaptor discovery.FuncOps) (discovery
 		if connectUIDKey, exists := cr.Service.Meta[ConnectUIDKey]; exists {
 			r.SetMetadata(ConnectUIDKey, fmt.Sprintf("%v", connectUIDKey))
 		}
+		if grpcViaGateway, exists := cr.Service.Meta[CloudGRPCViaGateway]; exists {
+			r.SetMetadata(CloudGRPCViaGateway, fmt.Sprintf("%v", grpcViaGateway))
+		}
+		if viaGatewayMode, exists := cr.Service.Meta[CloudViaGatewayMode]; exists {
+			r.SetMetadata(CloudViaGatewayMode, fmt.Sprintf("%v", viaGatewayMode))
+		}
 	}
 	_, _ = r.Marshal()
 	return r, nil

@@ -48,7 +48,7 @@ func (sd *ServiceDiscovery) queryForInstance(k8sServiceName, serviceName, instan
 	instancePath := sd.ops.PathForInstance(sd.basePath, categoryServiceName, instanceId)
 	if data, _, err := sd.client.GetContent(instancePath); err != nil {
 		return nil, err
-	} else if err = instance.Unmarshal(instancePath, data); err != nil {
+	} else if err = instance.Unmarshal(instanceId, data); err != nil {
 		return nil, err
 	}
 	return instance, nil

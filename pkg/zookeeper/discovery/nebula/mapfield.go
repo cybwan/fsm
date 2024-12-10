@@ -3,6 +3,8 @@ package nebula
 import (
 	"fmt"
 	"strconv"
+
+	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
 type mapField struct {
@@ -14,7 +16,7 @@ var (
 	mapFields = map[string]*mapField{
 		"interface": {
 			getter: func(ins *ServiceInstance) string {
-				return ins.Methods
+				return ins.Interface
 			},
 			setter: func(ins *ServiceInstance, value string) error {
 				ins.Interface = value
@@ -359,7 +361,7 @@ var (
 				return nil
 			},
 		},
-		"fsm.connector.service.cluster.set": {
+		connector.ClusterSetKey: {
 			getter: func(ins *ServiceInstance) string {
 				return ins.FsmConnectorServiceClusterSet
 			},
@@ -368,12 +370,30 @@ var (
 				return nil
 			},
 		},
-		"fsm.connector.service.connector.uid": {
+		connector.ConnectUIDKey: {
 			getter: func(ins *ServiceInstance) string {
 				return ins.FsmConnectorServiceConnectorUid
 			},
 			setter: func(ins *ServiceInstance, value string) error {
 				ins.FsmConnectorServiceConnectorUid = value
+				return nil
+			},
+		},
+		connector.CloudGRPCViaGateway: {
+			getter: func(ins *ServiceInstance) string {
+				return ins.FsmConnectorServiceGRPCViaGateway
+			},
+			setter: func(ins *ServiceInstance, value string) error {
+				ins.FsmConnectorServiceGRPCViaGateway = value
+				return nil
+			},
+		},
+		connector.CloudViaGatewayMode: {
+			getter: func(ins *ServiceInstance) string {
+				return ins.FsmConnectorServiceViaGatewayMode
+			},
+			setter: func(ins *ServiceInstance, value string) error {
+				ins.FsmConnectorServiceViaGatewayMode = value
 				return nil
 			},
 		},

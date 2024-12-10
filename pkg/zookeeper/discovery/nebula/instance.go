@@ -62,8 +62,10 @@ type ServiceInstance struct {
 	Side      string `urlenc:"side"`
 	Version   string `urlenc:"version"`
 
-	FsmConnectorServiceClusterSet   string `urlenc:"fsm.connector.service.cluster.set,omitempty"`
-	FsmConnectorServiceConnectorUid string `urlenc:"fsm.connector.service.connector.uid,omitempty"`
+	FsmConnectorServiceClusterSet     string `urlenc:"fsm.connector.service.cluster.set,omitempty"`
+	FsmConnectorServiceConnectorUid   string `urlenc:"fsm.connector.service.connector.uid,omitempty"`
+	FsmConnectorServiceGRPCViaGateway string `urlenc:"fsm.connector.service.grpc.via.gateway"`
+	FsmConnectorServiceViaGatewayMode string `urlenc:"fsm.connector.service.via.gateway.mode"`
 }
 
 func NewServiceInstance(serviceName, instanceId string) *ServiceInstance {
