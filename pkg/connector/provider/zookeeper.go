@@ -313,8 +313,8 @@ func (dc *ZookeeperDiscoveryClient) Deregister(dereg *connector.CatalogDeregistr
 }
 
 func (dc *ZookeeperDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
-	bytes, _ := json.MarshalIndent(reg, "", " ")
-	fmt.Println(string(bytes))
+	bytes, _ := json.Marshal(reg)
+	fmt.Println(reg.Service.Service, string(bytes))
 	//k2cGroupId := dc.connectController.GetZookeeperGroupId()
 	//if len(k2cGroupId) == 0 {
 	//	k2cGroupId = constant.DEFAULT_GROUP

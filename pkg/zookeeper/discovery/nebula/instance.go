@@ -133,6 +133,8 @@ func (ins *ServiceInstance) Metadata(key string) (string, bool) {
 
 func (ins *ServiceInstance) Metadatas() map[string]string {
 	metadata := map[string]string{
+		"interface":   ins.Interface,
+		"methods":     ins.Methods,
 		"application": ins.Application,
 		"project":     ins.Project,
 		"owner":       ins.Owner,

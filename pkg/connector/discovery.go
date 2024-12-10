@@ -104,8 +104,8 @@ type AgentService struct {
 	Tags        []string
 	Meta        map[string]interface{}
 
-	Interface string
-	Methods   []string
+	GRPCInterface string
+	GRPCMethods   []string
 
 	HealthCheck bool
 }
@@ -220,8 +220,8 @@ func (as *AgentService) FromZookeeper(ins discovery.ServiceInstance) {
 	}
 	as.ID = ins.InstanceId()
 	as.Service = ins.ServiceName()
-	as.Interface = ins.ServiceInterface()
-	as.Methods = append(as.Methods, ins.ServiceMethods()...)
+	as.GRPCInterface = ins.ServiceInterface()
+	as.GRPCMethods = append(as.GRPCMethods, ins.ServiceMethods()...)
 	as.InstanceId = ins.InstanceId()
 	as.Address = ins.InstanceIP()
 	if metadata := ins.Metadatas(); len(metadata) > 0 {
