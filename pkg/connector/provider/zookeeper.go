@@ -1,8 +1,6 @@
 package provider
 
 import (
-	"encoding/json"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -307,7 +305,7 @@ func (dc *ZookeeperDiscoveryClient) Deregister(dereg *connector.CatalogDeregistr
 	if ins == nil {
 		return nil
 	}
-	return dc.connectController.CacheDeregisterInstance(dereg.ServiceID, func() error {
+	return dc.connectController.CacheDeregisterInstance(ins.InstanceId(), func() error {
 		return dc.zookeeperClient().UnregisterService(ins)
 	})
 }
@@ -317,20 +315,7 @@ func (dc *ZookeeperDiscoveryClient) Register(reg *connector.CatalogRegistration)
 	if err != nil {
 		return err
 	}
-	if strings.EqualFold(reg.Service.Service, "greeter-demo-orientsec-com") {
-		bytes, _ := json.MarshalIndent(ins, "", " ")
-		fmt.Println(string(bytes))
-		fmt.Println("InstanceId:", ins.InstanceId())
-	}
-	//metadataSet := dc.connectController.GetAppendMetadataSet().ToSlice()
-	//if len(metadataSet) > 0 {
-	//	rMetadata := ins.Metadata.GetMap()
-	//	for _, item := range metadataSet {
-	//		metadata := item.(ctv1.Metadata)
-	//		rMetadata[metadata.Key] = metadata.Value
-	//	}
-	//}
-	return dc.connectController.CacheRegisterInstance(reg.Service.ID, ins, func() error {
+	return dc.connectController.CacheRegisterInstance(ins.InstanceId(), ins, func() error {
 		return dc.zookeeperClient().RegisterService(ins)
 	})
 }

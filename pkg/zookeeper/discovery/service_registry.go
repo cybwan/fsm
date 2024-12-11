@@ -67,6 +67,11 @@ func (sd *ServiceDiscovery) UnregisterService(instance ServiceInstance) error {
 
 // unregisterService un-register service in zookeeper
 func (sd *ServiceDiscovery) unregisterService(instance ServiceInstance) error {
-	instancePath := sd.ops.PathForInstance(sd.basePath, instance.ServiceName(), instance.InstanceId())
+	serviceName := sd.ops.KtoCName(instance.ServiceName())
+	if len(serviceName) == 0 {
+		return nil
+	}
+	categoryServiceName := path.Join(serviceName, sd.category)
+	instancePath := sd.ops.PathForInstance(sd.basePath, categoryServiceName, instance.InstanceId())
 	return sd.client.Delete(instancePath)
 }
