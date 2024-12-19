@@ -541,7 +541,7 @@ func (s *CtoKSyncer) mergeFixedHTTPServiceEndpoints(meta *connector.MicroSvcMeta
 			}
 		}
 		meta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
-		meta.Ports[valley] = constants.ProtocolHTTP
+		meta.Ports[valley] = connector.ProtocolHTTP
 		meta.Endpoints = stats[valley]
 	}
 }
