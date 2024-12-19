@@ -1,4 +1,4 @@
-package nebula
+package dubbo
 
 import (
 	"fmt"
@@ -7,13 +7,6 @@ import (
 	"strings"
 
 	"github.com/flomesh-io/fsm/pkg/zookeeper/urlenc"
-)
-
-const (
-	PickFirstLoadBalance        = "pick_first"
-	RoundRobinLoadBalance       = "round_robin"
-	WeightRoundRobinLoadBalance = "weight_round_robin"
-	ConsistentHashLoadBalance   = "consistent_hash"
 )
 
 type ServiceInstance struct {
@@ -29,38 +22,18 @@ type ServiceInstance struct {
 	Interface string `urlenc:"interface"`
 	Methods   string `urlenc:"methods"`
 
+	Anyhost     bool   `urlenc:"anyhost"`
 	Application string `urlenc:"application"`
-	Project     string `urlenc:"project"`
-	Owner       string `urlenc:"owner"`
-	Ops         string `urlenc:"ops,omitempty"`
-	Category    string `urlenc:"category"`
-	Timestamp   uint64 `urlenc:"timestamp"`
-	GRPC        string `urlenc:"grpc"`
-	PID         uint32 `urlenc:"pid"`
-	Group       bool   `urlenc:"group,omitempty"`
-	Weight      uint32 `urlenc:"weight"`
 	Deprecated  bool   `urlenc:"deprecated"`
-	Master      bool   `urlenc:"master"`
-
-	DefaultAsync       bool   `urlenc:"default.async"`
-	DefaultCluster     string `urlenc:"default.cluster"`
-	DefaultConnections uint32 `urlenc:"default.connections"`
-	DefaultLoadBalance string `urlenc:"default.loadbalance"`
-	DefaultRequests    uint32 `urlenc:"default.requests"`
-	DefaultReties      uint32 `urlenc:"default.reties"`
-	DefaultTimeout     uint32 `urlenc:"default.timeout"`
-
-	ServiceType     string `urlenc:"service.type"`
-	RealIP          string `urlenc:"real.ip"`
-	RealPort        uint16 `urlenc:"real.port"`
-	AccessProtected bool   `urlenc:"access.protected"`
-
-	Accesslog bool   `urlenc:"accesslog"`
-	Anyhost   bool   `urlenc:"anyhost"`
-	Dynamic   bool   `urlenc:"dynamic"`
-	Token     bool   `urlenc:"token"`
-	Side      string `urlenc:"side"`
-	Version   string `urlenc:"version"`
+	Dubbo       string `urlenc:"dubbo"`
+	Dynamic     bool   `urlenc:"dynamic"`
+	Generic     string `urlenc:"generic"`
+	PID         uint32 `urlenc:"pid"`
+	Release     string `urlenc:"release"`
+	Revision    string `urlenc:"revision"`
+	Side        string `urlenc:"side"`
+	Timestamp   uint64 `urlenc:"timestamp"`
+	Version     string `urlenc:"version"`
 
 	Extends map[string]string `urlenc:"-"`
 
@@ -72,15 +45,8 @@ type ServiceInstance struct {
 
 func NewServiceInstance(serviceName, instanceId string) *ServiceInstance {
 	return &ServiceInstance{
-		serviceName:        serviceName,
-		instanceId:         instanceId,
-		AccessProtected:    false,
-		DefaultConnections: 20,
-		DefaultRequests:    2000,
-		DefaultLoadBalance: PickFirstLoadBalance,
-		Weight:             100,
-		Deprecated:         false,
-		Master:             true,
+		serviceName: serviceName,
+		instanceId:  instanceId,
 	}
 }
 
