@@ -148,9 +148,9 @@ func (t *KtoCSource) Upsert(key string, raw interface{}) error {
 					endpointPort := corev1.EndpointPort{}
 					endpointPort.Port = int32(port)
 					endpointPort.Protocol = constants.ProtocolTCP
-					if strings.EqualFold(string(protocol), constants.ProtocolHTTP) {
+					if protocol == connector.ProtocolHTTP {
 						endpointPort.AppProtocol = &ProtocolHTTP
-					} else if strings.EqualFold(string(protocol), constants.ProtocolGRPC) {
+					} else if protocol == connector.ProtocolGRPC {
 						endpointPort.AppProtocol = &ProtocolGRPC
 					}
 					endpointSubset.Ports = append(endpointSubset.Ports, endpointPort)
