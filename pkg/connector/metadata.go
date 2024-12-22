@@ -39,6 +39,11 @@ func (addr MicroEndpointAddr) To16() net.IP {
 // MicroSvcPort defines int as micro service port
 type MicroSvcPort int
 
+const (
+	ProtocolHTTP = MicroSvcAppProtocol(constants.ProtocolHTTP)
+	ProtocolGRPC = MicroSvcAppProtocol(constants.ProtocolGRPC)
+)
+
 // MicroSvcAppProtocol defines app protocol
 type MicroSvcAppProtocol string
 
