@@ -11,7 +11,6 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
@@ -138,12 +137,12 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.MicroSvcName]*connec
 	endpointMeta := new(connector.MicroEndpointMeta)
 	endpointMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
 	if httpPort > 0 {
-		svcMeta.Ports[connector.MicroSvcPort(httpPort)] = constants.ProtocolHTTP
-		endpointMeta.Ports[connector.MicroSvcPort(httpPort)] = constants.ProtocolHTTP
+		svcMeta.Ports[connector.MicroSvcPort(httpPort)] = connector.ProtocolHTTP
+		endpointMeta.Ports[connector.MicroSvcPort(httpPort)] = connector.ProtocolHTTP
 	}
 	if grpcPort > 0 {
-		svcMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
-		endpointMeta.Ports[connector.MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
+		svcMeta.Ports[connector.MicroSvcPort(grpcPort)] = connector.ProtocolGRPC
+		endpointMeta.Ports[connector.MicroSvcPort(grpcPort)] = connector.ProtocolGRPC
 		if len(instance.GRPCInterface) > 0 && len(instance.GRPCMethods) > 0 {
 			if svcMeta.GRPCMeta == nil {
 				svcMeta.GRPCMeta = new(connector.GRPCMeta)
