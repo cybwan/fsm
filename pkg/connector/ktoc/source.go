@@ -352,7 +352,9 @@ func (t *KtoCSource) generateRegistrations(key string) {
 
 	baseService := connector.AgentService{
 		MicroService: connector.MicroService{
-			Service: t.addPrefixAndK8SNamespace(svc.Name, svc.Namespace),
+			NamespaceService: connector.NamespaceService{
+				Service: t.addPrefixAndK8SNamespace(svc.Name, svc.Namespace),
+			},
 		},
 		Meta: map[string]interface{}{
 			connector.ClusterSetKey: t.controller.GetClusterSet(),
@@ -363,16 +365,16 @@ func (t *KtoCSource) generateRegistrations(key string) {
 
 	// If the name is explicitly annotated, adopt that name
 	if v, ok := svc.Annotations[connector.AnnotationServiceName]; ok {
-		baseService.Service = strings.TrimSpace(v)
+		baseService.MicroService.Service = strings.TrimSpace(v)
 	} else if v, ok := svc.Annotations[connector.AnnotationCloudServiceInheritedFrom]; ok {
-		baseService.Service = strings.TrimSpace(v)
+		baseService.MicroService.Service = strings.TrimSpace(v)
 	}
 
 	// Update the service namespace based on namespace settings
 	registeredNS := t.discClient.RegisteredNamespace(svc.Namespace)
 	if registeredNS != "" {
 		log.Debug().Msgf("[generateRegistrations] namespace being used key:%s namespace:%s", key, registeredNS)
-		baseService.Namespace = registeredNS
+		baseService.MicroService.Namespace = registeredNS
 	}
 
 	// Determine the default port and set port annotations
@@ -395,8 +397,8 @@ func (t *KtoCSource) generateRegistrations(key string) {
 	defer func() {
 		log.Debug().Msgf("generated registration key:%s service:%s namespace:%s instances:%d",
 			key,
-			baseService.Service,
-			baseService.Namespace,
+			baseService.MicroService.Service,
+			baseService.MicroService.Namespace,
 			t.controller.GetK2CContext().RegisteredServiceMap.Count())
 	}()
 
@@ -483,7 +485,7 @@ func (t *KtoCSource) determinePortAnnotations(svc *corev1.Service, baseService c
 			}
 		}
 
-		baseService.HTTPPort = port
+		baseService.MicroService.SetHTTPPort(port)
 
 		// Add all the ports as annotations
 		for _, p := range svc.Spec.Ports {
@@ -500,8 +502,8 @@ func (t *KtoCSource) generateExternalIPRegistrations(key string, svc *corev1.Ser
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = t.controller.GetServiceInstanceID(r.Service.Service, ip, rs.HTTPPort, rs.GRPCPort)
-			r.Service.Address = ip
+			r.Service.ID = t.controller.GetServiceInstanceID(r.Service.MicroService.Service, ip, rs.MicroService.Port, rs.MicroService.Protocol)
+			r.Service.MicroService.Address.Set(ip)
 			// Adding information about service weight.
 			// Overrides the existing weight if present.
 			if weight, ok := svc.Annotations[connector.AnnotationServiceWeight]; ok && weight != "" {
@@ -577,8 +579,8 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 					r := baseNode
 					rs := baseService
 					r.Service = &rs
-					r.Service.ID = t.controller.GetServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort, rs.GRPCPort)
-					r.Service.Address = address.Address
+					r.Service.ID = t.controller.GetServiceInstanceID(r.Service.MicroService.Service, subsetAddr.IP, rs.MicroService.Port, rs.MicroService.Protocol)
+					r.Service.MicroService.Address.Set(address.Address)
 
 					t.controller.GetK2CContext().RegisteredServiceMap.Upsert(
 						key,
@@ -614,8 +616,8 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 						r := baseNode
 						rs := baseService
 						r.Service = &rs
-						r.Service.ID = t.controller.GetServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort, rs.GRPCPort)
-						r.Service.Address = address.Address
+						r.Service.ID = t.controller.GetServiceInstanceID(r.Service.MicroService.Service, subsetAddr.IP, rs.MicroService.Port, rs.MicroService.Protocol)
+						r.Service.MicroService.Address.Set(address.Address)
 
 						t.controller.GetK2CContext().RegisteredServiceMap.Upsert(
 							key,
@@ -676,16 +678,16 @@ func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(
 			if len(overridePortName) > 0 {
 				for _, p := range svc.Spec.Ports {
 					if overridePortName == p.Name {
-						rs.HTTPPort = int(p.Port)
+						rs.MicroService.SetHTTPPort(int(p.Port))
 						break
 					}
 				}
 			} else if overridePortNumber > 0 {
-				rs.HTTPPort = overridePortNumber
+				rs.MicroService.SetHTTPPort(overridePortNumber)
 			}
 			r.Service = &rs
-			r.Service.ID = t.controller.GetServiceInstanceID(r.Service.Service, addr, rs.HTTPPort, rs.GRPCPort)
-			r.Service.Address = addr
+			r.Service.ID = t.controller.GetServiceInstanceID(r.Service.MicroService.Service, addr, rs.MicroService.Port, rs.MicroService.Protocol)
+			r.Service.MicroService.Address.Set(addr)
 
 			// Adding information about service weight.
 			// Overrides the existing weight if present.
@@ -733,39 +735,34 @@ func (t *KtoCSource) registerServiceInstance(
 	seen := map[string]struct{}{}
 	for _, subset := range endpoints.Subsets {
 		// For ClusterIP services and if loadBalancerEndpointsSync is true, we use the endpoint port instead
-		// of the service port because we're registering each endpoint
-		// as a separate service instance.
-		httpPort := baseService.HTTPPort
-		grpcPort := baseService.GRPCPort
-		httpPort, grpcPort = t.choosePorts(subset, overridePortName, overridePortNumber, httpPort, grpcPort)
+		// of the service port because we're registering each endpoint as a separate service instance.
+		protocol := baseService.MicroService.Protocol
+		port := baseService.MicroService.Port
+		protocol, port = t.choosePorts(subset, overridePortName, overridePortNumber, protocol, port)
+		if protocol.Empty() || port == 0 {
+			log.Error().Msgf("invalid port:%v or invalid protocol:%v", port, protocol)
+			continue
+		}
 		for _, subsetAddr := range subset.Addresses {
 			var addr string
+			addr, port = t.chooseServiceAddrPort(key, port, subsetAddr, useHostname)
+			if len(addr) == 0 || !t.filterIPRanges(addr) || t.excludeIPRanges(addr) {
+				continue
+			}
+
 			var viaAddr string
-			var viaHTTPPort, viaGRPCPort int
-			addr, httpPort = t.chooseServiceAddrPort(key, httpPort, subsetAddr, useHostname)
-			if len(addr) == 0 {
-				continue
-			}
-
-			if !t.filterIPRanges(addr) || t.excludeIPRanges(addr) {
-				continue
-			}
-
+			var viaPort connector.MicroSvcPort
 			if t.controller.GetK2CWithGateway() {
-				if t.controller.GetK2CWithGatewayMode() == ctv1.Forward {
-					viaAddr = t.controller.GetViaIngressAddr()
-					viaHTTPPort = int(t.controller.GetViaIngressHTTPPort())
-					if grpcPort > 0 {
-						viaGRPCPort = int(t.controller.GetViaIngressGRPCPort())
-					}
+				viaAddr = t.controller.GetViaIngressAddr()
+				switch protocol {
+				case connector.ProtocolHTTP:
+					viaPort = connector.MicroSvcPort(t.controller.GetViaIngressHTTPPort())
+				case connector.ProtocolGRPC:
+					viaPort = connector.MicroSvcPort(t.controller.GetViaIngressGRPCPort())
+				default:
 				}
 				if t.controller.GetK2CWithGatewayMode() == ctv1.Proxy {
 					addr = t.controller.GetViaIngressAddr()
-					viaAddr = t.controller.GetViaIngressAddr()
-					viaHTTPPort = int(t.controller.GetViaIngressHTTPPort())
-					if grpcPort > 0 {
-						viaGRPCPort = int(t.controller.GetViaIngressGRPCPort())
-					}
 				}
 			}
 
@@ -778,7 +775,7 @@ func (t *KtoCSource) registerServiceInstance(
 			seen[addr] = struct{}{}
 
 			r := baseNode
-			r.Service = t.bindService(svcMeta, baseService, baseService.Service, addr, httpPort, grpcPort, viaAddr, viaHTTPPort, viaGRPCPort)
+			r.Service = t.bindService(svcMeta, baseService, baseService.MicroService.Service, protocol, addr, port, viaAddr, viaPort)
 			// Deepcopy baseService.Meta into r.RegisteredInstances.Meta as baseService is shared
 			// between all nodes of a service
 			for k, v := range baseService.Meta {
@@ -793,12 +790,12 @@ func (t *KtoCSource) registerServiceInstance(
 			}
 
 			r.Check = &connector.AgentCheck{
-				CheckID:   healthCheckID(endpoints.Namespace, t.controller.GetServiceInstanceID(r.Service.Service, addr, httpPort, grpcPort)),
+				CheckID:   healthCheckID(endpoints.Namespace, t.controller.GetServiceInstanceID(r.Service.MicroService.Service, addr, port, protocol)),
 				Name:      cloudKubernetesCheckName,
-				Namespace: baseService.Namespace,
+				Namespace: baseService.MicroService.Namespace,
 				Type:      cloudKubernetesCheckType,
 				Status:    connector.HealthPassing,
-				ServiceID: t.controller.GetServiceInstanceID(r.Service.Service, addr, httpPort, grpcPort),
+				ServiceID: t.controller.GetServiceInstanceID(r.Service.MicroService.Service, addr, port, protocol),
 				Output:    kubernetesSuccessReasonMsg,
 			}
 
@@ -810,12 +807,19 @@ func (t *KtoCSource) registerServiceInstance(
 	}
 }
 
-func (t *KtoCSource) choosePorts(subset corev1.EndpointSubset, overridePortName string, overridePortNumber int, httpPort, grpcPort int) (int, int) {
+func (t *KtoCSource) choosePorts(subset corev1.EndpointSubset,
+	overridePortName string,
+	overridePortNumber int,
+	protocol connector.MicroSvcProtocol,
+	port connector.MicroSvcPort) (connector.MicroSvcProtocol, connector.MicroSvcPort) {
 	if overridePortName != "" {
 		// If we're supposed to use a specific named port, find it.
 		for _, p := range subset.Ports {
 			if overridePortName == p.Name {
-				httpPort = int(p.Port)
+				port = connector.MicroSvcPort(int(p.Port))
+				if protocol.Empty() && p.AppProtocol != nil {
+					protocol = connector.MicroSvcProtocol(strings.ToLower(*p.AppProtocol))
+				}
 				break
 			}
 		}
@@ -823,24 +827,21 @@ func (t *KtoCSource) choosePorts(subset corev1.EndpointSubset, overridePortName 
 		// Otherwise we'll just use the first port in the list
 		// (unless the port number was overridden by an annotation).
 		for _, p := range subset.Ports {
-			if httpPort == 0 &&
-				strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
-				p.AppProtocol != nil &&
-				strings.EqualFold(*p.AppProtocol, strings.ToUpper(constants.ProtocolHTTP)) {
-				httpPort = int(p.Port)
+			if port == 0 && p.AppProtocol != nil &&
+				strings.EqualFold(strings.ToUpper(string(p.Protocol)), strings.ToUpper(constants.ProtocolTCP)) {
+				if protocol.Empty() {
+					protocol = connector.MicroSvcProtocol(strings.ToLower(*p.AppProtocol))
+					port = connector.MicroSvcPort(int(p.Port))
+				} else if strings.EqualFold(strings.ToLower(*p.AppProtocol), strings.ToLower(protocol.Get())) {
+					port = connector.MicroSvcPort(int(p.Port))
+				}
 			}
-			if grpcPort == 0 &&
-				strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
-				p.AppProtocol != nil &&
-				strings.EqualFold(*p.AppProtocol, strings.ToUpper(constants.ProtocolGRPC)) {
-				grpcPort = int(p.Port)
-			}
-			if httpPort > 0 && grpcPort > 0 {
+			if port > 0 {
 				break
 			}
 		}
 	}
-	return httpPort, grpcPort
+	return protocol, port
 }
 
 func (t *KtoCSource) excludeIPRanges(addr string) (exclude bool) {
@@ -869,57 +870,63 @@ func (t *KtoCSource) filterIPRanges(addr string) (include bool) {
 	return
 }
 
-func (t *KtoCSource) chooseServiceAddrPort(key string, port int, subsetAddr corev1.EndpointAddress, useHostname bool) (addr string, httpPort int) {
+func (t *KtoCSource) chooseServiceAddrPort(key string,
+	port connector.MicroSvcPort,
+	subsetAddr corev1.EndpointAddress,
+	useHostname bool) (microSvcAddress string, microSvcPort connector.MicroSvcPort) {
 	// Use the address and port from the Ingress resource if
 	// ingress-sync is enabled and the service has an ingress
 	// resource that references it.
 	if t.controller.GetSyncIngress() && t.isIngressService(key) {
 		if svcAddr, exists := t.controller.GetK2CContext().ServiceHostnameMap.Get(key); exists {
-			addr = svcAddr.HostName
-			httpPort = int(svcAddr.Port)
+			microSvcAddress = svcAddr.HostName
+			microSvcPort = connector.MicroSvcPort(int(svcAddr.Port))
 		}
 	} else {
-		addr = subsetAddr.IP
-		if len(addr) == 0 && useHostname {
-			addr = subsetAddr.Hostname
+		microSvcAddress = subsetAddr.IP
+		if len(microSvcAddress) == 0 && useHostname {
+			microSvcAddress = subsetAddr.Hostname
 		}
-		httpPort = port
+		microSvcPort = port
 	}
-	return addr, httpPort
+	return
 }
 
 func (t *KtoCSource) bindService(
 	svcMeta *connector.MicroSvcMeta,
 	baseService connector.AgentService,
-	service, addr string, httpPort, grpcPort int,
-	viaAddr string, viaHTTPPort, viaGRPCPort int) *connector.AgentService {
+	service string,
+	protocol connector.MicroSvcProtocol,
+	addr string,
+	port connector.MicroSvcPort,
+	viaAddr string,
+	viaPort connector.MicroSvcPort) *connector.AgentService {
 	rs := baseService
-	rs.ID = t.controller.GetServiceInstanceID(service, addr, httpPort, grpcPort)
-	rs.Address = addr
-	rs.HTTPPort = httpPort
-	rs.GRPCPort = grpcPort
-	rs.ViaAddress = viaAddr
-	rs.ViaHTTPPort = viaHTTPPort
-	rs.ViaGRPCPort = viaGRPCPort
+	rs.ID = t.controller.GetServiceInstanceID(service, addr, port, protocol)
+	rs.MicroService.Address = connector.MicroSvcAddress(addr)
+	rs.MicroService.Port = port
+	rs.MicroService.Protocol = protocol
+	rs.MicroService.ViaAddress = connector.MicroSvcAddress(viaAddr)
+	rs.MicroService.ViaPort = viaPort
 	rs.Meta = make(map[string]interface{})
 	rs.Meta[connector.CloudViaGatewayMode] = string(t.controller.GetK2CWithGatewayMode())
-	if len(viaAddr) > 0 && viaHTTPPort > 0 {
-		rs.Meta[connector.CloudHTTPViaGateway] = fmt.Sprintf("%s:%d", viaAddr, viaHTTPPort)
+	if protocol == connector.ProtocolHTTP {
+		rs.Meta[connector.CloudHTTPViaGateway] = fmt.Sprintf("%s:%d", viaAddr, viaPort)
 	}
-	if len(viaAddr) > 0 && viaGRPCPort > 0 {
-		rs.Meta[connector.CloudGRPCViaGateway] = fmt.Sprintf("%s:%d", viaAddr, viaGRPCPort)
-	}
-	if rs.GRPCPort > 0 && svcMeta != nil && svcMeta.GRPCMeta != nil {
-		if len(svcMeta.GRPCMeta.Interface) > 0 {
-			rs.GRPCInterface = svcMeta.GRPCMeta.Interface
-			if len(svcMeta.GRPCMeta.Methods) > 0 {
-				for method := range svcMeta.GRPCMeta.Methods {
-					rs.GRPCMethods = append(rs.GRPCMethods, method)
+	if protocol == connector.ProtocolGRPC {
+		rs.Meta[connector.CloudGRPCViaGateway] = fmt.Sprintf("%s:%d", viaAddr, viaPort)
+		if svcMeta != nil && svcMeta.GRPCMeta != nil {
+			if len(svcMeta.GRPCMeta.Interface) > 0 {
+				rs.GRPCInterface = svcMeta.GRPCMeta.Interface
+				if len(svcMeta.GRPCMeta.Methods) > 0 {
+					for method := range svcMeta.GRPCMeta.Methods {
+						rs.GRPCMethods = append(rs.GRPCMethods, method)
+					}
 				}
-			}
-			if svcMeta.Endpoints != nil {
-				if endpointMeta, exists := svcMeta.Endpoints[connector.MicroEndpointAddr(addr)]; exists {
-					rs.GRPCInstanceMeta = endpointMeta.GRPCMeta
+				if svcMeta.Endpoints != nil {
+					if endpointMeta, exists := svcMeta.Endpoints[connector.MicroEndpointAddr(addr)]; exists {
+						rs.GRPCInstanceMeta = endpointMeta.GRPCMeta
+					}
 				}
 			}
 		}

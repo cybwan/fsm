@@ -50,7 +50,7 @@ func (s *CtoKSource) Run(ctx context.Context) {
 	}).WithContext(ctx)
 	for {
 		// Get all services.
-		var catalogServices []connector.MicroService
+		var catalogServices []connector.NamespaceService
 
 		if !s.controller.Purge() {
 			err := backoff.Retry(func() error {
@@ -107,8 +107,8 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName connector.MicroSvcNa
 	svcMetaMap := make(map[connector.MicroSvcName]*connector.MicroSvcMeta)
 
 	for _, instance := range instanceEntries {
-		instance.Service = strings.ToLower(instance.Service)
-		svcNames := []connector.MicroSvcName{connector.MicroSvcName(instance.Service)}
+		instance.MicroService.Service = strings.ToLower(instance.MicroService.Service)
+		svcNames := []connector.MicroSvcName{connector.MicroSvcName(instance.MicroService.Service)}
 		if len(instance.Tags) > 0 {
 			svcNames = s.aggregateTag(svcName, instance, svcNames)
 		}
@@ -123,26 +123,24 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName connector.MicroSvcNa
 }
 
 func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.MicroSvcName]*connector.MicroSvcMeta, serviceName connector.MicroSvcName, instance *connector.AgentService) {
-	httpPort := instance.HTTPPort
-	grpcPort := instance.GRPCPort
+	port := instance.MicroService.Port
+	protocol := instance.MicroService.Protocol
 	svcMeta, exists := svcMetaMap[serviceName]
 	if !exists {
 		svcMeta = new(connector.MicroSvcMeta)
-		svcMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
+		svcMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcProtocol)
 		svcMeta.Endpoints = make(map[connector.MicroEndpointAddr]*connector.MicroEndpointMeta)
 		svcMetaMap[serviceName] = svcMeta
 	}
 	svcMeta.HealthCheck = instance.HealthCheck
 
 	endpointMeta := new(connector.MicroEndpointMeta)
-	endpointMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
-	if httpPort > 0 {
-		svcMeta.Ports[connector.MicroSvcPort(httpPort)] = connector.ProtocolHTTP
-		endpointMeta.Ports[connector.MicroSvcPort(httpPort)] = connector.ProtocolHTTP
+	endpointMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcProtocol)
+	if port > 0 {
+		svcMeta.Ports[port] = protocol
+		endpointMeta.Ports[port] = protocol
 	}
-	if grpcPort > 0 {
-		svcMeta.Ports[connector.MicroSvcPort(grpcPort)] = connector.ProtocolGRPC
-		endpointMeta.Ports[connector.MicroSvcPort(grpcPort)] = connector.ProtocolGRPC
+	if protocol == connector.ProtocolGRPC {
 		if len(instance.GRPCInterface) > 0 && len(instance.GRPCMethods) > 0 {
 			if svcMeta.GRPCMeta == nil {
 				svcMeta.GRPCMeta = new(connector.GRPCMeta)
@@ -156,13 +154,13 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.MicroSvcName]*connec
 				if !exists {
 					eps = make([]string, 0)
 				}
-				eps = append(eps, instance.Address)
+				eps = append(eps, instance.MicroService.Address.Get())
 				svcMeta.GRPCMeta.Methods[method] = eps
 			}
 			endpointMeta.GRPCMeta = instance.Meta
 		}
 	}
-	endpointMeta.Address = connector.MicroEndpointAddr(instance.Address)
+	endpointMeta.Address = connector.MicroEndpointAddr(instance.MicroService.Address)
 	endpointMeta.Native.ClusterId = instance.ClusterId
 	endpointMeta.Native.ViaGatewayMode = ctv1.Forward
 	if viaGatewayModeIf, ok := instance.Meta[connector.CloudViaGatewayMode]; ok {
@@ -197,7 +195,7 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.MicroSvcName]*connec
 	if len(endpointMeta.Native.ClusterSet) == 0 || len(endpointMeta.Native.ClusterId) > 0 {
 		endpointMeta.Native.ClusterSet = endpointMeta.Native.ClusterId
 	}
-	svcMeta.Endpoints[connector.MicroEndpointAddr(instance.Address)] = endpointMeta
+	svcMeta.Endpoints[connector.MicroEndpointAddr(instance.MicroService.Address)] = endpointMeta
 }
 
 func (s *CtoKSource) aggregateTag(svcName connector.MicroSvcName, svc *connector.AgentService, svcNames []connector.MicroSvcName) []connector.MicroSvcName {

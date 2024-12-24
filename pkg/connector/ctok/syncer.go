@@ -447,7 +447,7 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 	}
 }
 
-func (s *CtoKSyncer) existPort(svc *apiv1.Service, port connector.MicroSvcPort, appProtocol connector.MicroSvcAppProtocol) bool {
+func (s *CtoKSyncer) existPort(svc *apiv1.Service, port connector.MicroSvcPort, appProtocol connector.MicroSvcProtocol) bool {
 	if len(svc.Spec.Ports) > 0 {
 		for _, specPort := range svc.Spec.Ports {
 			if specPort.Port == int32(port) ||
@@ -540,7 +540,7 @@ func (s *CtoKSyncer) mergeFixedHTTPServiceEndpoints(meta *connector.MicroSvcMeta
 				valley = port
 			}
 		}
-		meta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
+		meta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcProtocol)
 		meta.Ports[valley] = connector.ProtocolHTTP
 		meta.Endpoints = stats[valley]
 	}
