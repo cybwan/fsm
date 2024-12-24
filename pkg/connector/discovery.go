@@ -114,9 +114,7 @@ func (as *AgentService) FromConsul(agentService *consul.AgentService) {
 	as.MicroService.SetHTTPPort(agentService.Port)
 	as.Weights.FromConsul(agentService.Weights)
 	if len(agentService.Tags) > 0 {
-		for _, tag := range agentService.Tags {
-			as.Tags = append(as.Tags, tag)
-		}
+		as.Tags = append(as.Tags, agentService.Tags...)
 	}
 	if len(agentService.Meta) > 0 {
 		as.Meta = make(map[string]interface{})
