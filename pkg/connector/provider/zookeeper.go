@@ -178,12 +178,12 @@ func (dc *ZookeeperDiscoveryClient) CatalogInstances(service string, _ *connecto
 	return agentServices, nil
 }
 
-func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.NamespaceService, error) {
+func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
 	serviceList, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var catalogServices []connector.NamespaceService
+	var catalogServices []connector.NamespacedService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
 			instances, _ := dc.selectInstances(svc)
@@ -251,7 +251,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]
 						continue
 					}
 				}
-				catalogServices = append(catalogServices, connector.NamespaceService{Service: svc})
+				catalogServices = append(catalogServices, connector.NamespacedService{Service: svc})
 				break
 			}
 		}
@@ -273,7 +273,7 @@ func (dc *ZookeeperDiscoveryClient) RegisteredInstances(service string, _ *conne
 				if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
 					catalogService := new(connector.CatalogService)
 					catalogService.FromZookeeper(instance)
-					catalogService.ServiceID = dc.connectController.GetServiceInstanceID(strings.ToLower(service), instance.InstanceIP(), connector.MicroSvcPort(instance.InstancePort()), connector.ProtocolGRPC)
+					catalogService.ServiceID = dc.connectController.GetServiceInstanceID(strings.ToLower(service), instance.InstanceIP(), connector.MicroServicePort(instance.InstancePort()), connector.ProtocolGRPC)
 					catalogServices = append(catalogServices, catalogService)
 				}
 			}
@@ -282,12 +282,12 @@ func (dc *ZookeeperDiscoveryClient) RegisteredInstances(service string, _ *conne
 	return catalogServices, nil
 }
 
-func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.NamespaceService, error) {
+func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
 	serviceList, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var registeredServices []connector.NamespaceService
+	var registeredServices []connector.NamespacedService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
 			svc := strings.ToLower(svc)
@@ -303,7 +303,7 @@ func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) 
 				instance := instance
 				if connectUID, connectUIDExist := instance.GetMetadata(connector.ConnectUIDKey); connectUIDExist {
 					if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
-						registeredServices = append(registeredServices, connector.NamespaceService{Service: svc})
+						registeredServices = append(registeredServices, connector.NamespacedService{Service: svc})
 						break
 					}
 				}

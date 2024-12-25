@@ -348,7 +348,7 @@ func (c *client) SetServiceInstanceIDFunc(f connector.ServiceInstanceIDFunc) {
 
 // GetServiceInstanceID generates a unique ID for a service. This ID is not meant
 // to be particularly human-friendly.
-func (c *client) GetServiceInstanceID(name, addr string, port connector.MicroSvcPort, protocol connector.MicroSvcProtocol) string {
+func (c *client) GetServiceInstanceID(name, addr string, port connector.MicroServicePort, protocol connector.MicroServiceProtocol) string {
 	if c.serviceInstanceIDFunc != nil {
 		return c.serviceInstanceIDFunc(name, addr, port, protocol)
 	}

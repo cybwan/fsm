@@ -90,8 +90,8 @@ func (as *AgentService) ToConsul() *consul.AgentService {
 	agentService.ID = as.ID
 	agentService.Service = as.MicroService.Service
 	agentService.Namespace = as.MicroService.Namespace
-	agentService.Address = as.MicroService.Address.Get()
-	agentService.Port = as.MicroService.Port.Get()
+	agentService.Address = as.MicroService.EndpointAddress().Get()
+	agentService.Port = int(as.MicroService.EndpointPort().Get())
 	agentService.Weights = as.Weights.ToConsul()
 	if len(as.Tags) > 0 {
 		agentService.Tags = append(agentService.Tags, as.Tags...)
@@ -106,19 +106,19 @@ func (as *AgentService) ToConsul() *consul.AgentService {
 	return agentService
 }
 
-func (as *AgentService) FromConsul(agentService *consul.AgentService) {
-	as.ID = agentService.ID
-	as.MicroService.Service = agentService.Service
-	as.MicroService.Namespace = agentService.Namespace
-	as.MicroService.Address.Set(agentService.Address)
-	as.MicroService.SetHTTPPort(agentService.Port)
-	as.Weights.FromConsul(agentService.Weights)
-	if len(agentService.Tags) > 0 {
-		as.Tags = append(as.Tags, agentService.Tags...)
+func (as *AgentService) FromConsul(ins *consul.AgentService) {
+	as.ID = ins.ID
+	as.MicroService.Service = ins.Service
+	as.MicroService.Namespace = ins.Namespace
+	as.MicroService.Protocol().SetVar(ProtocolHTTP)
+	as.MicroService.Endpoint().Set(MicroServiceAddress(ins.Address), MicroServicePort(ins.Port))
+	as.Weights.FromConsul(ins.Weights)
+	if len(ins.Tags) > 0 {
+		as.Tags = append(as.Tags, ins.Tags...)
 	}
-	if len(agentService.Meta) > 0 {
+	if len(ins.Meta) > 0 {
 		as.Meta = make(map[string]interface{})
-		for k, v := range agentService.Meta {
+		for k, v := range ins.Meta {
 			as.Meta[k] = v
 		}
 	}
@@ -131,8 +131,8 @@ func (as *AgentService) FromEureka(ins *eureka.Instance) {
 	as.ID = ins.Id()
 	as.MicroService.Service = strings.ToLower(ins.VipAddress)
 	as.InstanceId = ins.InstanceId
-	as.MicroService.Address.Set(ins.IPAddr)
-	as.MicroService.SetHTTPPort(ins.Port)
+	as.MicroService.Protocol().SetVar(ProtocolHTTP)
+	as.MicroService.Endpoint().Set(MicroServiceAddress(ins.IPAddr), MicroServicePort(ins.Port))
 	metadata := ins.Metadata.GetMap()
 	if len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
@@ -149,8 +149,8 @@ func (as *AgentService) FromNacos(ins *nacos.Instance) {
 	as.ID = ins.InstanceId
 	as.MicroService.Service = strings.ToLower(strings.Split(ins.ServiceName, constant.SERVICE_INFO_SPLITER)[1])
 	as.InstanceId = ins.InstanceId
-	as.MicroService.Address.Set(ins.Ip)
-	as.MicroService.SetHTTPPort(int(ins.Port))
+	as.MicroService.Protocol().SetVar(ProtocolHTTP)
+	as.MicroService.Endpoint().Set(MicroServiceAddress(ins.Ip), MicroServicePort(ins.Port))
 	if len(ins.Metadata) > 0 {
 		as.Meta = make(map[string]interface{})
 		for k, v := range ins.Metadata {
@@ -163,20 +163,20 @@ func (as *AgentService) FromZookeeper(ins discovery.ServiceInstance) {
 	if ins == nil {
 		return
 	}
-	switch strings.ToLower(ins.ServiceSchema()) {
-	case constants.ProtocolHTTP:
-		as.MicroService.SetHTTPPort(ins.InstancePort())
-	case constants.ProtocolGRPC:
-		as.MicroService.SetGRPCPort(ins.InstancePort())
-	default:
-		as.MicroService.SetHTTPPort(ins.InstancePort())
-	}
 	as.ID = ins.InstanceId()
 	as.MicroService.Service = ins.ServiceName()
 	as.GRPCInterface = ins.ServiceInterface()
 	as.GRPCMethods = append(as.GRPCMethods, ins.ServiceMethods()...)
 	as.InstanceId = ins.InstanceId()
-	as.MicroService.Address.Set(ins.InstanceIP())
+	as.MicroService.Endpoint().Set(MicroServiceAddress(ins.InstanceIP()), MicroServicePort(ins.InstancePort()))
+	switch strings.ToLower(ins.ServiceSchema()) {
+	case constants.ProtocolHTTP:
+		as.MicroService.Protocol().SetVar(ProtocolHTTP)
+	case constants.ProtocolGRPC:
+		as.MicroService.Protocol().SetVar(ProtocolGRPC)
+	default:
+		as.MicroService.Protocol().SetVar(ProtocolHTTP)
+	}
 	if metadata := ins.Metadatas(); len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
 		for k, v := range metadata {
@@ -189,8 +189,8 @@ func (as *AgentService) FromVM(vm machinev1alpha1.VirtualMachine, svc machinev1a
 	as.ID = fmt.Sprintf("%s-%s", svc.ServiceName, vm.UID)
 	as.MicroService.Service = svc.ServiceName
 	as.InstanceId = fmt.Sprintf("%s-%s-%s", vm.Name, svc.ServiceName, vm.UID)
-	as.MicroService.Address.Set(vm.Spec.MachineIP)
-	as.MicroService.SetHTTPPort(int(svc.Port))
+	as.MicroService.Protocol().SetVar(ProtocolHTTP)
+	as.MicroService.Endpoint().Set(MicroServiceAddress(vm.Spec.MachineIP), MicroServicePort(svc.Port))
 	metadata := vm.Labels
 	if len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
@@ -201,7 +201,7 @@ func (as *AgentService) FromVM(vm machinev1alpha1.VirtualMachine, svc machinev1a
 }
 
 type CatalogDeregistration struct {
-	NamespaceService
+	NamespacedService
 
 	Node       string
 	ServiceID  string
@@ -289,12 +289,12 @@ func (cr *CatalogRegistration) ToEureka() *eureka.Instance {
 			return cr.Service.ID
 		}
 		r.InstanceId = cr.Service.ID
-		r.HostName = cr.Service.MicroService.Address.Get()
-		r.IPAddr = cr.Service.MicroService.Address.Get()
+		r.HostName = cr.Service.MicroService.EndpointAddress().Get()
+		r.IPAddr = cr.Service.MicroService.EndpointAddress().Get()
 		r.App = strings.ToUpper(cr.Service.MicroService.Service)
 		r.VipAddress = strings.ToUpper(cr.Service.MicroService.Service)
 		r.SecureVipAddress = strings.ToUpper(cr.Service.MicroService.Service)
-		r.Port = cr.Service.MicroService.Port.Get()
+		r.Port = int(cr.Service.MicroService.EndpointPort().Get())
 		r.PortEnabled = true
 		r.Status = eureka.UP
 		r.DataCenterInfo = eureka.DataCenterInfo{Name: eureka.MyOwn}
@@ -320,8 +320,8 @@ func (cr *CatalogRegistration) ToNacos(cluster, group string, weight float64) *v
 		r.ClusterName = cluster
 		r.GroupName = group
 		r.ServiceName = strings.ToLower(cr.Service.MicroService.Service)
-		r.Ip = cr.Service.MicroService.Address.Get()
-		r.Port = uint64(cr.Service.MicroService.Port)
+		r.Ip = cr.Service.MicroService.EndpointAddress().Get()
+		r.Port = uint64(cr.Service.MicroService.EndpointPort().Get())
 		r.Weight = weight
 		r.Enable = true
 		r.Healthy = true
@@ -340,9 +340,9 @@ func (cr *CatalogRegistration) ToZookeeper(adaptor discovery.FuncOps) (discovery
 	if err := r.Unmarshal(
 		fmt.Sprintf("%s://%s:%d",
 			cr.Service.MicroService.Protocol,
-			cr.Service.MicroService.Address,
-			cr.Service.MicroService.Port),
-		[]byte(cr.Service.MicroService.Address)); err != nil {
+			cr.Service.MicroService.EndpointAddress().Get(),
+			cr.Service.MicroService.EndpointPort().Get()),
+		[]byte(cr.Service.MicroService.EndpointAddress().Get())); err != nil {
 		return nil, err
 	}
 	if cr.Service.GRPCInstanceMeta != nil {
@@ -471,10 +471,10 @@ func (o *QueryOptions) ToConsul() *consul.QueryOptions {
 }
 
 type ServiceDiscoveryClient interface {
-	CatalogServices(q *QueryOptions) ([]NamespaceService, error)
+	CatalogServices(q *QueryOptions) ([]NamespacedService, error)
 	CatalogInstances(service string, q *QueryOptions) ([]*AgentService, error)
 	RegisteredInstances(service string, q *QueryOptions) ([]*CatalogService, error)
-	RegisteredServices(q *QueryOptions) ([]NamespaceService, error)
+	RegisteredServices(q *QueryOptions) ([]NamespacedService, error)
 	Register(reg *CatalogRegistration) error
 	Deregister(dereg *CatalogDeregistration) error
 	EnableNamespaces() bool

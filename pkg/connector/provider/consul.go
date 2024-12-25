@@ -65,7 +65,7 @@ func (dc *ConsulDiscoveryClient) IsInternalServices() bool {
 	return dc.connectController.AsInternalServices()
 }
 
-func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]connector.NamespaceService, error) {
+func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]connector.NamespacedService, error) {
 	opts := q.ToConsul()
 	filters := []string{fmt.Sprintf("Service.Meta.%s != `%s`",
 		connector.ClusterSetKey,
@@ -86,7 +86,7 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]c
 	}
 	q.WaitIndex = meta.LastIndex
 
-	var catalogServices []connector.NamespaceService
+	var catalogServices []connector.NamespacedService
 	if len(servicesMap) > 0 {
 		for svc := range servicesMap {
 			if strings.EqualFold(svc, consulServiceName) {
@@ -96,7 +96,7 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]c
 				log.Info().Msgf("invalid format, ignore service: %s, errors:%s", svc, strings.Join(errMsgs, "; "))
 				continue
 			}
-			catalogServices = append(catalogServices, connector.NamespaceService{Service: svc})
+			catalogServices = append(catalogServices, connector.NamespacedService{Service: svc})
 		}
 	}
 	return catalogServices, nil
@@ -191,8 +191,8 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 	return agentServices, nil
 }
 
-func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) ([]connector.NamespaceService, error) {
-	var registeredServices []connector.NamespaceService
+func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) ([]connector.NamespacedService, error) {
+	var registeredServices []connector.NamespacedService
 	var opts = q.ToConsul()
 	opts.Filter = fmt.Sprintf("ServiceMeta.%s == `%s`",
 		connector.ConnectUIDKey,
@@ -205,7 +205,7 @@ func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (
 				if strings.EqualFold(svc, consulServiceName) {
 					continue
 				}
-				registeredServices = append(registeredServices, connector.NamespaceService{Service: svc})
+				registeredServices = append(registeredServices, connector.NamespacedService{Service: svc})
 			}
 		}
 	}
