@@ -841,7 +841,6 @@ func (t *KtoCSource) choosePorts(subset corev1.EndpointSubset,
 			}
 		}
 	}
-	return
 }
 
 func (t *KtoCSource) excludeIPRanges(addr string) (exclude bool) {

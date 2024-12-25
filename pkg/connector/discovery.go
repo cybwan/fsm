@@ -339,9 +339,9 @@ func (cr *CatalogRegistration) ToZookeeper(adaptor discovery.FuncOps) (discovery
 	r := adaptor.NewInstance(cr.Service.GRPCInterface, "")
 	if err := r.Unmarshal(
 		fmt.Sprintf("%s://%s:%d",
-			cr.Service.MicroService.Protocol,
-			cr.Service.MicroService.EndpointAddress().Get(),
-			cr.Service.MicroService.EndpointPort().Get()),
+			*cr.Service.MicroService.Protocol(),
+			*cr.Service.MicroService.EndpointAddress(),
+			*cr.Service.MicroService.EndpointPort()),
 		[]byte(cr.Service.MicroService.EndpointAddress().Get())); err != nil {
 		return nil, err
 	}
