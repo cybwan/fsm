@@ -520,6 +520,7 @@ func generatePipyViaGateway(appProtocol, clusterID string, proxy *pipy.Proxy, vi
 			}
 		}
 	}
+	fmt.Println("proxy.ClusterID:", proxy.ClusterID, "clusterID:", clusterID, viaGw)
 	return viaGw
 }
 
