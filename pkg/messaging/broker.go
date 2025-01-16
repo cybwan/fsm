@@ -1230,7 +1230,7 @@ func podUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 			}
 		}
 	}
-	if len(prePod.Labels) > 0 {
+	if okPreCast && len(prePod.Labels) > 0 {
 		if proxyUUID := prePod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
 			event := &proxyUpdateEvent{
 				msg:   msg,
