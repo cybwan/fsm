@@ -8,12 +8,13 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/bpf"
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/fs"
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/util"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/bpf"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/fs"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
 )
 
-func AddNatEntry(natKey *NatKey, natVal *NatVal) error {
+func AddNatEntry(sysId SysID, natKey *NatKey, natVal *NatVal) error {
+	natKey.Sys = uint32(sysId)
 	pinnedFile := fs.GetPinningFile(bpf.FSM_MAP_NAME_NAT)
 	if natMap, err := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{}); err == nil {
 		defer natMap.Close()
@@ -30,7 +31,8 @@ func AddNatEntry(natKey *NatKey, natVal *NatVal) error {
 	}
 }
 
-func DelNatEntry(natKey *NatKey) error {
+func DelNatEntry(sysId SysID, natKey *NatKey) error {
+	natKey.Sys = uint32(sysId)
 	pinnedFile := fs.GetPinningFile(bpf.FSM_MAP_NAME_NAT)
 	if natMap, err := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{}); err == nil {
 		defer natMap.Close()
