@@ -4,8 +4,8 @@ import (
 	"net"
 
 	"github.com/flomesh-io/fsm/pkg/service"
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/maps"
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/util"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/maps"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
 )
 
 type xnetworkConfigJob struct {
