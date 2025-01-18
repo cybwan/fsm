@@ -6,22 +6,25 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.5
   labels:
     app.kubernetes.io/name: flomesh.io
-  name: isolations.policy.flomesh.io
+  name: eipadvertisements.xnetwork.flomesh.io
 spec:
-  group: policy.flomesh.io
+  group: xnetwork.flomesh.io
   names:
-    kind: Isolation
-    listKind: IsolationList
-    plural: isolations
+    kind: EIPAdvertisement
+    listKind: EIPAdvertisementList
+    plural: eipadvertisements
     shortNames:
-    - iso
-    singular: isolation
-  scope: Cluster
+    - eipadvertisement
+    singular: eipadvertisement
+  scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Isolation is the type used to represent an isolation policy.
+        description: |-
+          EIPAdvertisement is the type used to represent an EIPAdvertisement policy.
+          An EIPAdvertisement policy authorizes one or more backends to accept
+          ingress traffic from one or more sources.
         properties:
           apiVersion:
             description: |-
@@ -41,30 +44,16 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec is the Isolation specification
+            description: Spec is the Ingress backend policy specification
             properties:
-              cidrs:
-                description: |-
-                  cidr is a string representing the IP Isolation
-                  Valid examples are "192.168.1.0/24"
-                items:
-                  type: string
-                minItems: 1
-                type: array
+              eip:
+                description: EIP defines the 4-layer ip for the service.
+                type: string
+              service:
+                description: Service defines the name of the service.
+                type: string
             required:
-            - cidrs
-            type: object
-          status:
-            description: Status is the status of the Isolation configuration.
-            properties:
-              currentStatus:
-                description: CurrentStatus defines the current status of an Isolation
-                  resource.
-                type: string
-              reason:
-                description: Reason defines the reason for the current status of an
-                  Isolation resource.
-                type: string
+            - service
             type: object
         type: object
     served: true

@@ -1,7 +1,9 @@
 package v2
 
 import (
+	"fmt"
 	"net"
+	"time"
 
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/maps"
@@ -68,4 +70,22 @@ func (job *xnetworkConfigJob) Run() {
 
 func (job *xnetworkConfigJob) JobName() string {
 	return "fsm-xnetwork-config-job"
+}
+
+type xnetworkE4lbJob struct {
+	done   chan struct{}
+	server *Server
+}
+
+func (job *xnetworkE4lbJob) GetDoneCh() <-chan struct{} {
+	return job.done
+}
+
+func (job *xnetworkE4lbJob) Run() {
+	defer close(job.done)
+	fmt.Println("E4Lb:", time.Now())
+}
+
+func (job *xnetworkE4lbJob) JobName() string {
+	return "fsm-xnetwork-e4lb-job"
 }
