@@ -27,13 +27,22 @@ type EIPAdvertisement struct {
 // EIPAdvertisementSpec is the type used to represent the EIPAdvertisement policy specification.
 type EIPAdvertisementSpec struct {
 	// Service defines the name of the service.
-	Service string `json:"service"`
+	Service ElbServiceSpec `json:"service"`
 
 	// EIP defines the 4-layer ip for the service.
 	EIP string `json:"eip"`
 
 	// +kubebuilder:validation:MinItems=1
 	Nodes []string `json:"nodes"`
+}
+
+type ElbServiceSpec struct {
+	// Name defines the name of the source for the given Kind.
+	Name string `json:"name"`
+
+	// Namespace defines the namespace for the given source.
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // EIPAdvertisementList defines the list of EIPAdvertisement objects.

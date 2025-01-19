@@ -25,6 +25,7 @@ var (
 type Server struct {
 	ctx                context.Context
 	cfg                configurator.Configurator
+	nodeName           string
 	xnetworkController xnetwork.Controller
 	kubeController     k8s.Controller
 	msgBroker          *messaging.Broker

@@ -56,7 +56,17 @@ spec:
                 type: array
               service:
                 description: Service defines the name of the service.
-                type: string
+                properties:
+                  name:
+                    description: Name defines the name of the source for the given
+                      Kind.
+                    type: string
+                  namespace:
+                    description: Namespace defines the namespace for the given source.
+                    type: string
+                required:
+                - name
+                type: object
             required:
             - eip
             - nodes

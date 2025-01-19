@@ -1,8 +1,10 @@
 package v2
 
 import (
+	"net"
 	"sync"
 
+	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/maps"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
 )
@@ -74,4 +76,52 @@ func (s *Server) updateAcls(aclAddrs map[uint32]uint8) {
 			}
 		}
 	}
+}
+
+func (s *Server) doConfigAcls() {
+	aclAddrs := make(map[uint32]uint8)
+	acls := s.xnetworkController.GetAccessControls()
+	for _, acl := range acls {
+		if len(acl.Spec.Services) > 0 {
+			for _, aclSvc := range acl.Spec.Services {
+				meshSvc := service.MeshService{Name: aclSvc.Name}
+				if len(aclSvc.Namespace) > 0 {
+					meshSvc.Namespace = aclSvc.Namespace
+				} else {
+					meshSvc.Namespace = acl.Namespace
+				}
+				if k8sSvc := s.kubeController.GetService(meshSvc); k8sSvc != nil {
+					if aclSvc.WithClusterIPs {
+						clusterIPNb, _ := util.IPv4ToInt(net.ParseIP(k8sSvc.Spec.ClusterIP))
+						aclAddrs[clusterIPNb] = uint8(maps.ACL_TRUSTED)
+						for _, clusterIP := range k8sSvc.Spec.ClusterIPs {
+							clusterIPNb, _ = util.IPv4ToInt(net.ParseIP(clusterIP))
+							aclAddrs[clusterIPNb] = uint8(maps.ACL_TRUSTED)
+						}
+					}
+
+					if aclSvc.WithExternalIPs {
+						for _, ingress := range k8sSvc.Status.LoadBalancer.Ingress {
+							ingressIPNb, _ := util.IPv4ToInt(net.ParseIP(ingress.IP))
+							aclAddrs[ingressIPNb] = uint8(maps.ACL_TRUSTED)
+						}
+					}
+
+					if aclSvc.WithEndpointIPs {
+						if eps, err := s.kubeController.GetEndpoints(meshSvc); err == nil && eps != nil {
+							for _, subsets := range eps.Subsets {
+								for _, epAddr := range subsets.Addresses {
+									epIPNb, _ := util.IPv4ToInt(net.ParseIP(epAddr.IP))
+									aclAddrs[epIPNb] = uint8(maps.ACL_TRUSTED)
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	s.updateAcls(aclAddrs)
+	s.updateDNSNat()
 }

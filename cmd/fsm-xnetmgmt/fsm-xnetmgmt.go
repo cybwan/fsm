@@ -132,7 +132,7 @@ func main() {
 
 	xnetworkController := xnetwork.NewXNetworkController(informerCollection, kubeClient, kubeController, msgBroker)
 
-	server := sidecarv2.NewXNetConfigServer(ctx, cfg, xnetworkController, kubeController, msgBroker)
+	server := sidecarv2.NewXNetConfigServer(ctx, cfg, xnetworkController, kubeController, msgBroker, nodeName)
 	server.Start()
 	go server.BroadcastListener(stop)
 
