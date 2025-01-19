@@ -48,6 +48,8 @@ require (
 	github.com/k3d-io/k3d/v5 v5.7.5
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/matm/gocov-html v1.4.0
+	github.com/mdlayher/arp v0.0.0-20220512170110-6706a2966875
+	github.com/mdlayher/ethernet v0.0.0-20220221185849-529eae5b6118
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/miekg/dns v1.1.62
 	github.com/mitchellh/gox v1.0.1
@@ -393,6 +395,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.1-0.20220621161143-b0104c826a24 // indirect
 	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
+	github.com/josharian/native v1.1.0 // indirect
 	github.com/joshlf/go-acl v0.0.0-20200411065538-eae00ae38531 // indirect
 	github.com/joyent/triton-go v1.7.1-0.20200416154420-6801d15b779f // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -431,6 +434,8 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/mdlayher/packet v1.0.0 // indirect
+	github.com/mdlayher/socket v0.4.1 // indirect
 	github.com/mgechev/revive v1.5.1 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
