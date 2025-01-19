@@ -42,6 +42,19 @@ spec:
           "--fsm-namespace", "{{ include "fsm.namespace" . }}",
           "--trust-domain", "{{.Values.fsm.trustDomain}}",
         ]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: NODE_HOSTIP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: NODE_PODIP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         resources:
           limits:
             cpu: "{{.Values.fsm.fsmXnetwork.xmgt.resource.limits.cpu}}"

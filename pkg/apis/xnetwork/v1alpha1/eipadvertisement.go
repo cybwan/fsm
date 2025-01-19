@@ -30,7 +30,10 @@ type EIPAdvertisementSpec struct {
 	Service string `json:"service"`
 
 	// EIP defines the 4-layer ip for the service.
-	EIP string `json:"eip,omitempty"`
+	EIP string `json:"eip"`
+
+	// +kubebuilder:validation:MinItems=1
+	Nodes []string `json:"nodes"`
 }
 
 // EIPAdvertisementList defines the list of EIPAdvertisement objects.

@@ -49,10 +49,17 @@ spec:
               eip:
                 description: EIP defines the 4-layer ip for the service.
                 type: string
+              nodes:
+                items:
+                  type: string
+                minItems: 1
+                type: array
               service:
                 description: Service defines the name of the service.
                 type: string
             required:
+            - eip
+            - nodes
             - service
             type: object
         type: object
