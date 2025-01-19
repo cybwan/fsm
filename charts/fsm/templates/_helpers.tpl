@@ -243,15 +243,6 @@ securityContext:
 {{- end }}
 {{- end }}
 
-{{/* fsm-xnet node path of kube token */}}
-{{- define "fsmXnetwork.xnet.node.kubeToken.path" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.kubeToken -}}
-{{- else -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.kubeToken -}}
-{{- end -}}
-{{- end -}}
-
 {{/* fsm-xnet node path of cni bin */}}
 {{- define "fsmXnetwork.xnet.node.cniBin.path" -}}
 {{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}

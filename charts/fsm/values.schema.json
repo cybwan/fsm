@@ -476,18 +476,12 @@
                                   "type": "object",
                                   "title": "k8s volume mounts schema",
                                   "required": [
-                                    "kubeToken",
                                     "cniBin",
                                     "cniNetd",
                                     "sysFs",
                                     "sysRun"
                                   ],
                                   "properties": {
-                                    "kubeToken": {
-                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/kubeToken",
-                                      "type": "string",
-                                      "title": "The kube token schema"
-                                    },
                                     "cniBin": {
                                       "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/cniBin",
                                       "type": "string",
@@ -517,7 +511,6 @@
                                   "title": "k8s volume mounts schema",
                                   "required": [
                                     "enable",
-                                    "kubeToken",
                                     "cniBin",
                                     "cniNetd",
                                     "sysFs",
@@ -528,11 +521,6 @@
                                       "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/enable",
                                       "type": "boolean",
                                       "title": "The enable schema"
-                                    },
-                                    "kubeToken": {
-                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/kubeToken",
-                                      "type": "string",
-                                      "title": "The kube token schema"
                                     },
                                     "cniBin": {
                                       "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/cniBin",

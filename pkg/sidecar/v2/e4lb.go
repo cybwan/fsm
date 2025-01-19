@@ -71,7 +71,7 @@ func (s *Server) doConfigE4lbs() {
 				}
 			}
 
-			lbEth, err := netlink.LinkByName("eth0")
+			lbEth, err := netlink.LinkByName("flb0")
 			if err != nil {
 				log.Error().Err(err)
 				fmt.Println(5)
