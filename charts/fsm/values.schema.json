@@ -304,6 +304,7 @@
                           "title": "xnet",
                           "description": "xnet",
                           "required": [
+                            "features",
                             "image",
                             "resource",
                             "filter",
@@ -312,6 +313,29 @@
                           ],
                           "additionalProperties": false,
                           "properties": {
+                            "features": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features",
+                              "type": "object",
+                              "title": "xnet's features schema",
+                              "description": "Features used for xnet",
+                              "required": [
+                                "mesh",
+                                "e4lb"
+                              ],
+                              "properties": {
+                                "mesh": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/mesh",
+                                  "type": "boolean",
+                                  "title": "The mesh schema"
+                                },
+                                "e4lb": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/features/properties/e4lb",
+                                  "type": "boolean",
+                                  "title": "The e4lb schema"
+                                }
+                              },
+                              "additionalProperties": false
+                            },
                             "image": {
                               "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/image",
                               "type": "object",
@@ -476,12 +500,18 @@
                                   "type": "object",
                                   "title": "k8s volume mounts schema",
                                   "required": [
+                                    "enable",
                                     "cniBin",
                                     "cniNetd",
                                     "sysFs",
                                     "sysRun"
                                   ],
                                   "properties": {
+                                    "enable": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/enable",
+                                      "type": "boolean",
+                                      "title": "The enable schema"
+                                    },
                                     "cniBin": {
                                       "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/cniBin",
                                       "type": "string",
