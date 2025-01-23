@@ -48,25 +48,21 @@ func (s *Server) doConfigE4lbs() {
 				fmt.Println(k8sSvc.Namespace, k8sSvc.Name, k8sSvc.Spec.ClusterIP, port.Port)
 			}
 			if len(ports) == 0 {
-				fmt.Println(1)
 				continue
 			}
 
 			eip := net.ParseIP(eipAdv.Spec.EIP)
 			if eip == nil {
-				fmt.Println(2)
 				continue
 			}
 
 			if eip.To4() == nil {
-				fmt.Println(3)
 				continue
 			}
 
 			for _, port := range ports {
 				if err := s.setupE4lbNat(eipAdv.Spec.EIP, k8sSvc.Spec.ClusterIP, port); err != nil {
-					log.Error().Err(err)
-					fmt.Println(4)
+					log.Error().Msg(err.Error())
 					continue
 				}
 			}
@@ -74,15 +70,13 @@ func (s *Server) doConfigE4lbs() {
 			dev, _, _ := route.DiscoverGateway()
 			viaEth, err := netlink.LinkByName(dev)
 			if err != nil {
-				log.Error().Err(err)
-				fmt.Println(7)
+				log.Error().Msg(err.Error())
 				continue
 			}
 			fmt.Println("default device:", dev, viaEth.Attrs().HardwareAddr)
 			err = arp.Announce(dev, eipAdv.Spec.EIP, viaEth.Attrs().HardwareAddr)
 			if err != nil {
-				log.Error().Err(err)
-				fmt.Println(8)
+				log.Error().Msg(err.Error())
 			}
 		}
 	}
