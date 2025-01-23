@@ -16,8 +16,14 @@ const (
 )
 
 // NewXNetConfigServer creates a new xnetwork config Service server
-func NewXNetConfigServer(ctx context.Context, cfg configurator.Configurator, xnetworkController xnetwork.Controller, kubecontroller k8s.Controller, msgBroker *messaging.Broker) *Server {
+func NewXNetConfigServer(ctx context.Context,
+	cfg configurator.Configurator,
+	xnetworkController xnetwork.Controller,
+	kubecontroller k8s.Controller,
+	msgBroker *messaging.Broker,
+	nodeName string) *Server {
 	server := Server{
+		nodeName:           nodeName,
 		ctx:                ctx,
 		cfg:                cfg,
 		xnetworkController: xnetworkController,
