@@ -7,8 +7,13 @@ var (
 )
 
 const (
-	SysMesh = SysID(0)
-	SysE4lb = SysID(1)
+	SysMesh = SysID(1)
+	SysE4lb = SysID(2)
+)
+
+const (
+	BPF_F_INGRESS = 0
+	BPF_F_EGRESS  = 1
 )
 
 type SysID uint32
@@ -72,11 +77,14 @@ type NatVal struct {
 	EpSel uint16
 	EpCnt uint16
 	Eps   [128]struct {
-		Raddr    [4]uint32
-		Rport    uint16
-		Rmac     [6]uint8
-		Inactive uint8
-		_        [3]byte
+		Raddr   [4]uint32
+		Rport   uint16
+		Rmac    [6]uint8
+		Ofi     uint32
+		Oflags  uint32
+		Omac    [6]uint8
+		OmacSet uint8
+		Active  uint8
 	}
 }
 

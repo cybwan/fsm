@@ -73,7 +73,7 @@ func (s *Server) setupDnsNat(dnsAddr string) {
 	natKey.Dport = util.HostToNetShort(53)
 	natKey.Proto = uint8(maps.IPPROTO_UDP)
 	natVal := new(maps.NatVal)
-	natVal.AddEp(net.ParseIP(dnsAddr), 53, brVal.Mac[:], false)
+	natVal.AddEp(net.ParseIP(dnsAddr), 53, brVal.Mac[:], 0, 0, nil, true)
 	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
 		natKey.TcDir = uint8(tcDir)
 		if err = maps.AddNatEntry(maps.SysMesh, natKey, natVal); err != nil {
