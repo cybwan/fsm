@@ -3,6 +3,8 @@ package v2
 import (
 	"context"
 
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/logger"
@@ -27,6 +29,7 @@ type Server struct {
 	cfg                configurator.Configurator
 	nodeName           string
 	xnetworkController xnetwork.Controller
+	kubeClient         kubernetes.Interface
 	kubeController     k8s.Controller
 	msgBroker          *messaging.Broker
 	workQueues         *workerpool.WorkerPool

@@ -9,6 +9,7 @@ import (
 
 	"github.com/vishvananda/netlink"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/strings/slices"
 
 	"github.com/flomesh-io/fsm/pkg/service"
@@ -19,6 +20,8 @@ import (
 )
 
 func (s *Server) doConfigE4lbs() {
+	e4lbSvcs := make(map[types.UID]*corev1.Service)
+	e4lbEips := make(map[types.UID]string)
 	eipAdvs := s.xnetworkController.GetEIPAdvertisements()
 	if len(eipAdvs) > 0 {
 		for _, eipAdv := range eipAdvs {
@@ -37,52 +40,75 @@ func (s *Server) doConfigE4lbs() {
 				continue
 			}
 
-			var ports []uint16
-			for _, port := range k8sSvc.Spec.Ports {
-				if !strings.EqualFold(string(port.Protocol), string(corev1.ProtocolTCP)) {
-					continue
-				}
-				if port.Port > 0 && port.Port <= math.MaxUint16 {
-					ports = append(ports, uint16(port.Port))
-				}
-				fmt.Println(k8sSvc.Namespace, k8sSvc.Name, k8sSvc.Spec.ClusterIP, port.Port)
-			}
-			if len(ports) == 0 {
-				continue
-			}
-
 			eip := net.ParseIP(eipAdv.Spec.EIP)
-			if eip == nil {
+			if eip == nil || eip.To4() == nil || eip.IsUnspecified() || eip.IsMulticast() {
 				continue
 			}
 
-			if eip.To4() == nil {
+			e4lbSvcs[k8sSvc.GetUID()] = k8sSvc
+			e4lbEips[k8sSvc.GetUID()] = eipAdv.Spec.EIP
+		}
+	}
+
+	s.announceE4lbService(e4lbSvcs, e4lbEips)
+}
+
+func (s *Server) announceE4lbService(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips map[types.UID]string) {
+	if len(e4lbSvcs) == 0 {
+		return
+	}
+
+	var defaultEth string
+	var defaultHwAddr net.HardwareAddr
+	if dev, _, err := route.DiscoverGateway(); err != nil {
+		log.Error().Msg(err.Error())
+		return
+	} else if viaEth, err := netlink.LinkByName(dev); err != nil {
+		log.Error().Msg(err.Error())
+		return
+	} else {
+		defaultHwAddr = viaEth.Attrs().HardwareAddr
+		defaultEth = dev
+	}
+
+	for uid, k8sSvc := range e4lbSvcs {
+		eip, exists := e4lbEips[uid]
+		if !exists {
+			continue
+		}
+		if len(k8sSvc.Spec.ClusterIP) == 0 {
+			continue
+		}
+
+		var ports []uint16
+		for _, port := range k8sSvc.Spec.Ports {
+			if !strings.EqualFold(string(port.Protocol), string(corev1.ProtocolTCP)) {
 				continue
 			}
-
-			for _, port := range ports {
-				if err := s.setupE4lbNat(eipAdv.Spec.EIP, k8sSvc.Spec.ClusterIP, port); err != nil {
-					log.Error().Msg(err.Error())
-					continue
-				}
+			if port.Port > 0 && port.Port <= math.MaxUint16 {
+				ports = append(ports, uint16(port.Port))
 			}
+			fmt.Println(k8sSvc.Namespace, k8sSvc.Name, k8sSvc.Spec.ClusterIP, port.Port)
+		}
+		if len(ports) == 0 {
+			continue
+		}
 
-			dev, _, _ := route.DiscoverGateway()
-			viaEth, err := netlink.LinkByName(dev)
-			if err != nil {
+		for _, port := range ports {
+			if err := s.setupE4lbServiceNat(eip, k8sSvc.Spec.ClusterIP, port); err != nil {
 				log.Error().Msg(err.Error())
 				continue
 			}
-			fmt.Println("default device:", dev, viaEth.Attrs().HardwareAddr)
-			err = arp.Announce(dev, eipAdv.Spec.EIP, viaEth.Attrs().HardwareAddr)
-			if err != nil {
-				log.Error().Msg(err.Error())
-			}
+		}
+
+		fmt.Println("default device:", defaultEth, defaultHwAddr)
+		if err := arp.Announce(defaultEth, eip, defaultHwAddr); err != nil {
+			log.Error().Msg(err.Error())
 		}
 	}
 }
 
-func (s *Server) setupE4lbNat(vip, eip string, port uint16) error {
+func (s *Server) setupE4lbServiceNat(vip, eip string, port uint16) error {
 	var err error
 	var brVal *maps.IFaceVal
 	brKey := new(maps.IFaceKey)
