@@ -145,10 +145,6 @@ func (s *Server) doConfigE4LBs() {
 }
 
 func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips map[types.UID]string) {
-	if len(e4lbSvcs) == 0 {
-		return
-	}
-
 	var defaultEth string
 	var defaultHwAddr net.HardwareAddr
 	if dev, _, err := route.DiscoverGateway(); err != nil {
