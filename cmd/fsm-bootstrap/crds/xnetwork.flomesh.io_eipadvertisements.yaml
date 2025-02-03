@@ -52,7 +52,6 @@ spec:
               nodes:
                 items:
                   type: string
-                minItems: 1
                 type: array
               service:
                 description: Service defines the name of the service.
@@ -69,7 +68,6 @@ spec:
                 type: object
             required:
             - eip
-            - nodes
             - service
             type: object
         type: object

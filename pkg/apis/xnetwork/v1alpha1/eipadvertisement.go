@@ -32,7 +32,7 @@ type EIPAdvertisementSpec struct {
 	// EIP defines the 4-layer ip for the service.
 	EIP string `json:"eip"`
 
-	// +kubebuilder:validation:MinItems=1
+	// +optional
 	Nodes []string `json:"nodes"`
 }
 

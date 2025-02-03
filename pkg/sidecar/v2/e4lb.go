@@ -1,18 +1,26 @@
 package v2
 
 import (
+	"bytes"
+	"context"
+	"crypto/sha256"
 	"fmt"
 	"math"
 	"net"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/vishvananda/netlink"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/strings/slices"
 
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/service"
+	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/arp"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/maps"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/route"
@@ -20,12 +28,34 @@ import (
 )
 
 func (s *Server) doConfigE4lbs() {
+	readyNodes := availableNetworkNodes(s.kubeClient)
+	if len(readyNodes) == 0 {
+		return
+	} else if _, exists := readyNodes[s.nodeName]; !exists {
+		return
+	}
+
 	e4lbSvcs := make(map[types.UID]*corev1.Service)
 	e4lbEips := make(map[types.UID]string)
 	eipAdvs := s.xnetworkController.GetEIPAdvertisements()
 	if len(eipAdvs) > 0 {
 		for _, eipAdv := range eipAdvs {
-			if !slices.Contains(eipAdv.Spec.Nodes, s.nodeName) {
+			var availableNodes []string
+			if len(eipAdv.Spec.Nodes) > 0 {
+				if !slices.Contains(eipAdv.Spec.Nodes, s.nodeName) {
+					continue
+				}
+				for _, nodeName := range eipAdv.Spec.Nodes {
+					if _, exists := readyNodes[nodeName]; exists {
+						availableNodes = append(availableNodes, nodeName)
+					}
+				}
+			} else {
+				for nodeName := range readyNodes {
+					availableNodes = append(availableNodes, nodeName)
+				}
+			}
+			if len(availableNodes) == 0 {
 				continue
 			}
 
@@ -40,13 +70,58 @@ func (s *Server) doConfigE4lbs() {
 				continue
 			}
 
-			eip := net.ParseIP(eipAdv.Spec.EIP)
-			if eip == nil || eip.To4() == nil || eip.IsUnspecified() || eip.IsMulticast() {
+			eip := eipAdv.Spec.EIP
+			ipAddr := net.ParseIP(eip)
+			if ipAddr == nil || ipAddr.To4() == nil || ipAddr.IsUnspecified() || ipAddr.IsMulticast() {
 				continue
 			}
 
-			e4lbSvcs[k8sSvc.GetUID()] = k8sSvc
-			e4lbEips[k8sSvc.GetUID()] = eipAdv.Spec.EIP
+			sort.Slice(availableNodes, func(i, j int) bool {
+				hi := sha256.Sum256([]byte(availableNodes[i] + "#" + eip))
+				hj := sha256.Sum256([]byte(availableNodes[j] + "#" + eip))
+
+				return bytes.Compare(hi[:], hj[:]) < 0
+			})
+
+			if availableNodes[0] == s.nodeName {
+				e4lbSvcs[k8sSvc.GetUID()] = k8sSvc
+				e4lbEips[k8sSvc.GetUID()] = eip
+			}
+		}
+	}
+
+	k8sSvcs := s.kubeController.ListServices(false, true)
+	if len(k8sSvcs) > 0 {
+		for _, k8sSvc := range k8sSvcs {
+			if !IsE4lbEnabled(k8sSvc, s.kubeClient) {
+				continue
+			}
+
+			eip := k8sSvc.Annotations[constants.FLBDesiredIPAnnotation]
+			ipAddr := net.ParseIP(eip)
+			if ipAddr == nil || ipAddr.To4() == nil || ipAddr.IsUnspecified() || ipAddr.IsMulticast() {
+				continue
+			}
+
+			var availableNodes []string
+			for nodeName := range readyNodes {
+				availableNodes = append(availableNodes, nodeName)
+			}
+			if len(availableNodes) == 0 {
+				continue
+			}
+
+			sort.Slice(availableNodes, func(i, j int) bool {
+				hi := sha256.Sum256([]byte(availableNodes[i] + "#" + eip))
+				hj := sha256.Sum256([]byte(availableNodes[j] + "#" + eip))
+
+				return bytes.Compare(hi[:], hj[:]) < 0
+			})
+
+			if availableNodes[0] == s.nodeName {
+				e4lbSvcs[k8sSvc.GetUID()] = k8sSvc
+				e4lbEips[k8sSvc.GetUID()] = eip
+			}
 		}
 	}
 
@@ -88,7 +163,6 @@ func (s *Server) announceE4lbService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 			if port.Port > 0 && port.Port <= math.MaxUint16 {
 				ports = append(ports, uint16(port.Port))
 			}
-			fmt.Println(k8sSvc.Namespace, k8sSvc.Name, k8sSvc.Spec.ClusterIP, port.Port)
 		}
 		if len(ports) == 0 {
 			continue
@@ -101,7 +175,6 @@ func (s *Server) announceE4lbService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 			}
 		}
 
-		fmt.Println("default device:", defaultEth, defaultHwAddr)
 		if err := arp.Announce(defaultEth, eip, defaultHwAddr); err != nil {
 			log.Error().Msg(err.Error())
 		}
@@ -138,9 +211,40 @@ func (s *Server) setupE4lbServiceNat(vip, eip string, port uint16) error {
 	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
 		natKey.TcDir = uint8(tcDir)
 		if err = maps.AddNatEntry(maps.SysE4lb, natKey, natVal); err != nil {
-			return fmt.Errorf(`failed to store dns nat, vip: %s`, vip)
+			return fmt.Errorf(`failed to store e4lb nat, vip: %s`, vip)
 		}
 	}
 
 	return nil
+}
+
+// IsE4lbEnabled checks if the service is enabled for flb
+func IsE4lbEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
+	if svc == nil {
+		return false
+	}
+
+	// if service doesn't have flb.flomesh.io/enabled annotation
+	if svc.Annotations == nil || svc.Annotations[constants.FLBEnabledAnnotation] == "" {
+		// check ns annotation
+		ns, err := kubeClient.CoreV1().
+			Namespaces().
+			Get(context.TODO(), svc.Namespace, metav1.GetOptions{})
+
+		if err != nil {
+			log.Error().Msgf("Failed to get namespace %q: %s", svc.Namespace, err)
+			return false
+		}
+
+		if ns.Annotations == nil || ns.Annotations[constants.FLBEnabledAnnotation] == "" {
+			return false
+		}
+
+		log.Debug().Msgf("Found annotation %q on Namespace %q", constants.FLBEnabledAnnotation, ns.Name)
+		return utils.ParseEnabled(ns.Annotations[constants.FLBEnabledAnnotation])
+	}
+
+	// parse svc annotation
+	log.Debug().Msgf("Found annotation %q on Service %s/%s", constants.FLBEnabledAnnotation, svc.Namespace, svc.Name)
+	return utils.ParseEnabled(svc.Annotations[constants.FLBEnabledAnnotation])
 }
