@@ -29,7 +29,7 @@ func (job *xnetworkE4lbJob) GetDoneCh() <-chan struct{} {
 
 func (job *xnetworkE4lbJob) Run() {
 	defer close(job.done)
-	job.server.doConfigE4lbs()
+	job.server.doConfigE4LBs()
 }
 
 func (job *xnetworkE4lbJob) JobName() string {

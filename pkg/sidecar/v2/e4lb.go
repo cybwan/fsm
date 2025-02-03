@@ -27,7 +27,23 @@ import (
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
 )
 
-func (s *Server) doConfigE4lbs() {
+var (
+	bridgeInfo *maps.IFaceVal
+	natCache   = make(map[string]*E4LBNat)
+)
+
+type E4LBNat struct {
+	vip   string
+	vport uint16
+	rip   string
+	rport uint16
+}
+
+func (lb *E4LBNat) Key() string {
+	return fmt.Sprintf("%s:%d:%s:%d", lb.vip, lb.vport, lb.rip, lb.rport)
+}
+
+func (s *Server) doConfigE4LBs() {
 	readyNodes := availableNetworkNodes(s.kubeClient)
 	if len(readyNodes) == 0 {
 		return
@@ -93,7 +109,7 @@ func (s *Server) doConfigE4lbs() {
 	k8sSvcs := s.kubeController.ListServices(false, true)
 	if len(k8sSvcs) > 0 {
 		for _, k8sSvc := range k8sSvcs {
-			if !IsE4lbEnabled(k8sSvc, s.kubeClient) {
+			if !IsE4LBEnabled(k8sSvc, s.kubeClient) {
 				continue
 			}
 
@@ -125,10 +141,10 @@ func (s *Server) doConfigE4lbs() {
 		}
 	}
 
-	s.announceE4lbService(e4lbSvcs, e4lbEips)
+	s.announceE4LBService(e4lbSvcs, e4lbEips)
 }
 
-func (s *Server) announceE4lbService(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips map[types.UID]string) {
+func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips map[types.UID]string) {
 	if len(e4lbSvcs) == 0 {
 		return
 	}
@@ -144,6 +160,11 @@ func (s *Server) announceE4lbService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 	} else {
 		defaultHwAddr = viaEth.Attrs().HardwareAddr
 		defaultEth = dev
+	}
+
+	obsoleteNats := make(map[string]*E4LBNat)
+	for natKey, natVal := range natCache {
+		obsoleteNats[natKey] = natVal
 	}
 
 	for uid, k8sSvc := range e4lbSvcs {
@@ -169,9 +190,20 @@ func (s *Server) announceE4lbService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 		}
 
 		for _, port := range ports {
-			if err := s.setupE4lbServiceNat(eip, port, k8sSvc.Spec.ClusterIP, port); err != nil {
-				log.Error().Msg(err.Error())
-				continue
+			nat := E4LBNat{
+				vip:   eip,
+				vport: port,
+				rip:   k8sSvc.Spec.ClusterIP,
+				rport: port,
+			}
+			if _, exists = natCache[nat.Key()]; !exists {
+				if err := s.setupE4LBServiceNat(nat.vip, nat.vport, nat.rip, nat.rport); err != nil {
+					log.Error().Msg(err.Error())
+					continue
+				}
+				natCache[nat.Key()] = &nat
+			} else {
+				delete(obsoleteNats, nat.Key())
 			}
 		}
 
@@ -179,9 +211,19 @@ func (s *Server) announceE4lbService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 			log.Error().Msg(err.Error())
 		}
 	}
+
+	if len(obsoleteNats) > 0 {
+		for natKey, natVal := range obsoleteNats {
+			if err := s.unsetE4LBServiceNat(natVal.vip, natVal.vport); err != nil {
+				log.Error().Msg(err.Error())
+				continue
+			}
+			delete(natCache, natKey)
+		}
+	}
 }
 
-func (s *Server) setupE4lbServiceNat(vip string, vport uint16, rip string, rport uint16) error {
+func (s *Server) setupE4LBServiceNat(vip string, vport uint16, rip string, rport uint16) error {
 	natKey := new(maps.NatKey)
 	natKey.Daddr[0], _ = util.IPv4ToInt(net.ParseIP(vip))
 	natKey.Dport = util.HostToNetShort(vport)
@@ -198,7 +240,7 @@ func (s *Server) setupE4lbServiceNat(vip string, vport uint16, rip string, rport
 	return nil
 }
 
-func (s *Server) unsetE4lbServiceNat(vip string, vport uint16) error {
+func (s *Server) unsetE4LBServiceNat(vip string, vport uint16) error {
 	natKey := new(maps.NatKey)
 	natKey.Daddr[0], _ = util.IPv4ToInt(net.ParseIP(vip))
 	natKey.Dport = util.HostToNetShort(vport)
@@ -211,10 +253,6 @@ func (s *Server) unsetE4lbServiceNat(vip string, vport uint16) error {
 	}
 	return nil
 }
-
-var (
-	bridgeInfo *maps.IFaceVal
-)
 
 func (s *Server) getBridgeInfo() *maps.IFaceVal {
 	if bridgeInfo != nil {
@@ -242,8 +280,8 @@ func (s *Server) getBridgeInfo() *maps.IFaceVal {
 	return bridgeInfo
 }
 
-// IsE4lbEnabled checks if the service is enabled for flb
-func IsE4lbEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
+// IsE4LBEnabled checks if the service is enabled for flb
+func IsE4LBEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
 	if svc == nil {
 		return false
 	}
