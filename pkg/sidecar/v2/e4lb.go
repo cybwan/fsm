@@ -169,7 +169,7 @@ func (s *Server) announceE4lbService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 		}
 
 		for _, port := range ports {
-			if err := s.setupE4lbServiceNat(eip, k8sSvc.Spec.ClusterIP, port); err != nil {
+			if err := s.setupE4lbServiceNat(eip, port, k8sSvc.Spec.ClusterIP, port); err != nil {
 				log.Error().Msg(err.Error())
 				continue
 			}
@@ -181,41 +181,65 @@ func (s *Server) announceE4lbService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 	}
 }
 
-func (s *Server) setupE4lbServiceNat(vip, eip string, port uint16) error {
-	var err error
-	var brVal *maps.IFaceVal
+func (s *Server) setupE4lbServiceNat(vip string, vport uint16, rip string, rport uint16) error {
+	natKey := new(maps.NatKey)
+	natKey.Daddr[0], _ = util.IPv4ToInt(net.ParseIP(vip))
+	natKey.Dport = util.HostToNetShort(vport)
+	natKey.Proto = uint8(maps.IPPROTO_TCP)
+	natVal := new(maps.NatVal)
+	brVal := s.getBridgeInfo()
+	natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], brVal.Ifi, maps.BPF_F_EGRESS, nil, true)
+	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
+		natKey.TcDir = uint8(tcDir)
+		if err := maps.AddNatEntry(maps.SysE4lb, natKey, natVal); err != nil {
+			return fmt.Errorf(`failed to setup e4lb nat, vip: %s`, vip)
+		}
+	}
+	return nil
+}
+
+func (s *Server) unsetE4lbServiceNat(vip string, vport uint16) error {
+	natKey := new(maps.NatKey)
+	natKey.Daddr[0], _ = util.IPv4ToInt(net.ParseIP(vip))
+	natKey.Dport = util.HostToNetShort(vport)
+	natKey.Proto = uint8(maps.IPPROTO_TCP)
+	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
+		natKey.TcDir = uint8(tcDir)
+		if err := maps.DelNatEntry(maps.SysE4lb, natKey); err != nil {
+			return fmt.Errorf(`failed to unset e4lb nat, vip: %s`, vip)
+		}
+	}
+	return nil
+}
+
+var (
+	bridgeInfo *maps.IFaceVal
+)
+
+func (s *Server) getBridgeInfo() *maps.IFaceVal {
+	if bridgeInfo != nil {
+		return bridgeInfo
+	}
+
 	brKey := new(maps.IFaceKey)
 	brKey.Len = uint8(len(bridgeDev))
 	copy(brKey.Name[0:brKey.Len], bridgeDev)
 	for {
-		brVal, err = maps.GetIFaceEntry(brKey)
+		var err error
+		bridgeInfo, err = maps.GetIFaceEntry(brKey)
 		if err != nil {
 			log.Error().Err(err).Msg(`failed to get node bridge info`)
 			time.Sleep(time.Second * 5)
 			continue
 		}
-		if brVal == nil {
+		if bridgeInfo == nil {
 			log.Error().Msg(`failed to get node bridge info`)
 			time.Sleep(time.Second * 5)
 			continue
 		}
 		break
 	}
-
-	natKey := new(maps.NatKey)
-	natKey.Daddr[0], _ = util.IPv4ToInt(net.ParseIP(vip))
-	natKey.Dport = util.HostToNetShort(port)
-	natKey.Proto = uint8(maps.IPPROTO_TCP)
-	natVal := new(maps.NatVal)
-	natVal.AddEp(net.ParseIP(eip), port, brVal.Mac[:], brVal.Ifi, maps.BPF_F_EGRESS, nil, true)
-	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
-		natKey.TcDir = uint8(tcDir)
-		if err = maps.AddNatEntry(maps.SysE4lb, natKey, natVal); err != nil {
-			return fmt.Errorf(`failed to store e4lb nat, vip: %s`, vip)
-		}
-	}
-
-	return nil
+	return bridgeInfo
 }
 
 // IsE4lbEnabled checks if the service is enabled for flb
