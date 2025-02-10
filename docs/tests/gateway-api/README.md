@@ -223,6 +223,12 @@ spec:
       port: 4000
       name: udp
     - protocol: UDP
+      port: 5053
+      name: dns
+      allowedRoutes:
+        namespaces:
+          from: All
+    - protocol: UDP
       port: 4001
       name: udp-cross
       allowedRoutes:
@@ -1050,6 +1056,94 @@ EOF
 #### Test it:
 ```shell
 echo -n "Text to send to UDP" | nc -4u -w1 localhost 4001
+```
+
+### Test UDPRoute - resolve in-cluster DNS
+
+#### Deploy the UDPRoute 
+```shell
+kubectl -n kube-system apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: UDPRoute
+metadata:
+  name: udp-dns-1
+spec:
+  parentRefs:
+    - name: test-gw-1
+      namespace: test
+      port: 5053
+  rules:
+  - name: dns
+    backendRefs:
+    - name: kube-dns
+      port: 53
+EOF
+```
+
+#### Test it:
+```shell
+❯ dig @127.0.0.1 -p 5053 kubernetes.default.svc.cluster.local +short
+10.43.0.1
+```
+
+### Test UDPRoute - resolve DNS with Filter
+
+#### Create a DNSModifier filter config
+```shell
+kubectl -n kube-system apply -f - <<EOF
+apiVersion: extension.gateway.flomesh.io/v1alpha1
+kind: DNSModifier
+metadata:
+  name: dns-mod-1
+spec:
+  domains:
+    - name: google.com
+      answer:
+        rdata: 11.11.11.11
+EOF
+```
+
+#### Create a DNSModifier Filter
+```shell
+kubectl -n kube-system apply -f - <<EOF
+apiVersion: extension.gateway.flomesh.io/v1alpha1
+kind: Filter
+metadata:
+  name: test-dns-1
+spec:
+  type: DNSModifier
+  configRef:
+    group: extension.gateway.flomesh.io
+    kind: DNSModifier
+    name: dns-mod-1
+EOF
+```
+
+#### Create a RouteRuleFilterPolicy to attach the Filter to the UDPRoute
+**Note**: The rule name field of UDPRoute must be set, and targetRef must be set to match the rule.
+```shell
+kubectl -n kube-system apply -f - <<EOF
+apiVersion: gateway.flomesh.io/v1alpha2
+kind: RouteRuleFilterPolicy
+metadata:
+  name: dns-policy-1
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: UDPRoute
+      name: udp-dns-1
+      rule: dns
+  filterRefs:
+    - group: extension.gateway.flomesh.io
+      kind: Filter
+      name: test-dns-1
+EOF
+```
+
+#### Test it:
+```shell
+❯ dig @127.0.0.1 -p 5053 google.com +short
+11.11.11.11
 ```
 
 ### Test HTTPS - HTTPRoute
