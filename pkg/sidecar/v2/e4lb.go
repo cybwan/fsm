@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/libp2p/go-netroute"
 	"github.com/vishvananda/netlink"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +20,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/strings/slices"
 
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/arp"
@@ -106,7 +109,7 @@ func (s *Server) processServiceAnnotations(readyNodes map[string]bool, existsE4l
 
 			eip := k8sSvc.Annotations[constants.FLBDesiredIPAnnotation]
 			ipAddr := net.ParseIP(eip)
-			if ipAddr == nil || ipAddr.To4() == nil || ipAddr.IsUnspecified() || ipAddr.IsMulticast() {
+			if ipAddr == nil || (ipAddr.To4() == nil && ipAddr.To16() == nil) || ipAddr.IsUnspecified() || ipAddr.IsMulticast() {
 				continue
 			}
 
@@ -181,7 +184,7 @@ func (s *Server) processEIPAdvertisements(readyNodes map[string]bool, existsE4lb
 
 			eip := eipAdv.Spec.EIP
 			ipAddr := net.ParseIP(eip)
-			if ipAddr == nil || ipAddr.To4() == nil || ipAddr.IsUnspecified() || ipAddr.IsMulticast() {
+			if ipAddr == nil || (ipAddr.To4() == nil && ipAddr.To16() == nil) || ipAddr.IsUnspecified() || ipAddr.IsMulticast() {
 				continue
 			}
 
@@ -224,38 +227,60 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 		if !exists {
 			continue
 		}
-		if len(k8sSvc.Spec.ClusterIP) == 0 {
-			continue
-		}
 
-		var ports []uint16
-		for _, port := range k8sSvc.Spec.Ports {
-			if !strings.EqualFold(string(port.Protocol), string(corev1.ProtocolTCP)) {
+		upstreams := make(map[string]bool)
+		if k8s.IsHeadlessService(k8sSvc) {
+			microSvc := false
+			if len(k8sSvc.Annotations) > 0 {
+				if _, ok := k8sSvc.Annotations[connector.AnnotationCloudServiceInheritedFrom]; ok {
+					if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+						microSvc = true
+						microMeta := connector.Decode(k8sSvc, v)
+						for addr := range microMeta.Endpoints {
+							upstreams[string(addr)] = true
+						}
+					}
+				}
+			}
+			if !microSvc {
 				continue
 			}
-			if port.Port > 0 && port.Port <= math.MaxUint16 {
-				ports = append(ports, uint16(port.Port))
+			continue
+		} else {
+			for _, clusterIP := range k8sSvc.Spec.ClusterIPs {
+				upstreams[clusterIP] = false
 			}
 		}
-		if len(ports) == 0 {
+
+		if len(upstreams) == 0 || len(k8sSvc.Spec.Ports) == 0 {
 			continue
 		}
 
-		for _, port := range ports {
-			nat := E4LBNat{
-				vip:   eip,
-				vport: port,
-				rip:   k8sSvc.Spec.ClusterIP,
-				rport: port,
-			}
-			if _, exists = s.e4lbNatCache[nat.Key()]; !exists {
-				if err := s.setupE4LBServiceNat(nat.vip, nat.vport, nat.rip, nat.rport); err != nil {
-					log.Error().Msg(err.Error())
+		for addr, microSvc := range upstreams {
+			for _, port := range k8sSvc.Spec.Ports {
+				if !strings.EqualFold(string(port.Protocol), string(corev1.ProtocolTCP)) {
 					continue
 				}
-				s.e4lbNatCache[nat.Key()] = &nat
-			} else {
-				delete(obsoleteNats, nat.Key())
+				nat := E4LBNat{
+					vip: eip,
+					rip: addr,
+				}
+				if port.Port > 0 && port.Port <= math.MaxUint16 {
+					nat.vport = uint16(port.Port)
+				}
+				if port.TargetPort.IntVal > 0 && port.TargetPort.IntVal <= math.MaxUint16 {
+					nat.rport = uint16(port.TargetPort.IntVal)
+				}
+				fmt.Println(nat.Key())
+				if _, exists = s.e4lbNatCache[nat.Key()]; !exists {
+					if err := s.setupE4LBServiceNat(microSvc, nat.vip, nat.vport, nat.rip, nat.rport); err != nil {
+						log.Error().Msg(err.Error())
+						continue
+					}
+					s.e4lbNatCache[nat.Key()] = &nat
+				} else {
+					delete(obsoleteNats, nat.Key())
+				}
 			}
 		}
 
@@ -275,14 +300,24 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 	}
 }
 
-func (s *Server) setupE4LBServiceNat(vip string, vport uint16, rip string, rport uint16) error {
+func (s *Server) setupE4LBServiceNat(microSvc bool, vip string, vport uint16, rip string, rport uint16) error {
 	natKey := new(maps.NatKey)
 	natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(net.ParseIP(vip))
 	natKey.Dport = util.HostToNetShort(vport)
 	natKey.Proto = uint8(maps.IPPROTO_TCP)
 	natVal := new(maps.NatVal)
-	brVal := s.getBridgeInfo()
-	natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], brVal.Ifi, maps.BPF_F_EGRESS, nil, true)
+	if microSvc {
+		r, err := netroute.New()
+		if err != nil {
+			panic(err)
+		}
+		iface, _, _, err := r.Route(net.ParseIP(rip))
+		natVal.AddEp(net.ParseIP(rip), rport, iface.HardwareAddr[:], uint32(iface.Index), maps.BPF_F_EGRESS, nil, true)
+	} else {
+		brVal := s.getBridgeInfo()
+		natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], brVal.Ifi, maps.BPF_F_EGRESS, nil, true)
+	}
+
 	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
 		natKey.TcDir = uint8(tcDir)
 		if err := maps.AddNatEntry(maps.SysE4lb, natKey, natVal); err != nil {
