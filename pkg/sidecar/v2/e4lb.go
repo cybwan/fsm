@@ -73,13 +73,8 @@ func (s *Server) loadNatEntries() error {
 			if natKey.Sys == uint32(maps.SysE4lb) && natKey.TcDir == uint8(maps.TC_DIR_IGR) {
 				for n := uint16(0); n < natVal.EpCnt; n++ {
 					if natVal.Eps[n].Active > 0 {
-						e4lbNat := E4LBNat{
-							key: natKey,
-							val: natVal,
-						}
-						e4lbNat.keyHash = e4lbNat.NatKeyHash()
-						e4lbNat.valHash = e4lbNat.NatValHash()
-						s.e4lbNatCache[e4lbNat.Key()] = &e4lbNat
+						e4lbNat := s.newE4lbNat(&natKey, &natVal)
+						s.e4lbNatCache[e4lbNat.Key()] = e4lbNat
 					}
 				}
 			}
@@ -274,26 +269,20 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 				}
 			}
 
-			e4lbNat := E4LBNat{
-				key: *natKey,
-				val: *natVal,
-			}
-			e4lbNat.keyHash = e4lbNat.NatKeyHash()
-			e4lbNat.valHash = e4lbNat.NatValHash()
-
+			e4lbNat := s.newE4lbNat(natKey, natVal)
 			if existsNat, exists := s.e4lbNatCache[e4lbNat.Key()]; !exists {
 				if err := s.setupE4LBServiceNat(natKey, natVal); err != nil {
 					log.Error().Err(err).Msgf(`failed to setup e4lb nat, eip: %s`, eip)
 					continue
 				}
-				s.e4lbNatCache[e4lbNat.Key()] = &e4lbNat
+				s.e4lbNatCache[e4lbNat.Key()] = e4lbNat
 			} else {
 				if existsNat.valHash != e4lbNat.valHash {
 					if err := s.setupE4LBServiceNat(natKey, natVal); err != nil {
 						log.Error().Err(err).Msgf(`failed to setup e4lb nat, eip: %s`, eip)
 						continue
 					}
-					s.e4lbNatCache[e4lbNat.Key()] = &e4lbNat
+					s.e4lbNatCache[e4lbNat.Key()] = e4lbNat
 				}
 				delete(obsoleteNats, e4lbNat.Key())
 			}
@@ -313,6 +302,16 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 			delete(s.e4lbNatCache, natKey)
 		}
 	}
+}
+
+func (s *Server) newE4lbNat(natKey *maps.NatKey, natVal *maps.NatVal) *E4LBNat {
+	e4lbNat := E4LBNat{
+		key: *natKey,
+		val: *natVal,
+	}
+	e4lbNat.keyHash = e4lbNat.NatKeyHash()
+	e4lbNat.valHash = e4lbNat.NatValHash()
+	return &e4lbNat
 }
 
 func (s *Server) headlessService(k8sSvc *corev1.Service, upstreams map[string]bool) bool {
