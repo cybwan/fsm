@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/hashstructure/v2"
+	probing "github.com/prometheus-community/pro-bing"
 	"github.com/vishvananda/netlink"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -323,6 +324,14 @@ func (s *Server) headlessService(k8sSvc *corev1.Service, upstreams map[string]bo
 				microMeta := connector.Decode(k8sSvc, v)
 				for addr := range microMeta.Endpoints {
 					upstreams[string(addr)] = true
+					go func() {
+						if pinger, err := probing.NewPinger(string(addr)); err == nil {
+							pinger.Count = 1
+							if err = pinger.Run(); err != nil {
+								log.Warn().Err(err).Msgf("fail to ping %s", string(addr))
+							}
+						}
+					}()
 				}
 			}
 		}
