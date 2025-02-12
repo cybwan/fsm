@@ -47,6 +47,7 @@ require (
 	github.com/jstemmer/go-junit-report v1.0.0
 	github.com/k3d-io/k3d/v5 v5.8.1
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/libp2p/go-netroute v0.2.2
 	github.com/matm/gocov-html v1.4.0
 	github.com/mdlayher/arp v0.0.0-20220512170110-6706a2966875
 	github.com/mdlayher/ethernet v0.0.0-20220221185849-529eae5b6118
@@ -437,7 +438,6 @@ require (
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/leonklingele/grouper v1.1.2 // indirect
 	github.com/lib/pq v1.10.9 // indirect
-	github.com/libp2p/go-netroute v0.2.2 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/linode/linodego v0.10.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect

@@ -5,13 +5,14 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
-	"fmt"
+	"encoding/json"
 	"math"
 	"net"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/vishvananda/netlink"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,14 +36,35 @@ var (
 )
 
 type E4LBNat struct {
-	vip   string
-	vport uint16
-	rip   string
-	rport uint16
+	key     maps.NatKey
+	val     maps.NatVal
+	keyHash uint64
+	valHash uint64
 }
 
 func (lb *E4LBNat) Key() string {
-	return fmt.Sprintf("%s:%d:%s:%d", lb.vip, lb.vport, lb.rip, lb.rport)
+	bytes, _ := json.Marshal(lb.key)
+	return string(bytes)
+}
+
+func (lb *E4LBNat) NatKeyHash() uint64 {
+	hash, _ := hashstructure.Hash(lb.key, hashstructure.FormatV2,
+		&hashstructure.HashOptions{
+			ZeroNil:         true,
+			IgnoreZeroValue: true,
+			SlicesAsSets:    true,
+		})
+	return hash
+}
+
+func (lb *E4LBNat) NatValHash() uint64 {
+	hash, _ := hashstructure.Hash(lb.val, hashstructure.FormatV2,
+		&hashstructure.HashOptions{
+			ZeroNil:         true,
+			IgnoreZeroValue: true,
+			SlicesAsSets:    true,
+		})
+	return hash
 }
 
 // intToIPv4 converts IP address of version 4 from integer to net.IP
@@ -69,11 +91,11 @@ func (s *Server) loadNatEntries() error {
 				for n := uint16(0); n < natVal.EpCnt; n++ {
 					if natVal.Eps[n].Active > 0 {
 						e4lbNat := E4LBNat{
-							vip:   intToIPv4(natKey.Daddr[0]).String(),
-							vport: netToHostShort(natKey.Dport),
-							rip:   intToIPv4(natVal.Eps[n].Raddr[0]).String(),
-							rport: netToHostShort(natVal.Eps[n].Rport),
+							key: natKey,
+							val: natVal,
 						}
+						e4lbNat.keyHash = e4lbNat.NatKeyHash()
+						e4lbNat.valHash = e4lbNat.NatValHash()
 						s.e4lbNatCache[e4lbNat.Key()] = &e4lbNat
 					}
 				}
@@ -254,37 +276,62 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 			continue
 		}
 
-		for addr, microSvc := range upstreams {
-			for _, port := range k8sSvc.Spec.Ports {
-				if !strings.EqualFold(string(port.Protocol), string(corev1.ProtocolTCP)) {
-					continue
-				}
+		for _, port := range k8sSvc.Spec.Ports {
+			if !strings.EqualFold(string(port.Protocol), string(corev1.ProtocolTCP)) {
+				continue
+			}
+			vport := uint16(0)
+			if port.Port > 0 && port.Port <= math.MaxUint16 {
+				vport = uint16(port.Port)
+			}
 
-				nat := E4LBNat{
-					vip: eip,
-					rip: addr,
-				}
-				if port.Port > 0 && port.Port <= math.MaxUint16 {
-					nat.vport = uint16(port.Port)
-				}
+			natKey := new(maps.NatKey)
+			natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(net.ParseIP(eip))
+			natKey.Dport = util.HostToNetShort(vport)
+			natKey.Proto = uint8(maps.IPPROTO_TCP)
+			natVal := new(maps.NatVal)
+
+			for rip, microSvc := range upstreams {
 				if microSvc {
 					if port.TargetPort.IntVal > 0 && port.TargetPort.IntVal <= math.MaxUint16 {
-						nat.rport = uint16(port.TargetPort.IntVal)
-					}
-				} else {
-					nat.rport = nat.vport
-				}
-
-				if _, exists = s.e4lbNatCache[nat.Key()]; !exists {
-					if err := s.setupE4LBServiceNat(microSvc, nat.vip, nat.vport, nat.rip, nat.rport); err != nil {
-						log.Error().Msg(err.Error())
+						rport := uint16(port.TargetPort.IntVal)
+						iface, hwAddr, err := s.matchRoute(rip)
+						if err != nil {
+							continue
+						}
+						natVal.AddEp(net.ParseIP(rip), rport, hwAddr[:], uint32(iface.Index), maps.BPF_F_EGRESS, nil, true)
+					} else {
 						continue
 					}
-					s.e4lbNatCache[nat.Key()] = &nat
 				} else {
-					delete(obsoleteNats, nat.Key())
+					rport := vport
+					brVal := s.getBridgeInfo()
+					natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], brVal.Ifi, maps.BPF_F_INGRESS, nil, true)
 				}
-				fmt.Println(nat.Key(), exists)
+			}
+
+			e4lbNat := E4LBNat{
+				key: *natKey,
+				val: *natVal,
+			}
+			e4lbNat.keyHash = e4lbNat.NatKeyHash()
+			e4lbNat.valHash = e4lbNat.NatValHash()
+
+			if existsNat, exists := s.e4lbNatCache[e4lbNat.Key()]; !exists {
+				if err := s.setupE4LBServiceNat(natKey, natVal); err != nil {
+					log.Error().Err(err).Msgf(`failed to setup e4lb nat, eip: %s`, eip)
+					continue
+				}
+				s.e4lbNatCache[e4lbNat.Key()] = &e4lbNat
+			} else {
+				if existsNat.valHash != e4lbNat.valHash {
+					if err := s.setupE4LBServiceNat(natKey, natVal); err != nil {
+						log.Error().Err(err).Msgf(`failed to setup e4lb nat, eip: %s`, eip)
+						continue
+					}
+					s.e4lbNatCache[e4lbNat.Key()] = &e4lbNat
+				}
+				delete(obsoleteNats, e4lbNat.Key())
 			}
 		}
 
@@ -294,9 +341,9 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 	}
 
 	if len(obsoleteNats) > 0 {
-		for natKey, natVal := range obsoleteNats {
-			if err := s.unsetE4LBServiceNat(natVal.vip, natVal.vport); err != nil {
-				log.Error().Msg(err.Error())
+		for natKey, e4lbNat := range obsoleteNats {
+			if err := s.unsetE4LBServiceNat(&e4lbNat.key); err != nil {
+				log.Error().Err(err).Msgf(`failed to unset e4lb nat`)
 				continue
 			}
 			delete(s.e4lbNatCache, natKey)
@@ -304,40 +351,21 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 	}
 }
 
-func (s *Server) setupE4LBServiceNat(microSvc bool, vip string, vport uint16, rip string, rport uint16) error {
-	natKey := new(maps.NatKey)
-	natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(net.ParseIP(vip))
-	natKey.Dport = util.HostToNetShort(vport)
-	natKey.Proto = uint8(maps.IPPROTO_TCP)
-	natVal := new(maps.NatVal)
-	if microSvc {
-		iface, hwAddr, err := s.matchRoute(rip)
-		if err != nil {
-			return err
-		}
-		natVal.AddEp(net.ParseIP(rip), rport, hwAddr[:], uint32(iface.Index), maps.BPF_F_EGRESS, nil, true)
-	} else {
-		brVal := s.getBridgeInfo()
-		natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], brVal.Ifi, maps.BPF_F_INGRESS, nil, true)
-	}
+func (s *Server) setupE4LBServiceNat(natKey *maps.NatKey, natVal *maps.NatVal) error {
 	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR} {
 		natKey.TcDir = uint8(tcDir)
 		if err := maps.AddNatEntry(maps.SysE4lb, natKey, natVal); err != nil {
-			return fmt.Errorf(`failed to setup e4lb nat, vip: %s`, vip)
+			return err
 		}
 	}
 	return nil
 }
 
-func (s *Server) unsetE4LBServiceNat(vip string, vport uint16) error {
-	natKey := new(maps.NatKey)
-	natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(net.ParseIP(vip))
-	natKey.Dport = util.HostToNetShort(vport)
-	natKey.Proto = uint8(maps.IPPROTO_TCP)
-	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
+func (s *Server) unsetE4LBServiceNat(natKey *maps.NatKey) error {
+	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR} {
 		natKey.TcDir = uint8(tcDir)
 		if err := maps.DelNatEntry(maps.SysE4lb, natKey); err != nil {
-			return fmt.Errorf(`failed to unset e4lb nat, vip: %s`, vip)
+			return err
 		}
 	}
 	return nil
