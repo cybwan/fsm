@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/binary"
 	"encoding/json"
 	"math"
 	"net"
@@ -65,22 +64,6 @@ func (lb *E4LBNat) NatValHash() uint64 {
 			SlicesAsSets:    true,
 		})
 	return hash
-}
-
-// intToIPv4 converts IP address of version 4 from integer to net.IP
-// representation.
-func intToIPv4(ipaddr uint32) net.IP {
-	ip := make(net.IP, net.IPv4len)
-	// Proceed conversion
-	binary.LittleEndian.PutUint32(ip, ipaddr)
-	return ip
-}
-
-// netToHostShort converts a 16-bit integer from network to host byte order, aka "ntohs"
-func netToHostShort(i uint16) uint16 {
-	data := make([]byte, 2)
-	binary.BigEndian.PutUint16(data, i)
-	return binary.LittleEndian.Uint16(data)
 }
 
 func (s *Server) loadNatEntries() error {
@@ -225,17 +208,10 @@ func (s *Server) processEIPAdvertisements(readyNodes map[string]bool, existsE4lb
 }
 
 func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4lbEips map[types.UID]string) {
-	var defaultEth string
-	var defaultHwAddr net.HardwareAddr
-	if dev, _, err := route.DiscoverGateway(); err != nil {
-		log.Error().Msg(err.Error())
+	defaultEth, defaultHwAddr, err := s.discoverGateway()
+	if err != nil {
+		log.Error().Err(err).Msg(`fail to discover gateway`)
 		return
-	} else if viaEth, err := netlink.LinkByName(dev); err != nil {
-		log.Error().Msg(err.Error())
-		return
-	} else {
-		defaultHwAddr = viaEth.Attrs().HardwareAddr
-		defaultEth = dev
 	}
 
 	obsoleteNats := make(map[string]*E4LBNat)
@@ -348,6 +324,20 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 			}
 			delete(s.e4lbNatCache, natKey)
 		}
+	}
+}
+
+func (s *Server) discoverGateway() (string, net.HardwareAddr, error) {
+	var defaultEth string
+	var defaultHwAddr net.HardwareAddr
+	if dev, _, err := route.DiscoverGateway(); err != nil {
+		return "", nil, err
+	} else if viaEth, err := netlink.LinkByName(dev); err != nil {
+		return "", nil, err
+	} else {
+		defaultHwAddr = viaEth.Attrs().HardwareAddr
+		defaultEth = dev
+		return defaultEth, defaultHwAddr, nil
 	}
 }
 
