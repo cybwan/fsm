@@ -10,7 +10,6 @@ func (at Kind) String() string {
 }
 
 const (
-	ProxyUpdate1 Kind = "proxy-update"
 	// ProxyUpdate is the event kind used to trigger an update to subscribed proxies
 	ProxyUpdate Kind = "proxy-update"
 
