@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/libp2p/go-netroute"
 	"github.com/vishvananda/netlink"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -245,14 +244,11 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 			if !microSvc {
 				continue
 			}
-			//continue
 		} else {
 			for _, clusterIP := range k8sSvc.Spec.ClusterIPs {
 				upstreams[clusterIP] = false
 			}
 		}
-
-		fmt.Println("upstreams:", upstreams)
 
 		if len(upstreams) == 0 || len(k8sSvc.Spec.Ports) == 0 {
 			continue
@@ -263,6 +259,7 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 				if !strings.EqualFold(string(port.Protocol), string(corev1.ProtocolTCP)) {
 					continue
 				}
+
 				nat := E4LBNat{
 					vip: eip,
 					rip: addr,
@@ -314,41 +311,16 @@ func (s *Server) setupE4LBServiceNat(microSvc bool, vip string, vport uint16, ri
 	natKey.Proto = uint8(maps.IPPROTO_TCP)
 	natVal := new(maps.NatVal)
 	if microSvc {
-		var mac net.HardwareAddr
-
-		r, err := netroute.New()
+		iface, hwAddr, err := s.matchRoute(rip)
 		if err != nil {
-			panic(err)
+			return err
 		}
-		iface, _, _, err := r.Route(net.ParseIP(rip))
-		addrs, _ := iface.Addrs()
-		for _, addr := range addrs {
-			addrStr := addr.String()
-			if strings.Index(addrStr, `:`) > 0 {
-				continue
-			}
-			addrStr = addrStr[0:strings.Index(addrStr, `/`)]
-			srcAddr := net.ParseIP(addrStr)
-			if srcAddr.To4() == nil || srcAddr.IsUnspecified() || srcAddr.IsMulticast() {
-				continue
-			}
-			mac, err = route.ARPing(srcAddr, net.ParseIP(rip), *iface)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		}
-
-		if len(mac) == 0 {
-			return nil
-		}
-
-		natVal.AddEp(net.ParseIP(rip), rport, mac[:], uint32(iface.Index), maps.BPF_F_EGRESS, nil, true)
+		natVal.AddEp(net.ParseIP(rip), rport, hwAddr[:], uint32(iface.Index), maps.BPF_F_EGRESS, nil, true)
 	} else {
 		brVal := s.getBridgeInfo()
 		natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], brVal.Ifi, maps.BPF_F_INGRESS, nil, true)
 	}
-
-	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
+	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR} {
 		natKey.TcDir = uint8(tcDir)
 		if err := maps.AddNatEntry(maps.SysE4lb, natKey, natVal); err != nil {
 			return fmt.Errorf(`failed to setup e4lb nat, vip: %s`, vip)
