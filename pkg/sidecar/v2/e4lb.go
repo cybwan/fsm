@@ -227,19 +227,7 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 
 		upstreams := make(map[string]bool)
 		if k8s.IsHeadlessService(k8sSvc) {
-			microSvc := false
-			if len(k8sSvc.Annotations) > 0 {
-				if _, ok := k8sSvc.Annotations[connector.AnnotationCloudServiceInheritedFrom]; ok {
-					if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
-						microSvc = true
-						microMeta := connector.Decode(k8sSvc, v)
-						for addr := range microMeta.Endpoints {
-							upstreams[string(addr)] = true
-						}
-					}
-				}
-			}
-			if !microSvc {
+			if microSvc := s.headlessService(k8sSvc, upstreams); !microSvc {
 				continue
 			}
 		} else {
@@ -325,6 +313,22 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 			delete(s.e4lbNatCache, natKey)
 		}
 	}
+}
+
+func (s *Server) headlessService(k8sSvc *corev1.Service, upstreams map[string]bool) bool {
+	microSvc := false
+	if len(k8sSvc.Annotations) > 0 {
+		if _, ok := k8sSvc.Annotations[connector.AnnotationCloudServiceInheritedFrom]; ok {
+			if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+				microSvc = true
+				microMeta := connector.Decode(k8sSvc, v)
+				for addr := range microMeta.Endpoints {
+					upstreams[string(addr)] = true
+				}
+			}
+		}
+	}
+	return microSvc
 }
 
 func (s *Server) discoverGateway() (string, net.HardwareAddr, error) {
