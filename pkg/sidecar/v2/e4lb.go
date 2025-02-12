@@ -245,12 +245,14 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 			if !microSvc {
 				continue
 			}
-			continue
+			//continue
 		} else {
 			for _, clusterIP := range k8sSvc.Spec.ClusterIPs {
 				upstreams[clusterIP] = false
 			}
 		}
+
+		fmt.Println("upstreams:", upstreams)
 
 		if len(upstreams) == 0 || len(k8sSvc.Spec.Ports) == 0 {
 			continue
@@ -268,10 +270,14 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 				if port.Port > 0 && port.Port <= math.MaxUint16 {
 					nat.vport = uint16(port.Port)
 				}
-				if port.TargetPort.IntVal > 0 && port.TargetPort.IntVal <= math.MaxUint16 {
-					nat.rport = uint16(port.TargetPort.IntVal)
+				if microSvc {
+					if port.TargetPort.IntVal > 0 && port.TargetPort.IntVal <= math.MaxUint16 {
+						nat.rport = uint16(port.TargetPort.IntVal)
+					}
+				} else {
+					nat.rport = nat.vport
 				}
-				fmt.Println(nat.Key())
+
 				if _, exists = s.e4lbNatCache[nat.Key()]; !exists {
 					if err := s.setupE4LBServiceNat(microSvc, nat.vip, nat.vport, nat.rip, nat.rport); err != nil {
 						log.Error().Msg(err.Error())
@@ -281,6 +287,7 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 				} else {
 					delete(obsoleteNats, nat.Key())
 				}
+				fmt.Println(nat.Key(), exists)
 			}
 		}
 
@@ -307,15 +314,38 @@ func (s *Server) setupE4LBServiceNat(microSvc bool, vip string, vport uint16, ri
 	natKey.Proto = uint8(maps.IPPROTO_TCP)
 	natVal := new(maps.NatVal)
 	if microSvc {
+		var mac net.HardwareAddr
+
 		r, err := netroute.New()
 		if err != nil {
 			panic(err)
 		}
 		iface, _, _, err := r.Route(net.ParseIP(rip))
-		natVal.AddEp(net.ParseIP(rip), rport, iface.HardwareAddr[:], uint32(iface.Index), maps.BPF_F_EGRESS, nil, true)
+		addrs, _ := iface.Addrs()
+		for _, addr := range addrs {
+			addrStr := addr.String()
+			if strings.Index(addrStr, `:`) > 0 {
+				continue
+			}
+			addrStr = addrStr[0:strings.Index(addrStr, `/`)]
+			srcAddr := net.ParseIP(addrStr)
+			if srcAddr.To4() == nil || srcAddr.IsUnspecified() || srcAddr.IsMulticast() {
+				continue
+			}
+			mac, err = route.ARPing(srcAddr, net.ParseIP(rip), *iface)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+		}
+
+		if len(mac) == 0 {
+			return nil
+		}
+
+		natVal.AddEp(net.ParseIP(rip), rport, mac[:], uint32(iface.Index), maps.BPF_F_EGRESS, nil, true)
 	} else {
 		brVal := s.getBridgeInfo()
-		natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], brVal.Ifi, maps.BPF_F_EGRESS, nil, true)
+		natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], brVal.Ifi, maps.BPF_F_INGRESS, nil, true)
 	}
 
 	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
