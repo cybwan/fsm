@@ -492,6 +492,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.warmup.maxWeight | int | `100` | MaxWeight configures the maximum percentage of origin weight -- If unspecified, defaults to 100 |
 | fsm.warmup.minWeight | int | `10` | MinWeight configures the minimum percentage of origin weight -- If unspecified, defaults to 10 |
 | fsm.webhookConfigNamePrefix | string | `"fsm-webhook"` | Prefix used in name of the webhook configuration resources |
+| fsm.xnetDNSProxy | object | `{"enable":false,"upstreams":[{"name":"fsm-controller"}]}` | xNet DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers |
 | smi.validateTrafficTarget | bool | `true` | Enables validation of SMI Traffic Target |
 
 <!-- markdownlint-enable MD013 MD034 -->

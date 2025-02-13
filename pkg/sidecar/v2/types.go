@@ -35,5 +35,5 @@ type Server struct {
 	workQueues         *workerpool.WorkerPool
 	ready              bool
 
-	e4lbNatCache map[string]*E4LBNat
+	xnatCache map[string]*XNat
 }

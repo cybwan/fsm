@@ -34,7 +34,7 @@ func NewXNetConfigServer(ctx context.Context,
 		kubeController:     kubecontroller,
 		msgBroker:          msgBroker,
 		workQueues:         workerpool.NewWorkerPool(workerPoolSize),
-		e4lbNatCache:       make(map[string]*E4LBNat),
+		xnatCache:          make(map[string]*XNat),
 	}
 
 	return &server

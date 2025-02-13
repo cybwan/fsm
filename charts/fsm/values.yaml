@@ -582,6 +582,13 @@ fsm:
       los: []
       ips:
         - ipv4: 127.0.0.2
+
+  # -- xNet DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers
+  xnetDNSProxy:
+    enable: false
+    upstreams:
+      - name: fsm-controller
+
   # -- Sets the max data plane connections allowed for an instance of fsm-controller, set to 0 to not enforce limits
   maxDataPlaneConnections: 0
 
