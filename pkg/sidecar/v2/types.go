@@ -16,8 +16,6 @@ import (
 const (
 	aclId   = uint16('c'<<8 | 'l')
 	aclFlag = uint8('a')
-
-	bridgeDev = `cni0`
 )
 
 var (
@@ -34,6 +32,9 @@ type Server struct {
 	msgBroker          *messaging.Broker
 	workQueues         *workerpool.WorkerPool
 	ready              bool
+
+	cniBridge4 string
+	cniBridge6 string
 
 	xnatCache map[string]*XNat
 }

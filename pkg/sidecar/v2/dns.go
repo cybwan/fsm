@@ -18,7 +18,7 @@ func (s *Server) updateDNSNat() {
 	}
 
 	if s.cfg.IsXNetDNSProxyEnabled() {
-		brVal := s.getBridgeInfo()
+		brVal := s.getCniBridge4Info()
 
 		natKey := new(maps.NatKey)
 		natKey.Dport = util.HostToNetShort(53)

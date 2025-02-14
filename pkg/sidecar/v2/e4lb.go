@@ -211,7 +211,7 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 					}
 				} else {
 					rport := vport
-					brVal := s.getBridgeInfo()
+					brVal := s.getCniBridge4Info()
 					natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], brVal.Ifi, maps.BPF_F_INGRESS, nil, true)
 				}
 			}
