@@ -331,7 +331,7 @@ fsm:
             enable: false
             name: cni0
             mac: ""
-        calicoCrossSubnet:
+        calicoVxlan:
           enable: false
           bridge4:
             enable: false

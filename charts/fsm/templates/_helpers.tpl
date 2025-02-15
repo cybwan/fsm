@@ -300,9 +300,9 @@ securityContext:
 
 {{/* fsm-xnet bridge4 name of cni */}}
 {{- define "fsmXnetwork.xnet.cni.bridge4.name" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.bridge4.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.bridge4.name -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.name -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}
@@ -319,9 +319,9 @@ securityContext:
 
 {{/* fsm-xnet bridge4 mac of cni */}}
 {{- define "fsmXnetwork.xnet.cni.bridge4.mac" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.bridge4.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.bridge4.mac -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.mac -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}
@@ -338,9 +338,9 @@ securityContext:
 
 {{/* fsm-xnet bridge6 name of cni */}}
 {{- define "fsmXnetwork.xnet.cni.bridge6.name" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.bridge6.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.bridge6.name -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge6.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge6.name -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}
@@ -357,9 +357,9 @@ securityContext:
 
 {{/* fsm-xnet bridge6 mac of cni */}}
 {{- define "fsmXnetwork.xnet.cni.bridge6.mac" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.enable -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.bridge6.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoCrossSubnet.bridge4.mac -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge6.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.mac -}}
 {{- else -}}
 {{- printf "" -}}
 {{- end -}}
