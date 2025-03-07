@@ -369,6 +369,9 @@ spec:
                   type: object
                 type: array
                 x-kubernetes-list-type: atomic
+              catalogServicesHash:
+                format: int64
+                type: integer
               currentStatus:
                 description: CurrentStatus defines the current status of a Connector
                   resource.
@@ -382,6 +385,7 @@ spec:
               toK8SServiceCnt:
                 type: integer
             required:
+            - catalogServicesHash
             - fromK8SServiceCnt
             - toK8SServiceCnt
             type: object
