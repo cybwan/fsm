@@ -110,12 +110,15 @@ type ConnectorStatus struct {
 	// +optional
 	Reason string `json:"reason,omitempty"`
 
-	ToK8SServiceCnt int `json:"toK8SServiceCnt"`
-
-	FromK8SServiceCnt int `json:"fromK8SServiceCnt"`
-
-	CatalogServicesHash uint64 `json:"catalogServicesHash"`
+	// +optional
+	ToK8SServiceCnt int `json:"toK8SServiceCnt,omitempty"`
 
 	// +optional
-	CatalogServices map[string]string `json:"catalogServices"`
+	FromK8SServiceCnt int `json:"fromK8SServiceCnt,omitempty"`
+
+	// +optional
+	CatalogServicesHash string `json:"catalogServicesHash,omitempty"`
+
+	// +optional
+	CatalogServices map[string]string `json:"catalogServices,omitempty"`
 }

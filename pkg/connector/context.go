@@ -34,8 +34,8 @@ type C2KContext struct {
 	SourceServices map[string]string
 	RawServices    map[string]string
 
-	CatalogServices     map[string]string
 	CatalogServicesHash uint64
+	CatalogServices     map[string]string
 
 	// ServiceKeyToName maps from Kube controller keys to Kube service names.
 	// Controller keys are in the form <kube namespace>/<kube svc name>

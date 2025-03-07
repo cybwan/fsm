@@ -376,7 +376,7 @@ func (c *client) updateConnectorStatus() {
 			if update := c.checkConnectorStatus(&eurekaConnector.Status); update {
 				if _, err := c.connectorClient.ConnectorV1alpha1().EurekaConnectors(eurekaConnector.Namespace).
 					UpdateStatus(c.context, eurekaConnector, metav1.UpdateOptions{}); err != nil {
-					log.Error().Err(err).Msgf("fail to update status for connector: %s/%s", eurekaConnector.Namespace, eurekaConnector.Name)
+					log.Error().Err(err).Msgf("fail to update status for connector: %s/%s %d", eurekaConnector.Namespace, eurekaConnector.Name, eurekaConnector.Status.CatalogServicesHash)
 				}
 			}
 			return
@@ -424,8 +424,8 @@ func (c *client) checkConnectorStatus(connectorStatus *ctv1.ConnectorStatus) boo
 		connectorStatus.FromK8SServiceCnt = fromK8sServiceCnt
 		update = true
 	}
-	if connectorStatus.CatalogServicesHash != c.c2kContext.CatalogServicesHash {
-		connectorStatus.CatalogServicesHash = c.c2kContext.CatalogServicesHash
+	if hexHash := fmt.Sprintf("%x", c.c2kContext.CatalogServicesHash); connectorStatus.CatalogServicesHash != hexHash {
+		connectorStatus.CatalogServicesHash = hexHash
 		connectorStatus.CatalogServices = c.c2kContext.CatalogServices
 		update = true
 	}
