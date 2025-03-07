@@ -1,6 +1,8 @@
 package v1alpha1
 
 import (
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -107,6 +109,18 @@ type NamespacedService struct {
 	Service string `json:"service"`
 }
 
+type NamespacedServiceOrder []NamespacedService
+
+func (s NamespacedServiceOrder) Len() int { return len(s) }
+func (s NamespacedServiceOrder) Less(i, j int) bool {
+	if c := strings.Compare(s[i].Namespace, s[j].Namespace); c == 0 {
+		return strings.Compare(s[i].Service, s[j].Service) < 0
+	} else {
+		return c < 0
+	}
+}
+func (s NamespacedServiceOrder) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
 // ConnectorStatus is the type used to represent the status of a Connector resource.
 type ConnectorStatus struct {
 	// CurrentStatus defines the current status of a Connector resource.
@@ -121,6 +135,7 @@ type ConnectorStatus struct {
 
 	FromK8SServiceCnt int `json:"fromK8SServiceCnt"`
 
+	CatalogServicesHash uint64 `json:"catalogServicesHash"`
 	// +optional
 	// +listType=atomic
 	CatalogServices []NamespacedService `json:"catalogServices"`
