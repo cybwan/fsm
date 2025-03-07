@@ -87,6 +87,13 @@ type EurekaSyncToK8SSpec struct {
 	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
+	EnableServiceConversionPolicies bool `json:"enableServiceConversionPolicies,omitempty"`
+
+	// +optional
+	ServiceConversionPolicies map[string]string `json:"serviceConversionPolicies,omitempty"`
 }
 
 // EurekaSyncFromK8SSpec is the type used to represent the sync from K8S to Eureka specification.

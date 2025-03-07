@@ -3,7 +3,6 @@ package connector
 import (
 	"net"
 
-	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
@@ -98,8 +97,13 @@ func (ept *MicroServiceEndpoint) Set(address MicroServiceAddress, port MicroServ
 	ept.port = port
 }
 
+type NamespacedService struct {
+	Namespace string
+	Service   string
+}
+
 type MicroService struct {
-	ctv1.NamespacedService
+	NamespacedService
 
 	protocol MicroServiceProtocol
 	endpoint MicroServiceEndpoint

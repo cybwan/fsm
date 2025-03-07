@@ -318,6 +318,9 @@ spec:
                     type: string
                   enable:
                     type: boolean
+                  enableServiceConversionPolicies:
+                    default: false
+                    type: boolean
                   excludeIpRanges:
                     items:
                       type: string
@@ -365,6 +368,10 @@ spec:
                     type: string
                   prefixTag:
                     type: string
+                  serviceConversionPolicies:
+                    additionalProperties:
+                      type: string
+                    type: object
                   suffixMetadata:
                     type: string
                   suffixTag:
@@ -394,17 +401,9 @@ spec:
             description: Status is the status of the Consul Connector configuration.
             properties:
               catalogServices:
-                items:
-                  properties:
-                    namespace:
-                      type: string
-                    service:
-                      type: string
-                  required:
-                  - service
-                  type: object
-                type: array
-                x-kubernetes-list-type: atomic
+                additionalProperties:
+                  type: string
+                type: object
               catalogServicesHash:
                 format: int64
                 type: integer

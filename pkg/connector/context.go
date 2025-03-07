@@ -5,8 +5,6 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 	corev1 "k8s.io/api/core/v1"
-
-	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 )
 
 // C2KContext is the c2k context for connector controller
@@ -36,7 +34,7 @@ type C2KContext struct {
 	SourceServices map[string]string
 	RawServices    map[string]string
 
-	CatalogServices     []ctv1.NamespacedService
+	CatalogServices     map[string]string
 	CatalogServicesHash uint64
 
 	// ServiceKeyToName maps from Kube controller keys to Kube service names.

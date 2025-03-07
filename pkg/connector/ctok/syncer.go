@@ -18,7 +18,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
-	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/messaging"
@@ -104,7 +103,7 @@ func (s *CtoKSyncer) SetMicroAggregator(microAggregator Aggregator) {
 // SetServices is called with the services that should be created.
 // The key is the service name and the destination is the external DNS
 // entry to point to.
-func (s *CtoKSyncer) SetServices(svcs map[connector.MicroSvcName]connector.MicroSvcDomainName, catalogServices []ctv1.NamespacedService) {
+func (s *CtoKSyncer) SetServices(svcs map[connector.MicroSvcName]connector.MicroSvcDomainName, catalogServices map[string]string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -116,16 +115,18 @@ func (s *CtoKSyncer) SetServices(svcs map[connector.MicroSvcName]connector.Micro
 	s.controller.GetC2KContext().SourceServices = legalSvcNames
 	s.controller.GetC2KContext().RawServices = maps.Clone(legalSvcNames)
 
-	if hash, err := hashstructure.Hash(catalogServices, hashstructure.FormatV2,
-		&hashstructure.HashOptions{
-			ZeroNil:         true,
-			IgnoreZeroValue: true,
-			SlicesAsSets:    true,
-		}); err == nil {
-		if s.controller.GetC2KContext().CatalogServicesHash != hash {
-			s.controller.GetC2KContext().CatalogServices = catalogServices
-			s.controller.GetC2KContext().CatalogServicesHash = hash
-		}
+	hash := uint64(0)
+	if len(catalogServices) > 0 {
+		hash, _ = hashstructure.Hash(catalogServices, hashstructure.FormatV2,
+			&hashstructure.HashOptions{
+				ZeroNil:         true,
+				IgnoreZeroValue: true,
+				SlicesAsSets:    true,
+			})
+	}
+	if s.controller.GetC2KContext().CatalogServicesHash != hash {
+		s.controller.GetC2KContext().CatalogServices = catalogServices
+		s.controller.GetC2KContext().CatalogServicesHash = hash
 	}
 
 	s.trigger() // Any service change probably requires syncing

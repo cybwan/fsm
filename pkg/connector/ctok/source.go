@@ -4,7 +4,6 @@ package ctok
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -51,7 +50,7 @@ func (s *CtoKSource) Run(ctx context.Context) {
 	}).WithContext(ctx)
 	for {
 		// Get all services.
-		var catalogServices []ctv1.NamespacedService
+		var catalogServices []connector.NamespacedService
 
 		if !s.controller.Purge() {
 			err := backoff.Retry(func() error {
@@ -72,15 +71,17 @@ func (s *CtoKSource) Run(ctx context.Context) {
 			}
 		}
 
-		sort.Sort(ctv1.NamespacedServiceOrder(catalogServices))
-
 		// Setup the services
 		services := make(map[connector.MicroSvcName]connector.MicroSvcDomainName, len(catalogServices))
+		namespacedServices := make(map[string]string, len(catalogServices))
 		for _, svc := range catalogServices {
+			namespacedServices[svc.Service] = svc.Namespace
 			services[connector.MicroSvcName(s.controller.GetPrefix()+svc.Service)] = connector.MicroSvcDomainName(fmt.Sprintf("%s.service.%s", svc.Service, s.domain))
 		}
 		log.Trace().Msgf("received services from cloud, count:%d", len(services))
-		s.syncer.SetServices(services, catalogServices)
+
+		s.syncer.SetServices(services, namespacedServices)
+
 		time.Sleep(opts.WaitTime)
 	}
 }
