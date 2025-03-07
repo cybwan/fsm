@@ -376,7 +376,7 @@ func (c *client) updateConnectorStatus() {
 			if update := c.checkConnectorStatus(&eurekaConnector.Status); update {
 				if _, err := c.connectorClient.ConnectorV1alpha1().EurekaConnectors(eurekaConnector.Namespace).
 					UpdateStatus(c.context, eurekaConnector, metav1.UpdateOptions{}); err != nil {
-					log.Error().Err(err).Msgf("fail to update status for connector: %s/%s %d", eurekaConnector.Namespace, eurekaConnector.Name, eurekaConnector.Status.CatalogServicesHash)
+					log.Error().Err(err).Msgf("fail to update status for connector: %s/%s", eurekaConnector.Namespace, eurekaConnector.Name)
 				}
 			}
 			return
