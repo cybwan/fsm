@@ -32,7 +32,7 @@ type EurekaConnector struct {
 
 	// Status is the status of the Eureka Connector configuration.
 	// +optional
-	Status EurekaStatus `json:"status,omitempty"`
+	Status ConnectorStatus `json:"status,omitempty"`
 }
 
 func (c *EurekaConnector) GetProvider() DiscoveryServiceProvider {
@@ -209,21 +209,6 @@ type EurekaSpec struct {
 	// +kubebuilder:default=true
 	// +optional
 	LeaderElection *bool `json:"leaderElection,omitempty"`
-}
-
-// EurekaStatus is the type used to represent the status of a Eureka Connector resource.
-type EurekaStatus struct {
-	// CurrentStatus defines the current status of a Eureka Connector resource.
-	// +optional
-	CurrentStatus string `json:"currentStatus,omitempty"`
-
-	// Reason defines the reason for the current status of a Eureka Connector resource.
-	// +optional
-	Reason string `json:"reason,omitempty"`
-
-	ToK8SServiceCnt int `json:"toK8SServiceCnt"`
-
-	FromK8SServiceCnt int `json:"fromK8SServiceCnt"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

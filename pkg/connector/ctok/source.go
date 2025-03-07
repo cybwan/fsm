@@ -50,7 +50,7 @@ func (s *CtoKSource) Run(ctx context.Context) {
 	}).WithContext(ctx)
 	for {
 		// Get all services.
-		var catalogServices []connector.NamespacedService
+		var catalogServices []ctv1.NamespacedService
 
 		if !s.controller.Purge() {
 			err := backoff.Retry(func() error {

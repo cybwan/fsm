@@ -383,15 +383,27 @@ spec:
           status:
             description: Status is the status of the Nacos Connector configuration.
             properties:
+              catalogServices:
+                items:
+                  properties:
+                    namespace:
+                      type: string
+                    service:
+                      type: string
+                  required:
+                  - service
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
               currentStatus:
-                description: CurrentStatus defines the current status of a Nacos Connector
+                description: CurrentStatus defines the current status of a Connector
                   resource.
                 type: string
               fromK8SServiceCnt:
                 type: integer
               reason:
                 description: Reason defines the reason for the current status of a
-                  Nacos Connector resource.
+                  Connector resource.
                 type: string
               toK8SServiceCnt:
                 type: integer

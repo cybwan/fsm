@@ -99,3 +99,29 @@ type Limiter struct {
 	Limit uint32 `json:"limit"`
 	Burst uint32 `json:"burst"`
 }
+
+type NamespacedService struct {
+	// +optional
+	Namespace string `json:"namespace"`
+
+	Service string `json:"service"`
+}
+
+// ConnectorStatus is the type used to represent the status of a Connector resource.
+type ConnectorStatus struct {
+	// CurrentStatus defines the current status of a Connector resource.
+	// +optional
+	CurrentStatus string `json:"currentStatus,omitempty"`
+
+	// Reason defines the reason for the current status of a Connector resource.
+	// +optional
+	Reason string `json:"reason,omitempty"`
+
+	ToK8SServiceCnt int `json:"toK8SServiceCnt"`
+
+	FromK8SServiceCnt int `json:"fromK8SServiceCnt"`
+
+	// +optional
+	// +listType=atomic
+	CatalogServices []NamespacedService `json:"catalogServices"`
+}

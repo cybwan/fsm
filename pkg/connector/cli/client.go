@@ -280,35 +280,35 @@ func (c *client) GetConnector() (connector, spec interface{}, uid string, ok boo
 		}
 	case ctv1.EurekaDiscoveryService:
 		if eurekaConnector := c.GetEurekaConnector(c.GetConnectorNamespace(), c.GetConnectorName()); eurekaConnector != nil {
-			connector = eurekaConnector.Spec
+			connector = eurekaConnector
 			spec = eurekaConnector.Spec
 			uid = string(eurekaConnector.UID)
 			ok = true
 		}
 	case ctv1.NacosDiscoveryService:
 		if nacosConnector := c.GetNacosConnector(c.GetConnectorNamespace(), c.GetConnectorName()); nacosConnector != nil {
-			connector = nacosConnector.Spec
+			connector = nacosConnector
 			spec = nacosConnector.Spec
 			uid = string(nacosConnector.UID)
 			ok = true
 		}
 	case ctv1.ZookeeperDiscoveryService:
 		if zookeeperConnector := c.GetZookeeperConnector(c.GetConnectorNamespace(), c.GetConnectorName()); zookeeperConnector != nil {
-			connector = zookeeperConnector.Spec
+			connector = zookeeperConnector
 			spec = zookeeperConnector.Spec
 			uid = string(zookeeperConnector.UID)
 			ok = true
 		}
 	case ctv1.MachineDiscoveryService:
 		if machineConnector := c.GetMachineConnector(c.GetConnectorNamespace(), c.GetConnectorName()); machineConnector != nil {
-			connector = machineConnector.Spec
+			connector = machineConnector
 			spec = machineConnector.Spec
 			uid = string(machineConnector.UID)
 			ok = true
 		}
 	case ctv1.GatewayDiscoveryService:
 		if gatewayConnector := c.GetGatewayConnector(c.GetConnectorNamespace(), c.GetConnectorName()); gatewayConnector != nil {
-			connector = gatewayConnector.Spec
+			connector = gatewayConnector
 			spec = gatewayConnector.Spec
 			uid = string(gatewayConnector.UID)
 			ok = true
@@ -379,7 +379,7 @@ func (c *client) updateConnectorMetrics() {
 			}
 			if _, err := c.connectorClient.ConnectorV1alpha1().ConsulConnectors(consulConnector.Namespace).
 				UpdateStatus(c.context, consulConnector, metav1.UpdateOptions{}); err != nil {
-				log.Error().Err(err)
+				log.Error().Err(err).Msgf("fail to update status for connector: %s/%s", consulConnector.Namespace, consulConnector.Name)
 			} else {
 				c.toK8sServiceCnt = toK8sServiceCnt
 				c.fromK8sServiceCnt = fromK8sServiceCnt
@@ -395,7 +395,7 @@ func (c *client) updateConnectorMetrics() {
 			}
 			if _, err := c.connectorClient.ConnectorV1alpha1().EurekaConnectors(eurekaConnector.Namespace).
 				UpdateStatus(c.context, eurekaConnector, metav1.UpdateOptions{}); err != nil {
-				log.Error().Err(err)
+				log.Error().Err(err).Msgf("fail to update status for connector: %s/%s", eurekaConnector.Namespace, eurekaConnector.Name)
 			} else {
 				c.toK8sServiceCnt = toK8sServiceCnt
 				c.fromK8sServiceCnt = fromK8sServiceCnt
@@ -411,7 +411,23 @@ func (c *client) updateConnectorMetrics() {
 			}
 			if _, err := c.connectorClient.ConnectorV1alpha1().NacosConnectors(nacosConnector.Namespace).
 				UpdateStatus(c.context, nacosConnector, metav1.UpdateOptions{}); err != nil {
-				log.Error().Err(err)
+				log.Error().Err(err).Msgf("fail to update status for connector: %s/%s", nacosConnector.Namespace, nacosConnector.Name)
+			} else {
+				c.toK8sServiceCnt = toK8sServiceCnt
+				c.fromK8sServiceCnt = fromK8sServiceCnt
+			}
+			return
+		}
+		if zookeeperConnector, ok := connector.(*ctv1.ZookeeperConnector); ok {
+			if toK8sServiceCnt >= 0 {
+				zookeeperConnector.Status.ToK8SServiceCnt = toK8sServiceCnt
+			}
+			if fromK8sServiceCnt >= 0 {
+				zookeeperConnector.Status.FromK8SServiceCnt = fromK8sServiceCnt
+			}
+			if _, err := c.connectorClient.ConnectorV1alpha1().ZookeeperConnectors(zookeeperConnector.Namespace).
+				UpdateStatus(c.context, zookeeperConnector, metav1.UpdateOptions{}); err != nil {
+				log.Error().Err(err).Msgf("fail to update status for connector: %s/%s", zookeeperConnector.Namespace, zookeeperConnector.Name)
 			} else {
 				c.toK8sServiceCnt = toK8sServiceCnt
 				c.fromK8sServiceCnt = fromK8sServiceCnt
@@ -425,7 +441,7 @@ func (c *client) updateConnectorMetrics() {
 			}
 			if _, err := c.connectorClient.ConnectorV1alpha1().MachineConnectors(machineConnector.Namespace).
 				UpdateStatus(c.context, machineConnector, metav1.UpdateOptions{}); err != nil {
-				log.Error().Err(err)
+				log.Error().Err(err).Msgf("fail to update status for connector: %s/%s", machineConnector.Namespace, machineConnector.Name)
 			} else {
 				c.toK8sServiceCnt = toK8sServiceCnt
 				c.fromK8sServiceCnt = fromK8sServiceCnt
