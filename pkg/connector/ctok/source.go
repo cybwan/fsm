@@ -71,13 +71,29 @@ func (s *CtoKSource) Run(ctx context.Context) {
 			}
 		}
 
-		// Setup the services
-		services := make(map[connector.MicroSvcName]connector.MicroSvcDomainName, len(catalogServices))
-		namespacedServices := make(map[string]string, len(catalogServices))
-		for _, svc := range catalogServices {
-			namespacedServices[svc.Service] = svc.Namespace
-			services[connector.MicroSvcName(s.controller.GetPrefix()+svc.Service)] = connector.MicroSvcDomainName(fmt.Sprintf("%s.service.%s", svc.Service, s.domain))
+		var namespacedServices map[string]string
+		var serviceConversions map[string]string
+		enableConversions := s.controller.EnableC2KConversions()
+		if enableConversions {
+			namespacedServices = make(map[string]string, len(catalogServices))
+			serviceConversions = s.controller.GetC2KServiceConversions()
 		}
+
+		services := make(map[connector.MicroSvcName]connector.MicroSvcDomainName, len(catalogServices))
+
+		for _, svc := range catalogServices {
+			if enableConversions {
+				namespacedServices[svc.Service] = svc.Namespace
+				if len(serviceConversions) > 0 {
+					if serviceConversion, exists := serviceConversions[fmt.Sprintf("%s/%s", svc.Namespace, svc.Service)]; exists {
+						services[connector.MicroSvcName(serviceConversion)] = connector.MicroSvcDomainName(fmt.Sprintf("%s.service.%s", svc.Service, s.domain))
+					}
+				}
+			} else {
+				services[connector.MicroSvcName(s.controller.GetPrefix()+svc.Service)] = connector.MicroSvcDomainName(fmt.Sprintf("%s.service.%s", svc.Service, s.domain))
+			}
+		}
+
 		log.Trace().Msgf("received services from cloud, count:%d", len(services))
 
 		s.syncer.SetServices(services, namespacedServices)

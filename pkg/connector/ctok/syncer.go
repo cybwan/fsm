@@ -338,7 +338,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 				deleteSvcs = append(deleteSvcs, string(microSvcName))
 				continue
 			}
-			if fixedPort := s.controller.GetFixedHTTPServicePort(); fixedPort != nil {
+			if fixedPort := s.controller.GetC2KFixedHTTPServicePort(); fixedPort != nil {
 				s.mergeFixedHTTPServiceEndpoints(svcMeta)
 				if len(svcMeta.Endpoints) == 0 {
 					deleteSvcs = append(deleteSvcs, string(microSvcName))
@@ -446,7 +446,7 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 			}
 			if appProtocol == constants.ProtocolHTTP {
 				specPort.AppProtocol = &protocolHTTP
-				if port := s.controller.GetFixedHTTPServicePort(); port != nil {
+				if port := s.controller.GetC2KFixedHTTPServicePort(); port != nil {
 					specPort.Port = int32(*port)
 				}
 			}

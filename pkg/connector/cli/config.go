@@ -70,6 +70,9 @@ type config struct {
 
 		fixedHTTPServicePort *uint32
 
+		enableConversions  bool
+		serviceConversions map[string]string
+
 		withGateway   bool
 		multiGateways bool
 
@@ -623,7 +626,19 @@ func (c *config) GetSuffixMetadata() string {
 	return c.c2kCfg.suffixMetadata
 }
 
-func (c *config) GetFixedHTTPServicePort() *uint32 {
+func (c *config) EnableC2KConversions() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.c2kCfg.enableConversions
+}
+
+func (c *config) GetC2KServiceConversions() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.c2kCfg.serviceConversions
+}
+
+func (c *config) GetC2KFixedHTTPServicePort() *uint32 {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.c2kCfg.fixedHTTPServicePort
@@ -785,6 +800,8 @@ func (c *client) initMachineConnectorConfig(spec ctv1.MachineSpec) {
 
 	c.config.c2kCfg.prefixTag = spec.SyncToK8S.PrefixLabel
 	c.config.c2kCfg.suffixTag = spec.SyncToK8S.SuffixLabel
+	c.config.c2kCfg.enableConversions = spec.SyncToK8S.EnableConversions
+	c.config.c2kCfg.serviceConversions = spec.SyncToK8S.ServiceConversions
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 }
@@ -818,6 +835,8 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.config.c2kCfg.enableConversions = spec.SyncToK8S.EnableConversions
+	c.config.c2kCfg.serviceConversions = spec.SyncToK8S.ServiceConversions
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 	if len(spec.SyncToK8S.ClusterSet) == 0 {
@@ -877,6 +896,8 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.config.c2kCfg.enableConversions = spec.SyncToK8S.EnableConversions
+	c.config.c2kCfg.serviceConversions = spec.SyncToK8S.ServiceConversions
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 
@@ -934,6 +955,8 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.config.c2kCfg.enableConversions = spec.SyncToK8S.EnableConversions
+	c.config.c2kCfg.serviceConversions = spec.SyncToK8S.ServiceConversions
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 
@@ -991,6 +1014,8 @@ func (c *client) initZookeeperConnectorConfig(spec ctv1.ZookeeperSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.config.c2kCfg.enableConversions = spec.SyncToK8S.EnableConversions
+	c.config.c2kCfg.serviceConversions = spec.SyncToK8S.ServiceConversions
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 

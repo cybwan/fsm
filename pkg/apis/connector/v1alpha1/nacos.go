@@ -104,10 +104,10 @@ type NacosSyncToK8SSpec struct {
 
 	// +kubebuilder:default=false
 	// +optional
-	EnableServiceConversionPolicies bool `json:"enableServiceConversionPolicies,omitempty"`
+	EnableConversions bool `json:"enableConversions,omitempty"`
 
 	// +optional
-	ServiceConversionPolicies map[string]string `json:"serviceConversionPolicies,omitempty"`
+	ServiceConversions map[string]string `json:"serviceConversions,omitempty"`
 }
 
 // NacosSyncFromK8SSpec is the type used to represent the sync from K8S to Nacos specification.

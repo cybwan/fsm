@@ -318,7 +318,7 @@ spec:
                     type: string
                   enable:
                     type: boolean
-                  enableServiceConversionPolicies:
+                  enableConversions:
                     default: false
                     type: boolean
                   excludeIpRanges:
@@ -368,7 +368,7 @@ spec:
                     type: string
                   prefixTag:
                     type: string
-                  serviceConversionPolicies:
+                  serviceConversions:
                     additionalProperties:
                       type: string
                     type: object

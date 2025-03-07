@@ -103,10 +103,10 @@ type ConsulSyncToK8SSpec struct {
 
 	// +kubebuilder:default=false
 	// +optional
-	EnableServiceConversionPolicies bool `json:"enableServiceConversionPolicies,omitempty"`
+	EnableConversions bool `json:"enableConversions,omitempty"`
 
 	// +optional
-	ServiceConversionPolicies map[string]string `json:"serviceConversionPolicies,omitempty"`
+	ServiceConversions map[string]string `json:"serviceConversions,omitempty"`
 
 	// +kubebuilder:default=false
 	// +optional

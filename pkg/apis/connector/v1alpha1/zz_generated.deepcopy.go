@@ -256,8 +256,8 @@ func (in *ConsulSyncToK8SSpec) DeepCopyInto(out *ConsulSyncToK8SSpec) {
 		**out = **in
 	}
 	out.WithGateway = in.WithGateway
-	if in.ServiceConversionPolicies != nil {
-		in, out := &in.ServiceConversionPolicies, &out.ServiceConversionPolicies
+	if in.ServiceConversions != nil {
+		in, out := &in.ServiceConversions, &out.ServiceConversions
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
@@ -465,8 +465,8 @@ func (in *EurekaSyncToK8SSpec) DeepCopyInto(out *EurekaSyncToK8SSpec) {
 		**out = **in
 	}
 	out.WithGateway = in.WithGateway
-	if in.ServiceConversionPolicies != nil {
-		in, out := &in.ServiceConversionPolicies, &out.ServiceConversionPolicies
+	if in.ServiceConversions != nil {
+		in, out := &in.ServiceConversions, &out.ServiceConversions
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
@@ -753,8 +753,8 @@ func (in *MachineSyncToK8SSpec) DeepCopyInto(out *MachineSyncToK8SSpec) {
 		copy(*out, *in)
 	}
 	out.WithGateway = in.WithGateway
-	if in.ServiceConversionPolicies != nil {
-		in, out := &in.ServiceConversionPolicies, &out.ServiceConversionPolicies
+	if in.ServiceConversions != nil {
+		in, out := &in.ServiceConversions, &out.ServiceConversions
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
@@ -988,8 +988,8 @@ func (in *NacosSyncToK8SSpec) DeepCopyInto(out *NacosSyncToK8SSpec) {
 		copy(*out, *in)
 	}
 	out.WithGateway = in.WithGateway
-	if in.ServiceConversionPolicies != nil {
-		in, out := &in.ServiceConversionPolicies, &out.ServiceConversionPolicies
+	if in.ServiceConversions != nil {
+		in, out := &in.ServiceConversions, &out.ServiceConversions
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
@@ -1224,8 +1224,8 @@ func (in *ZookeeperSyncToK8SSpec) DeepCopyInto(out *ZookeeperSyncToK8SSpec) {
 		**out = **in
 	}
 	out.WithGateway = in.WithGateway
-	if in.ServiceConversionPolicies != nil {
-		in, out := &in.ServiceConversionPolicies, &out.ServiceConversionPolicies
+	if in.ServiceConversions != nil {
+		in, out := &in.ServiceConversions, &out.ServiceConversions
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
