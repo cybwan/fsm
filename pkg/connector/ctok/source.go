@@ -77,19 +77,20 @@ func (s *CtoKSource) Run(ctx context.Context) {
 			serviceConversions = s.controller.GetC2KServiceConversions()
 		}
 
-		services := make(map[connector.K8sSvcName]connector.CloudSvcName, len(catalogServices))
+		services := make(map[connector.KubeSvcName]connector.CloudSvcName, len(catalogServices))
 
 		for _, svc := range catalogServices {
 			if enableConversions {
 				namespacedServices[svc.Service] = svc.Namespace
 				if len(serviceConversions) > 0 {
 					if serviceConversion, exists := serviceConversions[fmt.Sprintf("%s/%s", svc.Namespace, svc.Service)]; exists {
-						services[connector.K8sSvcName(serviceConversion)] = connector.CloudSvcName(svc.Service)
+						services[connector.KubeSvcName(serviceConversion)] = connector.CloudSvcName(svc.Service)
 					}
 				}
 			} else {
-				services[connector.K8sSvcName(svc.Service)] = connector.CloudSvcName(svc.Service)
+				services[connector.KubeSvcName(svc.Service)] = connector.CloudSvcName(svc.Service)
 			}
+			services[connector.KubeSvcName(svc.Service)] = connector.CloudSvcName(svc.Service)
 		}
 
 		log.Trace().Msgf("received services from cloud, count:%d", len(services))

@@ -17,7 +17,10 @@ import (
 // MicroSvcName defines string as microservice name
 type MicroSvcName string
 
-type K8sSvcName string
+// KubeSvcKey is in the form <kube namespace>/<kube svc name>
+type KubeSvcKey string
+
+type KubeSvcName string
 
 type CloudSvcName string
 

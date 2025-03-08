@@ -103,7 +103,7 @@ func (s *CtoKSyncer) SetMicroAggregator(microAggregator Aggregator) {
 // SetServices is called with the services that should be created.
 // The key is the service name and the destination is the external DNS
 // entry to point to.
-func (s *CtoKSyncer) SetServices(svcs map[connector.K8sSvcName]connector.CloudSvcName, catalogServices map[string]string) {
+func (s *CtoKSyncer) SetServices(svcs map[connector.KubeSvcName]connector.CloudSvcName, catalogServices map[string]string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -189,13 +189,13 @@ func (s *CtoKSyncer) Upsert(key string, raw interface{}) error {
 
 	// Store all the key to name mappings. We need this because the key
 	// is opaque but we want to do all the lookups by service name.
-	s.controller.GetC2KContext().ServiceKeyToName[key] = service.Name
-	s.controller.GetC2KContext().ServiceHashMap[service.Name] = s.serviceHash(service)
+	s.controller.GetC2KContext().KubeServiceKeyToName[connector.KubeSvcKey(key)] = connector.KubeSvcName(service.Name)
 
 	// If the service is a Cloud-sourced service, then keep track of it
 	// separately for a quick lookup.
-	if service.Labels != nil && service.Labels[constants.CloudSourcedServiceLabel] == True {
-		s.controller.GetC2KContext().ServiceMapCache[service.Name] = service
+	if len(service.Labels) > 0 && service.Labels[constants.CloudSourcedServiceLabel] == True {
+		s.controller.GetC2KContext().SyncedKubeServiceCache[connector.KubeSvcName(service.Name)] = service
+		s.controller.GetC2KContext().SyncedKubeServiceHash[connector.KubeSvcName(service.Name)] = s.serviceHash(service)
 		s.trigger() // Always trigger sync
 	}
 
@@ -208,7 +208,7 @@ func (s *CtoKSyncer) Delete(key string, _ interface{}) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	name, ok := s.controller.GetC2KContext().ServiceKeyToName[key]
+	kubeSvcName, ok := s.controller.GetC2KContext().KubeServiceKeyToName[connector.KubeSvcKey(key)]
 	if !ok {
 		// This is a weird scenario, but in unit tests we've seen this happen
 		// in cases where the delete happens very quickly after the create.
@@ -218,17 +218,17 @@ func (s *CtoKSyncer) Delete(key string, _ interface{}) error {
 		return nil
 	}
 
-	delete(s.controller.GetC2KContext().ServiceKeyToName, key)
-	delete(s.controller.GetC2KContext().ServiceMapCache, name)
-	delete(s.controller.GetC2KContext().ServiceHashMap, name)
+	delete(s.controller.GetC2KContext().KubeServiceKeyToName, connector.KubeSvcKey(key))
+	delete(s.controller.GetC2KContext().SyncedKubeServiceCache, kubeSvcName)
+	delete(s.controller.GetC2KContext().SyncedKubeServiceHash, kubeSvcName)
 
 	// If the service that is deleted is part of cloud services, then
 	// we need to trigger a sync to recreate it.
-	if _, ok = s.controller.GetC2KContext().SourceServices[name]; ok {
+	if _, ok = s.controller.GetC2KContext().SourceServices[string(kubeSvcName)]; ok {
 		s.trigger()
 	}
 
-	log.Info().Msgf("delete service, key:%s name:%s", key, name)
+	log.Info().Msgf("delete service, key:%s name:%s", key, kubeSvcName)
 	return nil
 }
 
@@ -328,7 +328,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	for k8sSvcName, cloudSvcName := range s.controller.GetC2KContext().SourceServices {
 		svcMetaMap := s.microAggregator.Aggregate(s.ctx, connector.MicroSvcName(k8sSvcName))
 		if len(svcMetaMap) == 0 {
-			if _, exists := s.controller.GetC2KContext().ServiceKeyToName[fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), k8sSvcName)]; exists {
+			if _, exists := s.controller.GetC2KContext().KubeServiceKeyToName[connector.KubeSvcKey(fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), k8sSvcName))]; exists {
 				deleteSvcs = append(deleteSvcs, k8sSvcName)
 			}
 			continue
@@ -350,7 +350,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 			}
 
 			// If this is an already registered service, then update it
-			if svc, ok := s.controller.GetC2KContext().ServiceMapCache[string(microSvcName)]; ok {
+			if svc, ok := s.controller.GetC2KContext().SyncedKubeServiceCache[connector.KubeSvcName(microSvcName)]; ok {
 				if svc.Spec.ExternalName == cloudSvcName {
 					// Matching service, no update required.
 					continue
@@ -367,7 +367,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 				}
 				s.fillService(svcMeta, svc)
-				preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
+				preHv := s.controller.GetC2KContext().SyncedKubeServiceHash[connector.KubeSvcName(microSvcName)]
 				if preHv == s.serviceHash(svc) {
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
 					continue
@@ -404,7 +404,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 			}
 			s.fillService(svcMeta, createSvc)
-			preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
+			preHv := s.controller.GetC2KContext().SyncedKubeServiceHash[connector.KubeSvcName(microSvcName)]
 			if preHv == s.serviceHash(createSvc) {
 				log.Debug().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
 				continue
@@ -421,9 +421,9 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	}
 
 	// Determine what needs to be deleted
-	for k := range s.controller.GetC2KContext().ServiceMapCache {
-		if _, ok := s.controller.GetC2KContext().SourceServices[k]; !ok {
-			deleteSvcs = append(deleteSvcs, k)
+	for k := range s.controller.GetC2KContext().SyncedKubeServiceCache {
+		if _, ok := s.controller.GetC2KContext().SourceServices[string(k)]; !ok {
+			deleteSvcs = append(deleteSvcs, string(k))
 		}
 	}
 

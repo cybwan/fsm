@@ -9,23 +9,12 @@ import (
 
 // C2KContext is the c2k context for connector controller
 type C2KContext struct {
-	//
-	// Resource Context
-	//
-
-	//
-	// Endpoint Context
-	//
 
 	// EndpointsKeyToName maps from Kube controller keys to Kube endpoints names.
 	// Controller keys are in the form <kube namespace>/<kube endpoints name>
 	// e.g. default/foo, and are the keys Kube uses to inform that something
 	// changed.
 	EndpointsKeyToName map[string]string
-
-	//
-	// Syncer Context
-	//
 
 	// SourceServices holds cloud services that should be synced to Kube.
 	// It maps from cloud service name to k8s service name.
@@ -34,21 +23,19 @@ type C2KContext struct {
 	// RawServices holds catalog services: k8sSvcName -> cloudSvcName
 	RawServices map[string]string
 
-	CatalogServicesHash uint64
+	// CatalogServices holds catalog services: cloudSvcName -> cloudNamespace
 	CatalogServices     map[string]string
+	CatalogServicesHash uint64
 
-	// ServiceKeyToName maps from Kube controller keys to Kube service names.
+	// KubeServiceKeyToName maps from Kube controller keys to Kube service names.
 	// Controller keys are in the form <kube namespace>/<kube svc name>
 	// e.g. default/foo, and are the keys Kube uses to inform that something
 	// changed.
-	ServiceKeyToName map[string]string
+	KubeServiceKeyToName map[KubeSvcKey]KubeSvcName
 
-	// ServiceMapCache is a subset of serviceMap. It holds all Kube services
-	// that were created by this sync process. Keys are Kube service names.
-	// It's populated from Kubernetes data.
-	ServiceMapCache map[string]*corev1.Service
-
-	ServiceHashMap map[string]uint64
+	// SyncedKubeServiceCache holds all Kube services that were created by this sync process. Keys are Kube service names.
+	SyncedKubeServiceCache map[KubeSvcName]*corev1.Service
+	SyncedKubeServiceHash  map[KubeSvcName]uint64
 }
 
 // K2CContext is the k2c context for connector controller
@@ -115,12 +102,12 @@ type K2GContext struct {
 
 func NewC2KContext() *C2KContext {
 	return &C2KContext{
-		EndpointsKeyToName: make(map[string]string),
-		SourceServices:     make(map[string]string),
-		RawServices:        make(map[string]string),
-		ServiceKeyToName:   make(map[string]string),
-		ServiceMapCache:    make(map[string]*corev1.Service),
-		ServiceHashMap:     make(map[string]uint64),
+		EndpointsKeyToName:     make(map[string]string),
+		SourceServices:         make(map[string]string),
+		RawServices:            make(map[string]string),
+		KubeServiceKeyToName:   make(map[KubeSvcKey]KubeSvcName),
+		SyncedKubeServiceCache: make(map[KubeSvcName]*corev1.Service),
+		SyncedKubeServiceHash:  make(map[KubeSvcName]uint64),
 	}
 }
 
