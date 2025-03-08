@@ -14,9 +14,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/lru"
 )
 
-// MicroSvcName defines string as microservice name
-type MicroSvcName string
-
 // KubeSvcKey is in the form <kube namespace>/<kube svc name>
 type KubeSvcKey string
 
@@ -86,7 +83,7 @@ type GRPCMeta struct {
 
 // MicroSvcMeta defines micro service meta
 type MicroSvcMeta struct {
-	Ports       map[MicroServicePort]MicroServicePort
+	Ports       map[MicroServicePort]MicroServicePort      `json:"-"`
 	TargetPorts map[MicroServicePort]MicroServiceProtocol  `json:"ports,omitempty"`
 	Endpoints   map[MicroServiceAddress]*MicroEndpointMeta `json:"endpoints,omitempty"`
 

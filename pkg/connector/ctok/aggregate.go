@@ -11,8 +11,8 @@ import (
 )
 
 // Aggregate micro services
-func (s *CtoKSource) Aggregate(ctx context.Context, k8sSvcName connector.MicroSvcName) map[connector.MicroSvcName]*connector.MicroSvcMeta {
-	cloudSvcName, exists := s.syncer.controller.GetC2KContext().NativeServices[connector.KubeSvcName(k8sSvcName)]
+func (s *CtoKSource) Aggregate(ctx context.Context, kubeSvcName connector.KubeSvcName) map[connector.KubeSvcName]*connector.MicroSvcMeta {
+	cloudSvcName, exists := s.syncer.controller.GetC2KContext().NativeServices[kubeSvcName]
 	if !exists {
 		return nil
 	}
@@ -32,33 +32,33 @@ func (s *CtoKSource) Aggregate(ctx context.Context, k8sSvcName connector.MicroSv
 		return nil
 	}
 
-	svcMetaMap := make(map[connector.MicroSvcName]*connector.MicroSvcMeta)
+	svcMetaMap := make(map[connector.KubeSvcName]*connector.MicroSvcMeta)
 
 	for _, instance := range instanceEntries {
 		instance.MicroService.Service = strings.ToLower(instance.MicroService.Service)
-		k8sSvcNames := []connector.MicroSvcName{connector.MicroSvcName(instance.MicroService.Service)}
+		kubeSvcNames := []connector.KubeSvcName{kubeSvcName}
 		if len(instance.Tags) > 0 {
-			k8sSvcNames = s.aggregateTag(k8sSvcName, instance, k8sSvcNames)
+			kubeSvcNames = s.aggregateTag(kubeSvcName, instance, kubeSvcNames)
 		}
 		if len(instance.Meta) > 0 {
-			k8sSvcNames = s.aggregateMetadata(k8sSvcName, instance, k8sSvcNames)
+			kubeSvcNames = s.aggregateMetadata(kubeSvcName, instance, kubeSvcNames)
 		}
-		for _, serviceName := range k8sSvcNames {
-			s.aggregateMeta(svcMetaMap, serviceName, instance)
+		for _, k8sSvcName := range kubeSvcNames {
+			s.aggregateMeta(svcMetaMap, k8sSvcName, instance)
 		}
 	}
 	return svcMetaMap
 }
 
-func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.MicroSvcName]*connector.MicroSvcMeta, k8sSvcName connector.MicroSvcName, instance *connector.AgentService) {
+func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.KubeSvcName]*connector.MicroSvcMeta, kubeSvcName connector.KubeSvcName, instance *connector.AgentService) {
 	port := instance.MicroService.EndpointPort()
 	protocol := instance.MicroService.Protocol()
-	svcMeta, exists := svcMetaMap[k8sSvcName]
+	svcMeta, exists := svcMetaMap[kubeSvcName]
 	if !exists {
 		svcMeta = new(connector.MicroSvcMeta)
 		svcMeta.TargetPorts = make(map[connector.MicroServicePort]connector.MicroServiceProtocol)
 		svcMeta.Endpoints = make(map[connector.MicroServiceAddress]*connector.MicroEndpointMeta)
-		svcMetaMap[k8sSvcName] = svcMeta
+		svcMetaMap[kubeSvcName] = svcMeta
 	}
 
 	if len(instance.Ports) > 0 {
@@ -134,7 +134,7 @@ func (s *CtoKSource) aggregateMeta(svcMetaMap map[connector.MicroSvcName]*connec
 	svcMeta.Endpoints[*instance.MicroService.EndpointAddress()] = endpointMeta
 }
 
-func (s *CtoKSource) aggregateTag(k8sSvcName connector.MicroSvcName, svc *connector.AgentService, k8sSvcNames []connector.MicroSvcName) []connector.MicroSvcName {
+func (s *CtoKSource) aggregateTag(kubeSvcName connector.KubeSvcName, svc *connector.AgentService, kubeSvcNames []connector.KubeSvcName) []connector.KubeSvcName {
 	svcPrefix := ""
 	svcSuffix := ""
 	for _, tag := range svc.Tags {
@@ -154,19 +154,19 @@ func (s *CtoKSource) aggregateTag(k8sSvcName connector.MicroSvcName, svc *connec
 		}
 	}
 	if len(svcPrefix) > 0 || len(svcSuffix) > 0 {
-		extSvcName := string(k8sSvcName)
+		extSvcName := string(kubeSvcName)
 		if len(svcPrefix) > 0 {
 			extSvcName = fmt.Sprintf("%s-%s", svcPrefix, extSvcName)
 		}
 		if len(svcSuffix) > 0 {
 			extSvcName = fmt.Sprintf("%s-%s", extSvcName, svcSuffix)
 		}
-		k8sSvcNames = append(k8sSvcNames, connector.MicroSvcName(extSvcName))
+		kubeSvcNames = append(kubeSvcNames, connector.KubeSvcName(extSvcName))
 	}
-	return k8sSvcNames
+	return kubeSvcNames
 }
 
-func (s *CtoKSource) aggregateMetadata(k8sSvcName connector.MicroSvcName, svc *connector.AgentService, k8sSvcNames []connector.MicroSvcName) []connector.MicroSvcName {
+func (s *CtoKSource) aggregateMetadata(kubeSvcName connector.KubeSvcName, svc *connector.AgentService, kubeSvcNames []connector.KubeSvcName) []connector.KubeSvcName {
 	svcPrefix := ""
 	svcSuffix := ""
 	for metaName, metaVal := range svc.Meta {
@@ -186,14 +186,14 @@ func (s *CtoKSource) aggregateMetadata(k8sSvcName connector.MicroSvcName, svc *c
 		}
 	}
 	if len(svcPrefix) > 0 || len(svcSuffix) > 0 {
-		extSvcName := string(k8sSvcName)
+		extSvcName := string(kubeSvcName)
 		if len(svcPrefix) > 0 {
 			extSvcName = fmt.Sprintf("%s-%s", svcPrefix, extSvcName)
 		}
 		if len(svcSuffix) > 0 {
 			extSvcName = fmt.Sprintf("%s-%s", extSvcName, svcSuffix)
 		}
-		k8sSvcNames = append(k8sSvcNames, connector.MicroSvcName(extSvcName))
+		kubeSvcNames = append(kubeSvcNames, connector.KubeSvcName(extSvcName))
 	}
-	return k8sSvcNames
+	return kubeSvcNames
 }

@@ -4,6 +4,7 @@ package ctok
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -88,9 +89,8 @@ func (s *CtoKSource) Run(ctx context.Context) {
 					}
 				}
 			} else {
-				services[connector.KubeSvcName(svc.Service)] = connector.CloudSvcName(svc.Service)
+				services[connector.KubeSvcName(s.toLegalServiceName(svc.Service))] = connector.CloudSvcName(svc.Service)
 			}
-			services[connector.KubeSvcName(svc.Service)] = connector.CloudSvcName(svc.Service)
 		}
 
 		log.Trace().Msgf("received services from cloud, count:%d", len(services))
@@ -99,4 +99,12 @@ func (s *CtoKSource) Run(ctx context.Context) {
 
 		time.Sleep(opts.WaitTime)
 	}
+}
+
+func (s *CtoKSource) toLegalServiceName(serviceName string) string {
+	serviceName = strings.ReplaceAll(serviceName, "_", "-")
+	serviceName = strings.ReplaceAll(serviceName, ".", "-")
+	serviceName = strings.ReplaceAll(serviceName, " ", "-")
+	serviceName = strings.ToLower(serviceName)
+	return serviceName
 }
