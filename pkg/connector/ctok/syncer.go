@@ -361,9 +361,9 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
-					connector.AnnotationMeshServiceSync:             string(s.discClient.MicroServiceProvider()),
-					connector.AnnotationMeshServiceSyncConnectorUID: s.controller.GetConnectorUID(),
-					connector.AnnotationCloudServiceInheritedFrom:   string(cloudSvcName),
+					connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
+					connector.AnnotationMeshServiceSyncManagedBy:  s.controller.GetConnectorUID(),
+					connector.AnnotationCloudServiceInheritedFrom: string(cloudSvcName),
 				}
 				if svcMeta.HealthCheck {
 					svc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
@@ -387,9 +387,9 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 					Labels: map[string]string{constants.CloudSourcedServiceLabel: True},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
-						connector.AnnotationMeshServiceSync:             string(s.discClient.MicroServiceProvider()),
-						connector.AnnotationMeshServiceSyncConnectorUID: s.controller.GetConnectorUID(),
-						connector.AnnotationCloudServiceInheritedFrom:   string(cloudSvcName),
+						connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
+						connector.AnnotationMeshServiceSyncManagedBy:  s.controller.GetConnectorUID(),
+						connector.AnnotationCloudServiceInheritedFrom: string(cloudSvcName),
 					},
 				},
 

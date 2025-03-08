@@ -19,5 +19,5 @@ func IsSyncCloudNamespace(ns *apiv1.Namespace) bool {
 func (s *CtoKSyncer) hasOwnership(service *apiv1.Service) bool {
 	return len(service.Labels) > 0 && len(service.Annotations) > 0 &&
 		service.Labels[constants.CloudSourcedServiceLabel] == True &&
-		service.Annotations[connector.AnnotationMeshServiceSyncConnectorUID] == s.controller.GetConnectorUID()
+		service.Annotations[connector.AnnotationMeshServiceSyncManagedBy] == s.controller.GetConnectorUID()
 }
