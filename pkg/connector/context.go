@@ -28,11 +28,11 @@ type C2KContext struct {
 	//
 
 	// SourceServices holds cloud services that should be synced to Kube.
-	// It maps from cloud service names to cloud DNS entry, e.g.
-	// We lowercase the cloud service names and DNS entries
-	// because Kube names must be lowercase.
+	// It maps from cloud service name to k8s service name.
 	SourceServices map[string]string
-	RawServices    map[string]string
+
+	// RawServices holds catalog services: k8sSvcName -> cloudSvcName
+	RawServices map[string]string
 
 	CatalogServicesHash uint64
 	CatalogServices     map[string]string
