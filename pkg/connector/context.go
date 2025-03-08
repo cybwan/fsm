@@ -16,12 +16,13 @@ type C2KContext struct {
 	// changed.
 	EndpointsKeyToName map[string]string
 
-	// SourceServices holds cloud services that should be synced to Kube.
-	// It maps from cloud service name to k8s service name.
-	SourceServices map[string]string
+	// SourceServices maps from k8s service name to cloud service name.
+	// Holds all services extended by prefix and suffix that should be synced to Kube.
+	SourceServices map[KubeSvcName]CloudSvcName
 
-	// RawServices holds catalog services: k8sSvcName -> cloudSvcName
-	RawServices map[string]string
+	// NativeServices maps from k8s service name to cloud service name.
+	// Holds native services without extended by prefix and suffix.
+	NativeServices map[KubeSvcName]CloudSvcName
 
 	// CatalogServices holds catalog services: cloudSvcName -> cloudNamespace
 	CatalogServices     map[string]string
@@ -103,8 +104,8 @@ type K2GContext struct {
 func NewC2KContext() *C2KContext {
 	return &C2KContext{
 		EndpointsKeyToName:     make(map[string]string),
-		SourceServices:         make(map[string]string),
-		RawServices:            make(map[string]string),
+		SourceServices:         make(map[KubeSvcName]CloudSvcName),
+		NativeServices:         make(map[KubeSvcName]CloudSvcName),
 		KubeServiceKeyToName:   make(map[KubeSvcKey]KubeSvcName),
 		SyncedKubeServiceCache: make(map[KubeSvcName]*corev1.Service),
 		SyncedKubeServiceHash:  make(map[KubeSvcName]uint64),

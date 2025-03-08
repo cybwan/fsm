@@ -12,7 +12,7 @@ import (
 
 // Aggregate micro services
 func (s *CtoKSource) Aggregate(ctx context.Context, k8sSvcName connector.MicroSvcName) map[connector.MicroSvcName]*connector.MicroSvcMeta {
-	cloudSvcName, exists := s.syncer.controller.GetC2KContext().RawServices[string(k8sSvcName)]
+	cloudSvcName, exists := s.syncer.controller.GetC2KContext().NativeServices[connector.KubeSvcName(k8sSvcName)]
 	if !exists {
 		return nil
 	}
@@ -23,7 +23,7 @@ func (s *CtoKSource) Aggregate(ctx context.Context, k8sSvcName connector.MicroSv
 		WaitTime:   5 * time.Second,
 	}).WithContext(ctx)
 
-	instanceEntries, err := s.discClient.CatalogInstances(cloudSvcName, opts)
+	instanceEntries, err := s.discClient.CatalogInstances(string(cloudSvcName), opts)
 	if err != nil {
 		return nil
 	}

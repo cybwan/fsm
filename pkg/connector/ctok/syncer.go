@@ -107,13 +107,13 @@ func (s *CtoKSyncer) SetServices(svcs map[connector.KubeSvcName]connector.CloudS
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	legalSvcNames := make(map[string]string)
+	legalSvcNames := make(map[connector.KubeSvcName]connector.CloudSvcName)
 	for serviceName := range svcs {
-		legalSvcNames[s.toLegalServiceName(string(serviceName))] = string(serviceName)
+		legalSvcNames[connector.KubeSvcName(s.toLegalServiceName(string(serviceName)))] = connector.CloudSvcName(serviceName)
 	}
 
 	s.controller.GetC2KContext().SourceServices = legalSvcNames
-	s.controller.GetC2KContext().RawServices = maps.Clone(legalSvcNames)
+	s.controller.GetC2KContext().NativeServices = maps.Clone(legalSvcNames)
 
 	hash := uint64(0)
 	if len(catalogServices) > 0 {
@@ -224,7 +224,7 @@ func (s *CtoKSyncer) Delete(key string, _ interface{}) error {
 
 	// If the service that is deleted is part of cloud services, then
 	// we need to trigger a sync to recreate it.
-	if _, ok = s.controller.GetC2KContext().SourceServices[string(kubeSvcName)]; ok {
+	if _, ok = s.controller.GetC2KContext().SourceServices[kubeSvcName]; ok {
 		s.trigger()
 	}
 
@@ -325,11 +325,11 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	extendServices := make(map[string]string, 0)
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
-	for k8sSvcName, cloudSvcName := range s.controller.GetC2KContext().SourceServices {
-		svcMetaMap := s.microAggregator.Aggregate(s.ctx, connector.MicroSvcName(k8sSvcName))
+	for kubeSvcName, cloudSvcName := range s.controller.GetC2KContext().SourceServices {
+		svcMetaMap := s.microAggregator.Aggregate(s.ctx, connector.MicroSvcName(kubeSvcName))
 		if len(svcMetaMap) == 0 {
-			if _, exists := s.controller.GetC2KContext().KubeServiceKeyToName[connector.KubeSvcKey(fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), k8sSvcName))]; exists {
-				deleteSvcs = append(deleteSvcs, k8sSvcName)
+			if _, exists := s.controller.GetC2KContext().KubeServiceKeyToName[connector.KubeSvcKey(fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), kubeSvcName))]; exists {
+				deleteSvcs = append(deleteSvcs, string(kubeSvcName))
 			}
 			continue
 		}
@@ -345,13 +345,13 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 					continue
 				}
 			}
-			if !strings.EqualFold(string(microSvcName), k8sSvcName) {
-				extendServices[string(microSvcName)] = cloudSvcName
+			if !strings.EqualFold(string(microSvcName), string(kubeSvcName)) {
+				extendServices[string(microSvcName)] = string(cloudSvcName)
 			}
 
 			// If this is an already registered service, then update it
 			if svc, ok := s.controller.GetC2KContext().SyncedKubeServiceCache[connector.KubeSvcName(microSvcName)]; ok {
-				if svc.Spec.ExternalName == cloudSvcName {
+				if svc.Spec.ExternalName == string(cloudSvcName) {
 					// Matching service, no update required.
 					continue
 				}
@@ -359,7 +359,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
 					connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
-					connector.AnnotationCloudServiceInheritedFrom: cloudSvcName,
+					connector.AnnotationCloudServiceInheritedFrom: string(cloudSvcName),
 				}
 				if svcMeta.HealthCheck {
 					svc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
@@ -384,7 +384,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
 						connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
-						connector.AnnotationCloudServiceInheritedFrom: cloudSvcName,
+						connector.AnnotationCloudServiceInheritedFrom: string(cloudSvcName),
 					},
 				},
 
@@ -415,15 +415,15 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	}
 
 	if len(extendServices) > 0 {
-		for cloudName, cloudDNS := range extendServices {
-			s.controller.GetC2KContext().SourceServices[cloudName] = cloudDNS
+		for kubeSvcName, cloudSvcName := range extendServices {
+			s.controller.GetC2KContext().SourceServices[connector.KubeSvcName(kubeSvcName)] = connector.CloudSvcName(cloudSvcName)
 		}
 	}
 
 	// Determine what needs to be deleted
-	for k := range s.controller.GetC2KContext().SyncedKubeServiceCache {
-		if _, ok := s.controller.GetC2KContext().SourceServices[string(k)]; !ok {
-			deleteSvcs = append(deleteSvcs, string(k))
+	for kubeSvcName := range s.controller.GetC2KContext().SyncedKubeServiceCache {
+		if _, ok := s.controller.GetC2KContext().SourceServices[kubeSvcName]; !ok {
+			deleteSvcs = append(deleteSvcs, string(kubeSvcName))
 		}
 	}
 
