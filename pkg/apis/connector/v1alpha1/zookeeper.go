@@ -88,12 +88,8 @@ type ZookeeperSyncToK8SSpec struct {
 	// +optional
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
 
-	// +kubebuilder:default=false
 	// +optional
-	EnableConversions bool `json:"enableConversions,omitempty"`
-
-	// +optional
-	ServiceConversions map[string]string `json:"serviceConversions,omitempty"`
+	ConversionStrategy *ConversionStrategy `json:"conversionStrategy,omitempty"`
 }
 
 // ZookeeperSyncFromK8SSpec is the type used to represent the sync from K8S to Zookeeper specification.

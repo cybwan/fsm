@@ -289,10 +289,27 @@ spec:
                   clusterId:
                     default: ""
                     type: string
+                  conversionStrategy:
+                    properties:
+                      enable:
+                        default: false
+                        type: boolean
+                      serviceConversions:
+                        items:
+                          properties:
+                            conversion:
+                              type: string
+                            namespace:
+                              type: string
+                            service:
+                              type: string
+                          required:
+                          - conversion
+                          - service
+                          type: object
+                        type: array
+                    type: object
                   enable:
-                    type: boolean
-                  enableConversions:
-                    default: false
                     type: boolean
                   excludeIpRanges:
                     items:
@@ -331,10 +348,6 @@ spec:
                     type: integer
                   prefixMetadata:
                     type: string
-                  serviceConversions:
-                    additionalProperties:
-                      type: string
-                    type: object
                   suffixMetadata:
                     type: string
                   withGateway:
@@ -365,9 +378,16 @@ spec:
             description: Status is the status of the Zookeeper Connector configuration.
             properties:
               catalogServices:
-                additionalProperties:
-                  type: string
-                type: object
+                items:
+                  properties:
+                    namespace:
+                      type: string
+                    service:
+                      type: string
+                  required:
+                  - service
+                  type: object
+                type: array
               catalogServicesHash:
                 type: string
               currentStatus:

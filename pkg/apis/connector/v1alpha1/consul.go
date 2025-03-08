@@ -103,14 +103,10 @@ type ConsulSyncToK8SSpec struct {
 
 	// +kubebuilder:default=false
 	// +optional
-	EnableConversions bool `json:"enableConversions,omitempty"`
-
-	// +optional
-	ServiceConversions map[string]string `json:"serviceConversions,omitempty"`
-
-	// +kubebuilder:default=false
-	// +optional
 	GenerateInternalServiceHealthCheck bool `json:"generateInternalServiceHealthCheck,omitempty"`
+
+	// +optional
+	ConversionStrategy *ConversionStrategy `json:"conversionStrategy,omitempty"`
 }
 
 // ConsulSyncFromK8SSpec is the type used to represent the sync from K8S to Consul specification.

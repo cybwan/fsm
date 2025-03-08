@@ -9,6 +9,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
@@ -49,7 +50,7 @@ func (s *CtoKSource) Run(ctx context.Context) {
 	}).WithContext(ctx)
 	for {
 		// Get all services.
-		var catalogServices []connector.NamespacedService
+		var catalogServices []ctv1.NamespacedService
 
 		if !s.controller.Purge() {
 			err := backoff.Retry(func() error {
@@ -70,19 +71,15 @@ func (s *CtoKSource) Run(ctx context.Context) {
 			}
 		}
 
-		var namespacedServices map[string]string
 		var serviceConversions map[string]string
 		enableConversions := s.controller.EnableC2KConversions()
 		if enableConversions {
-			namespacedServices = make(map[string]string, len(catalogServices))
 			serviceConversions = s.controller.GetC2KServiceConversions()
 		}
 
 		services := make(map[connector.KubeSvcName]connector.CloudSvcName, len(catalogServices))
-
 		for _, svc := range catalogServices {
 			if enableConversions {
-				namespacedServices[svc.Service] = svc.Namespace
 				if len(serviceConversions) > 0 {
 					if serviceConversion, exists := serviceConversions[fmt.Sprintf("%s/%s", svc.Namespace, svc.Service)]; exists {
 						services[connector.KubeSvcName(serviceConversion)] = connector.CloudSvcName(svc.Service)
@@ -95,7 +92,7 @@ func (s *CtoKSource) Run(ctx context.Context) {
 
 		log.Trace().Msgf("received services from cloud, count:%d", len(services))
 
-		s.syncer.SetServices(services, namespacedServices)
+		s.syncer.SetServices(services, catalogServices)
 
 		time.Sleep(opts.WaitTime)
 	}

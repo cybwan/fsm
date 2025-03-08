@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -793,10 +794,21 @@ func (c *client) initMachineConnectorConfig(spec ctv1.MachineSpec) {
 
 	c.config.c2kCfg.prefixTag = spec.SyncToK8S.PrefixLabel
 	c.config.c2kCfg.suffixTag = spec.SyncToK8S.SuffixLabel
-	c.config.c2kCfg.enableConversions = spec.SyncToK8S.EnableConversions
-	c.config.c2kCfg.serviceConversions = spec.SyncToK8S.ServiceConversions
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
+
+	if spec.SyncToK8S.ConversionStrategy != nil {
+		c.config.c2kCfg.enableConversions = spec.SyncToK8S.ConversionStrategy.Enable
+		c.config.c2kCfg.serviceConversions = make(map[string]string)
+		if len(spec.SyncToK8S.ConversionStrategy.ServiceConversions) > 0 {
+			for _, serviceConversion := range spec.SyncToK8S.ConversionStrategy.ServiceConversions {
+				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion.Conversion
+			}
+		}
+	} else {
+		c.config.c2kCfg.enableConversions = false
+		c.config.c2kCfg.serviceConversions = nil
+	}
 }
 
 func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
@@ -828,8 +840,6 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
-	c.config.c2kCfg.enableConversions = spec.SyncToK8S.EnableConversions
-	c.config.c2kCfg.serviceConversions = spec.SyncToK8S.ServiceConversions
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 	if len(spec.SyncToK8S.ClusterSet) == 0 {
@@ -841,6 +851,19 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 		c.config.c2kCfg.nacos2kCfg.groupSet = []string{constant.DEFAULT_GROUP}
 	} else {
 		c.config.c2kCfg.nacos2kCfg.groupSet = append([]string{}, spec.SyncToK8S.GroupSet...)
+	}
+
+	if spec.SyncToK8S.ConversionStrategy != nil {
+		c.config.c2kCfg.enableConversions = spec.SyncToK8S.ConversionStrategy.Enable
+		c.config.c2kCfg.serviceConversions = make(map[string]string)
+		if len(spec.SyncToK8S.ConversionStrategy.ServiceConversions) > 0 {
+			for _, serviceConversion := range spec.SyncToK8S.ConversionStrategy.ServiceConversions {
+				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion.Conversion
+			}
+		}
+	} else {
+		c.config.c2kCfg.enableConversions = false
+		c.config.c2kCfg.serviceConversions = nil
 	}
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
@@ -889,10 +912,21 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
-	c.config.c2kCfg.enableConversions = spec.SyncToK8S.EnableConversions
-	c.config.c2kCfg.serviceConversions = spec.SyncToK8S.ServiceConversions
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
+
+	if spec.SyncToK8S.ConversionStrategy != nil {
+		c.config.c2kCfg.enableConversions = spec.SyncToK8S.ConversionStrategy.Enable
+		c.config.c2kCfg.serviceConversions = make(map[string]string)
+		if len(spec.SyncToK8S.ConversionStrategy.ServiceConversions) > 0 {
+			for _, serviceConversion := range spec.SyncToK8S.ConversionStrategy.ServiceConversions {
+				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion.Conversion
+			}
+		}
+	} else {
+		c.config.c2kCfg.enableConversions = false
+		c.config.c2kCfg.serviceConversions = nil
+	}
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
 	c.k2cCfg.defaultSync = spec.SyncFromK8S.DefaultSync
@@ -948,10 +982,21 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
-	c.config.c2kCfg.enableConversions = spec.SyncToK8S.EnableConversions
-	c.config.c2kCfg.serviceConversions = spec.SyncToK8S.ServiceConversions
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
+
+	if spec.SyncToK8S.ConversionStrategy != nil {
+		c.config.c2kCfg.enableConversions = spec.SyncToK8S.ConversionStrategy.Enable
+		c.config.c2kCfg.serviceConversions = make(map[string]string)
+		if len(spec.SyncToK8S.ConversionStrategy.ServiceConversions) > 0 {
+			for _, serviceConversion := range spec.SyncToK8S.ConversionStrategy.ServiceConversions {
+				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion.Conversion
+			}
+		}
+	} else {
+		c.config.c2kCfg.enableConversions = false
+		c.config.c2kCfg.serviceConversions = nil
+	}
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
 	c.k2cCfg.defaultSync = spec.SyncFromK8S.DefaultSync
@@ -1007,10 +1052,21 @@ func (c *client) initZookeeperConnectorConfig(spec ctv1.ZookeeperSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
-	c.config.c2kCfg.enableConversions = spec.SyncToK8S.EnableConversions
-	c.config.c2kCfg.serviceConversions = spec.SyncToK8S.ServiceConversions
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
+
+	if spec.SyncToK8S.ConversionStrategy != nil {
+		c.config.c2kCfg.enableConversions = spec.SyncToK8S.ConversionStrategy.Enable
+		c.config.c2kCfg.serviceConversions = make(map[string]string)
+		if len(spec.SyncToK8S.ConversionStrategy.ServiceConversions) > 0 {
+			for _, serviceConversion := range spec.SyncToK8S.ConversionStrategy.ServiceConversions {
+				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion.Conversion
+			}
+		}
+	} else {
+		c.config.c2kCfg.enableConversions = false
+		c.config.c2kCfg.serviceConversions = nil
+	}
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
 	c.k2cCfg.defaultSync = spec.SyncFromK8S.DefaultSync

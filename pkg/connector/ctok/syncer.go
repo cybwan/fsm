@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/messaging"
@@ -94,7 +96,7 @@ func (s *CtoKSyncer) SetMicroAggregator(microAggregator Aggregator) {
 // SetServices is called with the services that should be created.
 // The key is the service name and the destination is the external DNS
 // entry to point to.
-func (s *CtoKSyncer) SetServices(svcs map[connector.KubeSvcName]connector.CloudSvcName, catalogServices map[string]string) {
+func (s *CtoKSyncer) SetServices(svcs map[connector.KubeSvcName]connector.CloudSvcName, catalogServices []ctv1.NamespacedService) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -110,6 +112,7 @@ func (s *CtoKSyncer) SetServices(svcs map[connector.KubeSvcName]connector.CloudS
 
 	hash := uint64(0)
 	if len(catalogServices) > 0 {
+		sort.Sort(ctv1.NamespacedServiceSlice(catalogServices))
 		hash, _ = hashstructure.Hash(catalogServices, hashstructure.FormatV2,
 			&hashstructure.HashOptions{
 				ZeroNil:         true,
