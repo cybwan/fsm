@@ -185,11 +185,11 @@ func (s *CtoKSyncer) Upsert(key string, raw interface{}) error {
 
 	// Store all the key to name mappings. We need this because the key
 	// is opaque but we want to do all the lookups by service name.
-	s.controller.GetC2KContext().KubeServiceKeyToName[connector.KubeSvcKey(key)] = connector.KubeSvcName(service.Name)
+	s.controller.GetC2KContext().KubeServiceCache[connector.KubeSvcKey(key)] = service
 
 	// If the service is a Cloud-sourced service, then keep track of it
 	// separately for a quick lookup.
-	if len(service.Labels) > 0 && service.Labels[constants.CloudSourcedServiceLabel] == True {
+	if s.hasOwnership(service) {
 		s.controller.GetC2KContext().SyncedKubeServiceCache[connector.KubeSvcName(service.Name)] = service
 		s.controller.GetC2KContext().SyncedKubeServiceHash[connector.KubeSvcName(service.Name)] = s.serviceHash(service)
 		s.trigger() // Always trigger sync
@@ -204,7 +204,7 @@ func (s *CtoKSyncer) Delete(key string, _ interface{}) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	kubeSvcName, ok := s.controller.GetC2KContext().KubeServiceKeyToName[connector.KubeSvcKey(key)]
+	service, ok := s.controller.GetC2KContext().KubeServiceCache[connector.KubeSvcKey(key)]
 	if !ok {
 		// This is a weird scenario, but in unit tests we've seen this happen
 		// in cases where the delete happens very quickly after the create.
@@ -214,7 +214,9 @@ func (s *CtoKSyncer) Delete(key string, _ interface{}) error {
 		return nil
 	}
 
-	delete(s.controller.GetC2KContext().KubeServiceKeyToName, connector.KubeSvcKey(key))
+	delete(s.controller.GetC2KContext().KubeServiceCache, connector.KubeSvcKey(key))
+
+	kubeSvcName := connector.KubeSvcName(service.Name)
 	delete(s.controller.GetC2KContext().SyncedKubeServiceCache, kubeSvcName)
 	delete(s.controller.GetC2KContext().SyncedKubeServiceHash, kubeSvcName)
 
@@ -322,12 +324,19 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 	for kubeSvcName, cloudSvcName := range s.controller.GetC2KContext().SourceServices {
 		svcMetaMap := s.microAggregator.Aggregate(s.ctx, kubeSvcName)
 		if len(svcMetaMap) == 0 {
-			if _, exists := s.controller.GetC2KContext().KubeServiceKeyToName[connector.KubeSvcKey(fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), kubeSvcName))]; exists {
-				deleteSvcs = append(deleteSvcs, kubeSvcName)
+			if service, exists := s.controller.GetC2KContext().KubeServiceCache[connector.KubeSvcKey(fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), kubeSvcName))]; exists {
+				if s.hasOwnership(service) {
+					deleteSvcs = append(deleteSvcs, kubeSvcName)
+				}
 			}
 			continue
 		}
 		for k8sSvcName, svcMeta := range svcMetaMap {
+			if service, exists := s.controller.GetC2KContext().KubeServiceCache[connector.KubeSvcKey(fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), k8sSvcName))]; exists {
+				if !s.hasOwnership(service) {
+					continue
+				}
+			}
 			if len(svcMeta.Endpoints) == 0 {
 				deleteSvcs = append(deleteSvcs, k8sSvcName)
 				continue
@@ -352,8 +361,9 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
-					connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
-					connector.AnnotationCloudServiceInheritedFrom: string(cloudSvcName),
+					connector.AnnotationMeshServiceSync:             string(s.discClient.MicroServiceProvider()),
+					connector.AnnotationMeshServiceSyncConnectorUID: s.controller.GetConnectorUID(),
+					connector.AnnotationCloudServiceInheritedFrom:   string(cloudSvcName),
 				}
 				if svcMeta.HealthCheck {
 					svc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
@@ -377,8 +387,9 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 					Labels: map[string]string{constants.CloudSourcedServiceLabel: True},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
-						connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
-						connector.AnnotationCloudServiceInheritedFrom: string(cloudSvcName),
+						connector.AnnotationMeshServiceSync:             string(s.discClient.MicroServiceProvider()),
+						connector.AnnotationMeshServiceSyncConnectorUID: s.controller.GetConnectorUID(),
+						connector.AnnotationCloudServiceInheritedFrom:   string(cloudSvcName),
 					},
 				},
 

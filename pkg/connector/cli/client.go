@@ -412,7 +412,7 @@ func (c *client) updateConnectorStatus() {
 }
 
 func (c *client) checkConnectorStatus(connectorStatus *ctv1.ConnectorStatus) bool {
-	toK8sServiceCnt := len(c.c2kContext.KubeServiceKeyToName)
+	toK8sServiceCnt := len(c.c2kContext.KubeServiceCache)
 	fromK8sServiceCnt := c.k2cContext.ServiceMap.Count() + c.k2cContext.IngressServiceMap.Count()
 	update := false
 

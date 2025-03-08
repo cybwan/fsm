@@ -30,11 +30,8 @@ type C2KContext struct {
 	CatalogServices     []ctv1.NamespacedService
 	CatalogServicesHash uint64
 
-	// KubeServiceKeyToName maps from Kube controller keys to Kube service names.
-	// Controller keys are in the form <kube namespace>/<kube svc name>
-	// e.g. default/foo, and are the keys Kube uses to inform that something
-	// changed.
-	KubeServiceKeyToName map[KubeSvcKey]KubeSvcName
+	// holds all Kube service
+	KubeServiceCache map[KubeSvcKey]*corev1.Service
 
 	// SyncedKubeServiceCache holds all Kube services that were created by this sync process. Keys are Kube service names.
 	SyncedKubeServiceCache map[KubeSvcName]*corev1.Service
@@ -108,7 +105,7 @@ func NewC2KContext() *C2KContext {
 		EndpointsKeyToName:     make(map[string]string),
 		SourceServices:         make(map[KubeSvcName]CloudSvcName),
 		NativeServices:         make(map[KubeSvcName]CloudSvcName),
-		KubeServiceKeyToName:   make(map[KubeSvcKey]KubeSvcName),
+		KubeServiceCache:       make(map[KubeSvcKey]*corev1.Service),
 		SyncedKubeServiceCache: make(map[KubeSvcName]*corev1.Service),
 		SyncedKubeServiceHash:  make(map[KubeSvcName]uint64),
 	}

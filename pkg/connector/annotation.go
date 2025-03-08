@@ -23,6 +23,9 @@ const (
 	// AnnotationMeshServiceSync defines mesh service sync annotation
 	AnnotationMeshServiceSync = "flomesh.io/mesh-service-sync"
 
+	// AnnotationMeshServiceSyncConnectorUID defines mesh service sync connector uid annotation
+	AnnotationMeshServiceSyncConnectorUID = "flomesh.io/mesh-service-sync-connector-uid"
+
 	// AnnotationMeshServiceInternalSync defines mesh service internal sync annotation
 	AnnotationMeshServiceInternalSync = "flomesh.io/mesh-service-internal-sync"
 
