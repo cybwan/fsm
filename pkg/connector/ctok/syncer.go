@@ -103,7 +103,7 @@ func (s *CtoKSyncer) SetMicroAggregator(microAggregator Aggregator) {
 // SetServices is called with the services that should be created.
 // The key is the service name and the destination is the external DNS
 // entry to point to.
-func (s *CtoKSyncer) SetServices(svcs map[connector.MicroSvcName]connector.MicroSvcDomainName, catalogServices map[string]string) {
+func (s *CtoKSyncer) SetServices(svcs map[connector.K8sSvcName]connector.CloudSvcName, catalogServices map[string]string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

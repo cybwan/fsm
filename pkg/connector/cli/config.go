@@ -62,7 +62,6 @@ type config struct {
 		excludeMetadatas []ctv1.Metadata
 		excludeIPRanges  []string
 
-		prefix         string // prefix is a prefix to prepend to services
 		prefixTag      string
 		suffixTag      string
 		prefixMetadata string
@@ -594,12 +593,6 @@ func (c *config) GetK2CExcludeIPRanges() []*cidr.CIDR {
 		}
 	}
 	return cidrs
-}
-
-func (c *config) GetPrefix() string {
-	c.flock.RLock()
-	defer c.flock.RUnlock()
-	return c.c2kCfg.prefix
 }
 
 func (c *config) GetPrefixTag() string {

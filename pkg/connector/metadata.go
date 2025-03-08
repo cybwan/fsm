@@ -17,8 +17,9 @@ import (
 // MicroSvcName defines string as microservice name
 type MicroSvcName string
 
-// MicroSvcDomainName defines string as microservice domain name
-type MicroSvcDomainName string
+type K8sSvcName string
+
+type CloudSvcName string
 
 // MicroEndpointMeta defines micro endpoint meta
 type MicroEndpointMeta struct {
