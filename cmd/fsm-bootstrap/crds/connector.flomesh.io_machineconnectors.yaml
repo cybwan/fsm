@@ -166,14 +166,16 @@ spec:
                       serviceConversions:
                         items:
                           properties:
-                            conversion:
+                            convertName:
+                              type: string
+                            externalName:
                               type: string
                             namespace:
                               type: string
                             service:
                               type: string
                           required:
-                          - conversion
+                          - convertName
                           - service
                           type: object
                         type: array

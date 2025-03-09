@@ -71,7 +71,7 @@ type config struct {
 		fixedHTTPServicePort *uint32
 
 		enableConversions  bool
-		serviceConversions map[string]string
+		serviceConversions map[string]ctv1.ServiceConversion
 
 		withGateway   bool
 		multiGateways bool
@@ -626,7 +626,7 @@ func (c *config) EnableC2KConversions() bool {
 	return c.c2kCfg.enableConversions
 }
 
-func (c *config) GetC2KServiceConversions() map[string]string {
+func (c *config) GetC2KServiceConversions() map[string]ctv1.ServiceConversion {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.c2kCfg.serviceConversions
@@ -799,10 +799,10 @@ func (c *client) initMachineConnectorConfig(spec ctv1.MachineSpec) {
 
 	if spec.SyncToK8S.ConversionStrategy != nil {
 		c.config.c2kCfg.enableConversions = spec.SyncToK8S.ConversionStrategy.Enable
-		c.config.c2kCfg.serviceConversions = make(map[string]string)
+		c.config.c2kCfg.serviceConversions = make(map[string]ctv1.ServiceConversion)
 		if len(spec.SyncToK8S.ConversionStrategy.ServiceConversions) > 0 {
 			for _, serviceConversion := range spec.SyncToK8S.ConversionStrategy.ServiceConversions {
-				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion.Conversion
+				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion
 			}
 		}
 	} else {
@@ -855,10 +855,10 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 
 	if spec.SyncToK8S.ConversionStrategy != nil {
 		c.config.c2kCfg.enableConversions = spec.SyncToK8S.ConversionStrategy.Enable
-		c.config.c2kCfg.serviceConversions = make(map[string]string)
+		c.config.c2kCfg.serviceConversions = make(map[string]ctv1.ServiceConversion)
 		if len(spec.SyncToK8S.ConversionStrategy.ServiceConversions) > 0 {
 			for _, serviceConversion := range spec.SyncToK8S.ConversionStrategy.ServiceConversions {
-				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion.Conversion
+				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion
 			}
 		}
 	} else {
@@ -917,10 +917,10 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 
 	if spec.SyncToK8S.ConversionStrategy != nil {
 		c.config.c2kCfg.enableConversions = spec.SyncToK8S.ConversionStrategy.Enable
-		c.config.c2kCfg.serviceConversions = make(map[string]string)
+		c.config.c2kCfg.serviceConversions = make(map[string]ctv1.ServiceConversion)
 		if len(spec.SyncToK8S.ConversionStrategy.ServiceConversions) > 0 {
 			for _, serviceConversion := range spec.SyncToK8S.ConversionStrategy.ServiceConversions {
-				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion.Conversion
+				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion
 			}
 		}
 	} else {
@@ -987,10 +987,10 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 
 	if spec.SyncToK8S.ConversionStrategy != nil {
 		c.config.c2kCfg.enableConversions = spec.SyncToK8S.ConversionStrategy.Enable
-		c.config.c2kCfg.serviceConversions = make(map[string]string)
+		c.config.c2kCfg.serviceConversions = make(map[string]ctv1.ServiceConversion)
 		if len(spec.SyncToK8S.ConversionStrategy.ServiceConversions) > 0 {
 			for _, serviceConversion := range spec.SyncToK8S.ConversionStrategy.ServiceConversions {
-				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion.Conversion
+				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion
 			}
 		}
 	} else {
@@ -1057,10 +1057,10 @@ func (c *client) initZookeeperConnectorConfig(spec ctv1.ZookeeperSpec) {
 
 	if spec.SyncToK8S.ConversionStrategy != nil {
 		c.config.c2kCfg.enableConversions = spec.SyncToK8S.ConversionStrategy.Enable
-		c.config.c2kCfg.serviceConversions = make(map[string]string)
+		c.config.c2kCfg.serviceConversions = make(map[string]ctv1.ServiceConversion)
 		if len(spec.SyncToK8S.ConversionStrategy.ServiceConversions) > 0 {
 			for _, serviceConversion := range spec.SyncToK8S.ConversionStrategy.ServiceConversions {
-				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion.Conversion
+				c.config.c2kCfg.serviceConversions[fmt.Sprintf("%s/%s", serviceConversion.Namespace, serviceConversion.Service)] = serviceConversion
 			}
 		}
 	} else {

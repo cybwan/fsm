@@ -59,7 +59,7 @@ type ConnectController interface {
 	GetC2KFixedHTTPServicePort() *uint32
 
 	EnableC2KConversions() bool
-	GetC2KServiceConversions() map[string]string
+	GetC2KServiceConversions() map[string]ctv1.ServiceConversion
 
 	GetC2KWithGateway() bool
 	GetC2KMultiGateways() bool

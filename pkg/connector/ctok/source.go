@@ -71,7 +71,7 @@ func (s *CtoKSource) Run(ctx context.Context) {
 			}
 		}
 
-		var serviceConversions map[string]string
+		var serviceConversions map[string]ctv1.ServiceConversion
 		enableConversions := s.controller.EnableC2KConversions()
 		if enableConversions {
 			serviceConversions = s.controller.GetC2KServiceConversions()
@@ -82,7 +82,7 @@ func (s *CtoKSource) Run(ctx context.Context) {
 			if enableConversions {
 				if len(serviceConversions) > 0 {
 					if serviceConversion, exists := serviceConversions[fmt.Sprintf("%s/%s", svc.Namespace, svc.Service)]; exists {
-						services[connector.KubeSvcName(serviceConversion)] = connector.CloudSvcName(svc.Service)
+						services[connector.KubeSvcName(serviceConversion.ConvertName)] = connector.CloudSvcName(svc.Service)
 					}
 				}
 			} else {

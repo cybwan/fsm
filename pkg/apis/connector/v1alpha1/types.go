@@ -126,7 +126,10 @@ type ServiceConversion struct {
 
 	Service string `json:"service"`
 
-	Conversion string `json:"conversion"`
+	ConvertName string `json:"convertName"`
+
+	// +optional
+	ExternalName string `json:"externalName,omitempty"`
 }
 
 type ConversionStrategy struct {

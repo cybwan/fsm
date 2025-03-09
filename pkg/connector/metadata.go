@@ -21,6 +21,11 @@ type KubeSvcName string
 
 type CloudSvcName string
 
+type ServiceConversion struct {
+	ConvertName  CloudSvcName
+	ExternalName string
+}
+
 // MicroEndpointMeta defines micro endpoint meta
 type MicroEndpointMeta struct {
 	Ports   map[MicroServicePort]MicroServiceProtocol `json:"ports,omitempty"`
