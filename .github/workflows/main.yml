@@ -128,3 +128,277 @@ jobs:
         run: make charts-tgz
       - name: Go Build
         run: make build-ci
+
+  unittest:
+    name: Go test
+    runs-on: ubuntu-24.04
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: go mod tidy
+        run: make go-mod-tidy
+      - name: Test
+        run: make go-test-coverage
+      - name: Upload Coverage
+        if: ${{ success() }}
+        uses: codecov/codecov-action@v5
+        with:
+          flags: unittests
+
+  ghcr:
+    name: Docker Images(ghcr.io)
+    runs-on: ubuntu-24.04
+    needs: build
+    env:
+      CTR_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+      CTR_TAG: ${{ github.sha }}
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.6.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.10.0
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.WORKFLOW_PAT }}
+
+      # to avoid dockerhub anonymous rate limit
+      - name: Login to DockerHub
+        uses: docker/login-action@v3.3.0
+        with:
+          username: ${{ secrets.RELEASE_DOCKER_USER }}
+          password: ${{ secrets.RELEASE_DOCKER_PASS }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        id: setup-go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Push images with SHA tag
+        run: make docker-build-fsm docker-build-demo
+
+  imagescan:
+    name: Scan images for security vulnerabilities
+    runs-on: ubuntu-24.04
+    needs: ghcr
+    env:
+      CTR_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+      CTR_TAG: ${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.WORKFLOW_PAT }}
+      - name: Setup Trivy
+        run: make trivy-ci-setup
+      - name: Scan docker images for vulnerabilities
+        run: make trivy-scan-images
+
+  mesh-e2e-test:
+    name: Go mesh test
+    needs: ghcr
+    strategy:
+      matrix:
+        k8s_version: [""]
+        focus: [""]
+        bucket: [1, 2, 3, 4, 5]
+        os: [ubuntu-24.04]
+        include:
+          - k8s_version: v1.19.16-k3s1
+            focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
+            bucket: ".*"
+            os: ubuntu-20.04
+          - k8s_version: v1.27.16-k3s1
+            focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
+            bucket: ".*"
+            os: ubuntu-24.04
+    uses: ./.github/workflows/e2e.yml
+    with:
+      os: ${{ matrix.os }}
+      k8s_version: ${{ matrix.k8s_version }}
+      bucket: ${{ matrix.bucket }}
+      focus: ${{ matrix.focus }}
+    secrets: inherit
+
+  gateway-e2e-test:
+    name: Go gateway test
+    needs: ghcr
+    strategy:
+      matrix:
+        focus: [""]
+        bucket: [6, 7]
+        k8s:
+          - version: "latest"
+            os: ubuntu-24.04
+          - version: v1.19.16-k3s1
+            os: ubuntu-20.04
+          - version: v1.21.14-k3s1
+            os: ubuntu-24.04
+          - version: v1.23.17-k3s1
+            os: ubuntu-24.04
+        exclude:
+          - focus: ""
+            bucket: "7"
+            k8s:
+              version: v1.21.14-k3s1
+              os: ubuntu-24.04
+          - focus: ""
+            bucket: "7"
+            k8s:
+              version: v1.23.17-k3s1
+              os: ubuntu-24.04
+    uses: ./.github/workflows/e2e.yml
+    with:
+      os: ${{ matrix.k8s.os }}
+      k8s_version: ${{ matrix.k8s.version }}
+      bucket: ${{ matrix.bucket }}
+      focus: ${{ matrix.focus }}
+    secrets: inherit
+
+  ingress-e2e-test:
+    name: Go ingress test
+    needs: ghcr
+    strategy:
+      matrix:
+        k8s_version: [ "" ]
+        focus: [ "" ]
+        bucket: [ 10 ]
+    uses: ./.github/workflows/e2e.yml
+    with:
+      os: ubuntu-24.04
+      k8s_version: ${{ matrix.k8s_version }}
+      bucket: ${{ matrix.bucket }}
+      focus: ${{ matrix.focus }}
+    secrets: inherit
+
+  mesh-retry-e2e-test:
+    name: Go retry test
+    needs: ghcr
+    strategy:
+      matrix:
+        k8s_version: [""]
+        focus: [""]
+        bucket: [9]
+    uses: ./.github/workflows/e2e.yml
+    with:
+      os: ubuntu-24.04
+      k8s_version: ${{ matrix.k8s_version }}
+      bucket: ${{ matrix.bucket }}
+      focus: ${{ matrix.focus }}
+    secrets: inherit
+
+  mesh-statefulset-e2e-test:
+    name: Go statefulset test
+    needs: ghcr
+    strategy:
+      matrix:
+        k8s_version: [""]
+        focus: [""]
+        bucket: [8]
+    uses: ./.github/workflows/e2e.yml
+    with:
+      os: ubuntu-24.04
+      k8s_version: ${{ matrix.k8s_version }}
+      bucket: ${{ matrix.bucket }}
+      focus: ${{ matrix.focus }}
+    secrets: inherit
+
+  integration-tresor:
+    name: Integration Test with Tresor, SMI traffic policies, and egress disabled
+    runs-on: ubuntu-24.04
+    needs: ghcr
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Install k3d CLI
+        run: |
+          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+          k3d version
+      - name: Run Simulation w/ Tresor, SMI policies, egress disabled and reconciler disabled
+        env:
+          CERT_MANAGER: "tresor"
+          BOOKSTORE_SVC: "bookstore"
+          BOOKTHIEF_EXPECTED_RESPONSE_CODE: "0"
+          ENABLE_EGRESS: "false"
+          ENABLE_RECONCILER: "false"
+          PERMISSIVE_MODE: "false"
+          DEPLOY_TRAFFIC_SPLIT: "true"
+          CTR_REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+          CTR_TAG: ${{ github.sha }}
+          USE_PRIVATE_REGISTRY: "false"
+          PUBLISH_IMAGES: "false"
+          GITHUB_REPO_OWNER: ${{ github.repository_owner }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
+          DOCKER_PASS: ${{ secrets.RELEASE_DOCKER_PASS }}
+          CI_INTEGRATION_TEST: "true"
+        run: |
+          touch .env
+          make k3d-up
+          ./demo/run-fsm-demo.sh
+          go run ./ci/cmd/maestro.go
+
+  ghcr-cleanup:
+    name: ghcr.io cleanup
+    runs-on: ubuntu-24.04
+    needs: [mesh-e2e-test, gateway-e2e-test, ingress-e2e-test, mesh-retry-e2e-test, mesh-statefulset-e2e-test, integration-tresor, imagescan]
+    steps:
+      - uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          token: ${{ secrets.WORKFLOW_PAT }}
+          owner: ${{ github.repository_owner }}
+          packages: fsm-*
+          expand-packages: true
+          delete-tags: ${{ github.sha }}
+
+  images:
+    name: Docker Images
+    runs-on: ubuntu-24.04
+    if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')) && github.event_name == 'push' }}
+    env:
+      DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
+      DOCKER_PASS: ${{ secrets.RELEASE_DOCKER_PASS }}
+      CTR_REGISTRY: ${{ secrets.RELEASE_REGISTRY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Docker Login
+        run: docker login --username "$DOCKER_USER" --password-stdin <<< "$DOCKER_PASS"
+      - name: Push images with "latest-main" tag
+        env:
+          CTR_TAG: latest-main
+        run: make docker-build-cross
