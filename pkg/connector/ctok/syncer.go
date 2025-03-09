@@ -96,19 +96,24 @@ func (s *CtoKSyncer) SetMicroAggregator(microAggregator Aggregator) {
 // SetServices is called with the services that should be created.
 // The key is the service name and the destination is the external DNS
 // entry to point to.
-func (s *CtoKSyncer) SetServices(svcs map[connector.KubeSvcName]connector.CloudSvcName, catalogServices []ctv1.NamespacedService) {
+func (s *CtoKSyncer) SetServices(svcs map[connector.KubeSvcName]connector.ServiceConversion, catalogServices []ctv1.NamespacedService) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	sourceServices := make(map[connector.KubeSvcName]connector.CloudSvcName, len(svcs))
 	nativeServices := make(map[connector.KubeSvcName]connector.CloudSvcName, len(svcs))
-	for kubeSvcName, cloudSvcName := range svcs {
-		sourceServices[kubeSvcName] = cloudSvcName
-		nativeServices[kubeSvcName] = cloudSvcName
+	externalServices := make(map[connector.CloudSvcName]connector.ExternalName, len(svcs))
+	for kubeSvcName, serviceConversion := range svcs {
+		sourceServices[kubeSvcName] = serviceConversion.Service
+		nativeServices[kubeSvcName] = serviceConversion.Service
+		if len(serviceConversion.ExternalName) > 0 {
+			externalServices[serviceConversion.Service] = serviceConversion.ExternalName
+		}
 	}
 
 	s.controller.GetC2KContext().SourceServices = sourceServices
 	s.controller.GetC2KContext().NativeServices = nativeServices
+	s.controller.GetC2KContext().ExternalServices = externalServices
 
 	hash := uint64(0)
 	if len(catalogServices) > 0 {
@@ -331,6 +336,22 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 			}
 			continue
 		}
+
+		var serviceSpec *apiv1.ServiceSpec
+		if externalName := s.controller.GetC2KContext().ExternalServices[cloudSvcName]; len(externalName) > 0 {
+			serviceSpec = &apiv1.ServiceSpec{
+				Type:         apiv1.ServiceTypeExternalName,
+				ExternalName: string(externalName),
+			}
+		} else {
+			serviceSpec = &apiv1.ServiceSpec{
+				Type:           apiv1.ServiceTypeClusterIP,
+				ClusterIP:      apiv1.ClusterIPNone,
+				IPFamilies:     []apiv1.IPFamily{apiv1.IPv4Protocol},
+				IPFamilyPolicy: &ipFamilyPolicy,
+			}
+		}
+
 		for k8sSvcName, svcMeta := range svcMetaMap {
 			if service, exists := s.controller.GetC2KContext().KubeServiceCache[connector.KubeSvcKey(fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), k8sSvcName))]; exists {
 				if !s.hasOwnership(service) {
@@ -352,13 +373,11 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 				extendServices[k8sSvcName] = cloudSvcName
 			}
 
+			serviceSpec.Selector = map[string]string{CloudServiceLabel: string(k8sSvcName)}
+
 			// If this is an already registered service, then update it
 			if svc, ok := s.controller.GetC2KContext().SyncedKubeServiceCache[k8sSvcName]; ok {
-				if svc.Spec.ExternalName == string(cloudSvcName) {
-					// Matching service, no update required.
-					continue
-				}
-
+				svc.Spec = *serviceSpec
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
 					connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
@@ -392,16 +411,7 @@ func (s *CtoKSyncer) crudList() (createSvcs []*apiv1.Service, deleteSvcs []conne
 						connector.AnnotationCloudServiceInheritedFrom: string(cloudSvcName),
 					},
 				},
-
-				Spec: apiv1.ServiceSpec{
-					Type:      apiv1.ServiceTypeClusterIP,
-					ClusterIP: apiv1.ClusterIPNone,
-					Selector: map[string]string{
-						CloudServiceLabel: string(k8sSvcName),
-					},
-					IPFamilies:     []apiv1.IPFamily{apiv1.IPv4Protocol},
-					IPFamilyPolicy: &ipFamilyPolicy,
-				},
+				Spec: *serviceSpec,
 			}
 			if svcMeta.HealthCheck {
 				createSvc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
@@ -525,6 +535,10 @@ func (s *CtoKSyncer) serviceHash(service *apiv1.Service) uint64 {
 	if len(service.Spec.Ports) > 0 {
 		portBytes, _ := json.Marshal(service.Spec.Ports)
 		bytes = append(bytes, portBytes...)
+	}
+	if len(service.Spec.ExternalName) > 0 {
+		externalNameBytes, _ := json.Marshal(service.Spec.ExternalName)
+		bytes = append(bytes, externalNameBytes...)
 	}
 	return utils.Hash(bytes)
 }
