@@ -53,7 +53,7 @@ type CtoKSyncer struct {
 
 	kubeClient kubernetes.Interface
 
-	informer cache.SharedIndexInformer
+	svcInformer, eptInformer cache.SharedIndexInformer
 
 	microAggregator Aggregator
 
@@ -152,11 +152,12 @@ func (s *CtoKSyncer) Ready() {
 // Informer implements the controller.Resource interface.
 // It tells Kubernetes that we want to watch for changes to Services.
 func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
-	if s.informer == nil {
-		s.informer = cache.NewSharedIndexInformer(
+	if s.svcInformer == nil {
+		s.svcInformer = cache.NewSharedIndexInformer(
 			&cache.ListWatch{
 				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 					serviceList, err := s.kubeClient.CoreV1().Services(s.namespace()).List(s.ctx, options)
+					fmt.Println("serviceList:", serviceList)
 					if err != nil {
 						log.Error().Msgf("cache.NewSharedIndexInformer Services ListFunc:%v", err)
 					}
@@ -164,6 +165,7 @@ func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
 				},
 				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 					service, err := s.kubeClient.CoreV1().Services(s.namespace()).Watch(s.ctx, options)
+					fmt.Println("service:", service)
 					if err != nil {
 						log.Error().Msgf("cache.NewSharedIndexInformer Services WatchFunc:%v", err)
 					}
@@ -174,8 +176,32 @@ func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
 			0,
 			cache.Indexers{},
 		)
+		fmt.Println("endpointsList:")
+		s.eptInformer = cache.NewSharedIndexInformer(
+			&cache.ListWatch{
+				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+					endpointsList, err := s.kubeClient.CoreV1().Endpoints(s.namespace()).List(s.ctx, options)
+					fmt.Println("endpointsList:", endpointsList)
+					if err != nil {
+						log.Error().Msgf("cache.NewSharedIndexInformer Endpoints ListFunc:%v", err)
+					}
+					return endpointsList, err
+				},
+				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+					endpoints, err := s.kubeClient.CoreV1().Endpoints(s.namespace()).Watch(s.ctx, options)
+					fmt.Println("endpoints:", endpoints)
+					if err != nil {
+						log.Error().Msgf("cache.NewSharedIndexInformer Endpoints WatchFunc:%v", err)
+					}
+					return endpoints, err
+				},
+			},
+			&corev1.Endpoints{},
+			0,
+			cache.Indexers{},
+		)
 	}
-	return s.informer
+	return s.svcInformer
 }
 
 // Upsert implements the controller.Resource interface.
@@ -354,16 +380,19 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 		var serviceSpec *corev1.ServiceSpec
 		if externalName := s.controller.GetC2KContext().ExternalServices[cloudSvcName]; len(externalName) > 0 {
 			serviceSpec = &corev1.ServiceSpec{
-				Type:         corev1.ServiceTypeExternalName,
-				ExternalName: string(externalName),
+				Type:            corev1.ServiceTypeExternalName,
+				ExternalName:    string(externalName),
+				SessionAffinity: corev1.ServiceAffinityNone,
 			}
 			fillEndpoints = false
 		} else {
 			serviceSpec = &corev1.ServiceSpec{
-				Type:           corev1.ServiceTypeClusterIP,
-				ClusterIP:      corev1.ClusterIPNone,
-				IPFamilies:     []corev1.IPFamily{corev1.IPv4Protocol},
-				IPFamilyPolicy: &ipFamilyPolicy,
+				Type:            corev1.ServiceTypeClusterIP,
+				ClusterIP:       corev1.ClusterIPNone,
+				ClusterIPs:      []string{corev1.ClusterIPNone},
+				IPFamilies:      []corev1.IPFamily{corev1.IPv4Protocol},
+				IPFamilyPolicy:  &ipFamilyPolicy,
+				SessionAffinity: corev1.ServiceAffinityNone,
 			}
 		}
 
@@ -390,26 +419,27 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 
 			// If this is an already registered service, then update it
 			if svc, ok := s.controller.GetC2KContext().SyncedKubeServiceCache[k8sSvcName]; ok {
-				svc.Spec = *serviceSpec
-				svc.ObjectMeta.Annotations = map[string]string{
+				updateSvc := *svc
+				updateSvc.Spec = *serviceSpec
+				updateSvc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
 					connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
 					connector.AnnotationMeshServiceSyncManagedBy:  s.controller.GetConnectorUID(),
 					connector.AnnotationCloudServiceInheritedFrom: string(cloudSvcName),
 				}
 				if svcMeta.HealthCheck {
-					svc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
-					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
-					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
+					updateSvc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
+					updateSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
+					updateSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 				}
-				s.fillService(svcMeta, svc, fillEndpoints)
+				s.fillService(svcMeta, &updateSvc, false)
 				preHv := s.controller.GetC2KContext().SyncedKubeServiceHash[k8sSvcName]
-				if preHv == s.serviceHash(svc) {
+				if preHv == s.serviceHash(&updateSvc) {
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", k8sSvcName)
 					continue
 				}
-				deleteSvcs = append(deleteSvcs, k8sSvcName)
-				continue
+				//deleteSvcs = append(deleteSvcs, k8sSvcName)
+				//continue
 			}
 
 			// Register!
@@ -576,14 +606,10 @@ func (s *CtoKSyncer) serviceHash(service *corev1.Service) uint64 {
 		annoBytes, _ := json.Marshal(service.Annotations)
 		bytes = append(bytes, annoBytes...)
 	}
-	if len(service.Spec.Ports) > 0 {
-		portBytes, _ := json.Marshal(service.Spec.Ports)
-		bytes = append(bytes, portBytes...)
-	}
-	if len(service.Spec.ExternalName) > 0 {
-		externalNameBytes, _ := json.Marshal(service.Spec.ExternalName)
-		bytes = append(bytes, externalNameBytes...)
-	}
+	specBytes, _ := json.Marshal(service.Spec)
+	bytes = append(bytes, specBytes...)
+	v := utils.Hash(bytes)
+	fmt.Println(service.Name, v)
 	return utils.Hash(bytes)
 }
 

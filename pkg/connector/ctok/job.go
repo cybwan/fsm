@@ -43,7 +43,7 @@ func (job *DeleteSyncJob) Run() {
 	defer job.wg.Done()
 	defer close(job.done)
 
-	_, exists, err := job.syncer.informer.GetIndexer().GetByKey(fmt.Sprintf("%s/%s", job.syncer.namespace(), job.serviceName))
+	_, exists, err := job.syncer.svcInformer.GetIndexer().GetByKey(fmt.Sprintf("%s/%s", job.syncer.namespace(), job.serviceName))
 	if err == nil && !exists {
 		return
 	}
@@ -74,21 +74,67 @@ func (job *CreateSyncJob) Run() {
 	defer job.wg.Done()
 	defer close(job.done)
 
-	item, exists, err := job.syncer.informer.GetIndexer().GetByKey(fmt.Sprintf("%s/%s", job.syncer.namespace(), job.create.service.Name))
-	if err == nil && exists {
+	key := fmt.Sprintf("%s/%s", job.syncer.namespace(), job.create.service.Name)
+	if item, exists, err := job.syncer.svcInformer.GetIndexer().GetByKey(key); err == nil && exists {
 		existsService := item.(*corev1.Service)
 		preHash := job.syncer.serviceHash(existsService)
 		curHash := job.syncer.serviceHash(job.create.service)
 		if preHash == curHash {
+			fmt.Println("A")
 			return
 		} else {
-			if err = job.svcClient.Delete(job.ctx, job.create.service.Name, metav1.DeleteOptions{}); err != nil {
-				log.Debug().Msgf("warn deleting service, name:%s warn:%v", job.create.service.Name, err)
+			fmt.Println("B")
+			existsService.Labels = job.create.service.Labels
+			existsService.Annotations = job.create.service.Annotations
+			existsService.Spec = job.create.service.Spec
+			if existsService, err = job.svcClient.Update(job.ctx, existsService, metav1.UpdateOptions{}); err != nil {
+				log.Error().Msgf("updating service, name:%s error:%v", job.create.service.Name, err)
+				fmt.Println("C")
+				return
 			}
+
+			if item, exists, err = job.syncer.eptInformer.GetIndexer().GetByKey(key); err == nil && exists {
+				fmt.Println("D")
+				if job.create.endpoints != nil {
+					fmt.Println("E")
+					existsEndpoints := item.(*corev1.Endpoints)
+					existsEndpoints.Labels = job.create.endpoints.Labels
+					existsEndpoints.Annotations = job.create.endpoints.Annotations
+					existsEndpoints.Subsets = job.create.endpoints.Subsets
+					if existsEndpoints, err = job.eptClient.Update(job.ctx, existsEndpoints, metav1.UpdateOptions{}); err != nil {
+						fmt.Println("F")
+						log.Error().Msgf("updating endpoints, name:%s error:%v", job.create.service.Name, err)
+					}
+				} else {
+					fmt.Println("G")
+					if err = job.eptClient.Delete(job.ctx, job.create.service.Name, metav1.DeleteOptions{}); err != nil {
+						fmt.Println("H")
+						log.Warn().Msgf("warn deleting endpoints, name:%s error:%v", job.create.service.Name, err)
+					}
+				}
+			} else {
+				fmt.Println("I0")
+				if job.create.endpoints != nil {
+					fmt.Println("I")
+					if _, err := job.eptClient.Create(job.ctx, job.create.endpoints, metav1.CreateOptions{}); err != nil {
+						fmt.Println("J")
+						log.Error().Msgf("creating endpoints, name:%s error:%v", job.create.service.Name, err)
+					}
+				}
+			}
+
+			job.syncer.lock.Lock()
+			defer job.syncer.lock.Unlock()
+			job.syncer.controller.GetC2KContext().SyncedKubeServiceHash[connector.KubeSvcName(job.create.service.Name)] = curHash
+			job.syncer.controller.GetC2KContext().SyncedKubeServiceCache[connector.KubeSvcName(job.create.service.Name)] = existsService
+
+			return
 		}
 	}
 
+	fmt.Println("K")
 	if job.create.endpoints != nil {
+		fmt.Println("L")
 		if _, err := job.eptClient.Create(job.ctx, job.create.endpoints, metav1.CreateOptions{}); err != nil {
 			log.Error().Msgf("creating endpoints, name:%s error:%v", job.create.service.Name, err)
 		}
