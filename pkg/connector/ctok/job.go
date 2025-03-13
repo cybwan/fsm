@@ -80,44 +80,33 @@ func (job *CreateSyncJob) Run() {
 		preHash := job.syncer.serviceHash(existsService)
 		curHash := job.syncer.serviceHash(job.create.service)
 		if preHash == curHash {
-			fmt.Println("A")
 			return
 		} else {
-			fmt.Println("B")
 			existsService.Labels = job.create.service.Labels
 			existsService.Annotations = job.create.service.Annotations
 			existsService.Spec = job.create.service.Spec
 			if existsService, err = job.svcClient.Update(job.ctx, existsService, metav1.UpdateOptions{}); err != nil {
 				log.Error().Msgf("updating service, name:%s error:%v", job.create.service.Name, err)
-				fmt.Println("C")
 				return
 			}
 
 			if item, exists, err = job.syncer.eptInformer.GetIndexer().GetByKey(key); err == nil && exists {
-				fmt.Println("D")
 				if job.create.endpoints != nil {
-					fmt.Println("E")
 					existsEndpoints := item.(*corev1.Endpoints)
 					existsEndpoints.Labels = job.create.endpoints.Labels
 					existsEndpoints.Annotations = job.create.endpoints.Annotations
 					existsEndpoints.Subsets = job.create.endpoints.Subsets
 					if existsEndpoints, err = job.eptClient.Update(job.ctx, existsEndpoints, metav1.UpdateOptions{}); err != nil {
-						fmt.Println("F")
 						log.Error().Msgf("updating endpoints, name:%s error:%v", job.create.service.Name, err)
 					}
 				} else {
-					fmt.Println("G")
 					if err = job.eptClient.Delete(job.ctx, job.create.service.Name, metav1.DeleteOptions{}); err != nil {
-						fmt.Println("H")
 						log.Warn().Msgf("warn deleting endpoints, name:%s error:%v", job.create.service.Name, err)
 					}
 				}
 			} else {
-				fmt.Println("I0")
 				if job.create.endpoints != nil {
-					fmt.Println("I")
 					if _, err := job.eptClient.Create(job.ctx, job.create.endpoints, metav1.CreateOptions{}); err != nil {
-						fmt.Println("J")
 						log.Error().Msgf("creating endpoints, name:%s error:%v", job.create.service.Name, err)
 					}
 				}
@@ -132,9 +121,7 @@ func (job *CreateSyncJob) Run() {
 		}
 	}
 
-	fmt.Println("K")
 	if job.create.endpoints != nil {
-		fmt.Println("L")
 		if _, err := job.eptClient.Create(job.ctx, job.create.endpoints, metav1.CreateOptions{}); err != nil {
 			log.Error().Msgf("creating endpoints, name:%s error:%v", job.create.service.Name, err)
 		}

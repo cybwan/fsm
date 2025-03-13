@@ -157,7 +157,6 @@ func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
 			&cache.ListWatch{
 				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 					serviceList, err := s.kubeClient.CoreV1().Services(s.namespace()).List(s.ctx, options)
-					fmt.Println("serviceList:", serviceList)
 					if err != nil {
 						log.Error().Msgf("cache.NewSharedIndexInformer Services ListFunc:%v", err)
 					}
@@ -165,7 +164,6 @@ func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
 				},
 				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 					service, err := s.kubeClient.CoreV1().Services(s.namespace()).Watch(s.ctx, options)
-					fmt.Println("service:", service)
 					if err != nil {
 						log.Error().Msgf("cache.NewSharedIndexInformer Services WatchFunc:%v", err)
 					}
@@ -173,30 +171,6 @@ func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
 				},
 			},
 			&corev1.Service{},
-			0,
-			cache.Indexers{},
-		)
-		fmt.Println("endpointsList:")
-		s.eptInformer = cache.NewSharedIndexInformer(
-			&cache.ListWatch{
-				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-					endpointsList, err := s.kubeClient.CoreV1().Endpoints(s.namespace()).List(s.ctx, options)
-					fmt.Println("endpointsList:", endpointsList)
-					if err != nil {
-						log.Error().Msgf("cache.NewSharedIndexInformer Endpoints ListFunc:%v", err)
-					}
-					return endpointsList, err
-				},
-				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-					endpoints, err := s.kubeClient.CoreV1().Endpoints(s.namespace()).Watch(s.ctx, options)
-					fmt.Println("endpoints:", endpoints)
-					if err != nil {
-						log.Error().Msgf("cache.NewSharedIndexInformer Endpoints WatchFunc:%v", err)
-					}
-					return endpoints, err
-				},
-			},
-			&corev1.Endpoints{},
 			0,
 			cache.Indexers{},
 		)
@@ -438,8 +412,6 @@ func (s *CtoKSyncer) crudList() (createSvcs []*syncCreate, deleteSvcs []connecto
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", k8sSvcName)
 					continue
 				}
-				//deleteSvcs = append(deleteSvcs, k8sSvcName)
-				//continue
 			}
 
 			// Register!
@@ -608,8 +580,6 @@ func (s *CtoKSyncer) serviceHash(service *corev1.Service) uint64 {
 	}
 	specBytes, _ := json.Marshal(service.Spec)
 	bytes = append(bytes, specBytes...)
-	v := utils.Hash(bytes)
-	fmt.Println(service.Name, v)
 	return utils.Hash(bytes)
 }
 

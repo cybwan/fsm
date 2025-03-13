@@ -25,3 +25,6 @@ type syncCreate struct {
 	service   *corev1.Service
 	endpoints *corev1.Endpoints
 }
+
+type SharedServiceList struct {
+}
