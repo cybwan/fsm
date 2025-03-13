@@ -62,6 +62,7 @@ func (s *CtoKSource) Run(ctx context.Context) {
 			// If there was an error, handle that
 			if err != nil {
 				log.Warn().Msgf("error querying services, will retry, err:%s", err)
+				time.Sleep(opts.WaitTime)
 				continue
 			}
 		}
@@ -93,7 +94,6 @@ func (s *CtoKSource) Run(ctx context.Context) {
 		log.Trace().Msgf("received services from cloud, count:%d", len(services))
 
 		s.syncer.SetServices(services, catalogServices)
-
 		time.Sleep(opts.WaitTime)
 	}
 }
