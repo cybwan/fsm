@@ -96,7 +96,7 @@ func (job *CreateSyncJob) Run() {
 					existsEndpoints.Labels = job.create.endpoints.Labels
 					existsEndpoints.Annotations = job.create.endpoints.Annotations
 					existsEndpoints.Subsets = job.create.endpoints.Subsets
-					if existsEndpoints, err = job.eptClient.Update(job.ctx, existsEndpoints, metav1.UpdateOptions{}); err != nil {
+					if _, err = job.eptClient.Update(job.ctx, existsEndpoints, metav1.UpdateOptions{}); err != nil {
 						log.Error().Msgf("updating endpoints, name:%s error:%v", job.create.service.Name, err)
 					}
 				} else {
