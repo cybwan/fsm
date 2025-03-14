@@ -39,7 +39,7 @@ type DeleteSyncJob struct {
 	syncer        *CtoKSyncer
 	serviceName   string
 	fillEndpoints bool
-	keepServices  bool
+	keepServices  map[string]string
 }
 
 // Run is the logic unit of job
@@ -53,7 +53,7 @@ func (job *DeleteSyncJob) Run() {
 		return
 	}
 
-	if !job.keepServices {
+	if _, keep := job.keepServices[job.serviceName]; !keep {
 		if err := job.svcClient.Delete(job.ctx, job.serviceName, metav1.DeleteOptions{}); err != nil {
 			log.Debug().Msgf("warn deleting service, name:%s warn:%v", job.serviceName, err)
 			return

@@ -59,7 +59,7 @@ type CtoKSyncer struct {
 	microAggregator Aggregator
 
 	fillEndpoints bool
-	keepServices  bool
+	keepServices  map[string]string
 
 	// ctx is used to cancel the CtoKSyncer.
 	ctx context.Context
@@ -252,7 +252,15 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 		s.fillEndpoints = !IsSyncCloudNamespace(deriveNamespace)
 	}
 
-	s.keepServices = s.controller.EnableC2KConversions()
+	s.keepServices = make(map[string]string)
+	if s.controller.EnableC2KConversions() {
+		serviceConversions := s.controller.GetC2KServiceConversions()
+		if len(serviceConversions) > 0 {
+			for _, serviceConversion := range serviceConversions {
+				s.keepServices[serviceConversion.ConvertName] = serviceConversion.Service
+			}
+		}
+	}
 
 	svcClient := s.kubeClient.CoreV1().Services(s.namespace())
 	eptClient := s.kubeClient.CoreV1().Endpoints(s.namespace())
