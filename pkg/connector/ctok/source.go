@@ -79,8 +79,7 @@ func (s *CtoKSource) Run(ctx context.Context) {
 				if len(serviceConversions) > 0 {
 					if serviceConversion, exists := serviceConversions[fmt.Sprintf("%s/%s", svc.Namespace, svc.Service)]; exists {
 						services[connector.KubeSvcName(serviceConversion.ConvertName)] = connector.ServiceConversion{
-							Service:      connector.CloudSvcName(svc.Service),
-							ExternalName: connector.ExternalName(serviceConversion.ExternalName),
+							Service: connector.CloudSvcName(svc.Service),
 						}
 					}
 				}

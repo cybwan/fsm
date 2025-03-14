@@ -139,9 +139,6 @@ type ServiceConversion struct {
 	Service string `json:"service"`
 
 	ConvertName string `json:"convertName"`
-
-	// +optional
-	ExternalName string `json:"externalName,omitempty"`
 }
 
 type ConversionStrategy struct {
