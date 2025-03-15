@@ -235,19 +235,19 @@ func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 	}
 
 	// If in deny list, don't sync
-	if t.controller.GetDenyK8SNamespaceSet().Contains(svc.Namespace) {
+	if t.controller.GetK2CDenyK8SNamespaceSet().Contains(svc.Namespace) {
 		log.Debug().Msgf("[shouldSync] service is in the deny list svc.Namespace:%s service:%v", svc.Namespace, svc)
 		return false
 	}
 
 	// If not in allow list or allow list is not *, don't sync
-	if !t.controller.GetAllowK8SNamespaceSet().Contains("*") && !t.controller.GetAllowK8SNamespaceSet().Contains(svc.Namespace) {
+	if !t.controller.GetK2CAllowK8SNamespaceSet().Contains("*") && !t.controller.GetK2CAllowK8SNamespaceSet().Contains(svc.Namespace) {
 		log.Debug().Msgf("[shouldSync] service not in allow list svc.Namespace:%s service:%v", svc.Namespace, svc)
 		return false
 	}
 
 	// Ignore ClusterIP services if ClusterIP sync is disabled
-	if svc.Spec.Type == corev1.ServiceTypeClusterIP && !t.controller.GetSyncClusterIPServices() {
+	if svc.Spec.Type == corev1.ServiceTypeClusterIP && !t.controller.GetK2CSyncClusterIPServices() {
 		log.Debug().Msgf("[shouldSync] ignoring clusterip service svc.Namespace:%s service:%v", svc.Namespace, svc)
 		return false
 	}
@@ -273,7 +273,7 @@ func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 	raw, ok := svc.Annotations[connector.AnnotationServiceSyncK8sToCloud]
 	if !ok {
 		// If there is no explicit value, then set it to our current default.
-		return t.controller.GetDefaultSync()
+		return t.controller.GetK2CDefaultSync()
 	}
 
 	v, err := strconv.ParseBool(raw)
@@ -283,7 +283,7 @@ func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 			err)
 
 		// Fallback to default
-		return t.controller.GetDefaultSync()
+		return t.controller.GetK2CDefaultSync()
 	}
 
 	return v
@@ -308,7 +308,7 @@ func (t *KtoCSource) shouldTrackEndpoints(key string) bool {
 
 	return svc.Spec.Type == corev1.ServiceTypeNodePort ||
 		svc.Spec.Type == corev1.ServiceTypeClusterIP ||
-		(t.controller.GetSyncLoadBalancerEndpoints() && svc.Spec.Type == corev1.ServiceTypeLoadBalancer)
+		(t.controller.GetK2CSyncLoadBalancerEndpoints() && svc.Spec.Type == corev1.ServiceTypeLoadBalancer)
 }
 
 // generateRegistrations generates the necessary cloud registrations for
@@ -568,7 +568,7 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 
 			// Set the expected node address type
 			var expectedType corev1.NodeAddressType
-			if t.controller.GetNodePortSyncType() == ctv1.InternalOnly {
+			if t.controller.GetK2CNodePortSyncType() == ctv1.InternalOnly {
 				expectedType = corev1.NodeInternalIP
 			} else {
 				expectedType = corev1.NodeExternalIP
@@ -610,7 +610,7 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 
 			// If an ExternalIP wasn't found, and ExternalFirst is set,
 			// use an InternalIP
-			if t.controller.GetNodePortSyncType() == ctv1.ExternalFirst && !found {
+			if t.controller.GetK2CNodePortSyncType() == ctv1.ExternalFirst && !found {
 				for _, address := range node.Status.Addresses {
 					if address.Type == corev1.NodeInternalIP {
 						if !t.filterIPRanges(address.Address) {
@@ -658,7 +658,7 @@ func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(
 	overridePortName string,
 	overridePortNumber int32,
 	svc *corev1.Service) {
-	if t.controller.GetSyncLoadBalancerEndpoints() {
+	if t.controller.GetK2CSyncLoadBalancerEndpoints() {
 		t.registerServiceInstance(svcMeta, baseNode, baseService, key, overridePortName, overridePortNumber, false)
 	} else {
 		seen := map[string]struct{}{}
@@ -885,7 +885,7 @@ func (t *KtoCSource) chooseServiceAddrPort(key string,
 	// Use the address and port from the Ingress resource if
 	// ingress-sync is enabled and the service has an ingress
 	// resource that references it.
-	if t.controller.GetSyncIngress() && t.isIngressService(key) {
+	if t.controller.GetK2CSyncIngress() && t.isIngressService(key) {
 		if svcAddr, exists := t.controller.GetK2CContext().ServiceHostnameMap.Get(key); exists {
 			addr.Set(svcAddr.HostName)
 			port.Set(svcAddr.Port)
@@ -1088,7 +1088,7 @@ func (t *serviceIngressSource) Informer() cache.SharedIndexInformer {
 }
 
 func (t *serviceIngressSource) Upsert(key string, raw interface{}) error {
-	if !t.Service.controller.GetSyncIngress() {
+	if !t.Service.controller.GetK2CSyncIngress() {
 		return nil
 	}
 	svc := t.Service
@@ -1116,7 +1116,7 @@ func (t *serviceIngressSource) Upsert(key string, raw interface{}) error {
 		if svcName == "" {
 			continue
 		}
-		if t.Service.controller.GetSyncIngressLoadBalancerIPs() {
+		if t.Service.controller.GetK2CSyncIngressLoadBalancerIPs() {
 			if len(ingress.Status.LoadBalancer.Ingress) > 0 && ingress.Status.LoadBalancer.Ingress[0].IP == "" {
 				continue
 			}
@@ -1164,7 +1164,7 @@ func (t *serviceIngressSource) Upsert(key string, raw interface{}) error {
 }
 
 func (t *serviceIngressSource) Delete(key string, _ interface{}) error {
-	if !t.Service.controller.GetSyncIngress() {
+	if !t.Service.controller.GetK2CSyncIngress() {
 		return nil
 	}
 
@@ -1188,11 +1188,11 @@ func (t *serviceIngressSource) Delete(key string, _ interface{}) error {
 }
 
 func (t *KtoCSource) addPrefixAndK8SNamespace(name, namespace string) string {
-	if addServicePrefix := t.controller.GetAddServicePrefix(); len(addServicePrefix) > 0 {
+	if addServicePrefix := t.controller.GetK2CAddServicePrefix(); len(addServicePrefix) > 0 {
 		name = fmt.Sprintf("%s%s", addServicePrefix, name)
 	}
 
-	if t.controller.GetAddK8SNamespaceAsServiceSuffix() {
+	if t.controller.GetK2CAddK8SNamespaceAsServiceSuffix() {
 		name = fmt.Sprintf("%s-%s", name, namespace)
 	}
 

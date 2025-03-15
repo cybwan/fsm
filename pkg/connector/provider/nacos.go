@@ -412,7 +412,7 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 		k2cClusterId = connector.NACOS_DEFAULT_CLUSTER
 	}
 	ins := reg.ToNacos(k2cClusterId, k2cGroupId, float64(1))
-	appendMetadataSet := dc.connectController.GetAppendMetadataSet().ToSlice()
+	appendMetadataSet := dc.connectController.GetK2CAppendMetadataSet().ToSlice()
 	if len(appendMetadataSet) > 0 {
 		rMetadata := ins.Metadata
 		for _, item := range appendMetadataSet {

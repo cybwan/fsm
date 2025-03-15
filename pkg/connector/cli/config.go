@@ -343,61 +343,61 @@ func (c *config) GetK2GDenyK8SNamespaceSet() mapset.Set {
 	return c.k2gCfg.denyK8sNamespacesSet
 }
 
-func (c *config) GetDefaultSync() bool {
+func (c *config) GetK2CDefaultSync() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.defaultSync
 }
 
-func (c *config) GetSyncClusterIPServices() bool {
+func (c *config) GetK2CSyncClusterIPServices() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.syncClusterIPServices
 }
 
-func (c *config) GetSyncLoadBalancerEndpoints() bool {
+func (c *config) GetK2CSyncLoadBalancerEndpoints() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.syncLoadBalancerEndpoints
 }
 
-func (c *config) GetNodePortSyncType() ctv1.NodePortSyncType {
+func (c *config) GetK2CNodePortSyncType() ctv1.NodePortSyncType {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.nodePortSyncType
 }
 
-func (c *config) GetSyncIngress() bool {
+func (c *config) GetK2CSyncIngress() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.syncIngress
 }
 
-func (c *config) GetSyncIngressLoadBalancerIPs() bool {
+func (c *config) GetK2CSyncIngressLoadBalancerIPs() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.syncIngressLoadBalancerIPs
 }
 
-func (c *config) GetAddServicePrefix() string {
+func (c *config) GetK2CAddServicePrefix() string {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.addServicePrefix
 }
 
-func (c *config) GetAddK8SNamespaceAsServiceSuffix() bool {
+func (c *config) GetK2CAddK8SNamespaceAsServiceSuffix() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.addK8SNamespaceAsServiceSuffix
 }
 
-func (c *config) GetAppendTagSet() mapset.Set {
+func (c *config) GetK2CAppendTagSet() mapset.Set {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.appendTagSet
 }
 
-func (c *config) GetAppendMetadataSet() mapset.Set {
+func (c *config) GetK2CAppendMetadataSet() mapset.Set {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.appendMetadataSet
@@ -457,13 +457,13 @@ func (c *config) GetK2CMetadataToAnnotationConversions() map[string]string {
 	return nil
 }
 
-func (c *config) GetAllowK8SNamespaceSet() mapset.Set {
+func (c *config) GetK2CAllowK8SNamespaceSet() mapset.Set {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.allowK8sNamespacesSet
 }
 
-func (c *config) GetDenyK8SNamespaceSet() mapset.Set {
+func (c *config) GetK2CDenyK8SNamespaceSet() mapset.Set {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.denyK8sNamespacesSet

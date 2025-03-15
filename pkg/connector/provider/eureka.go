@@ -375,7 +375,7 @@ func (dc *EurekaDiscoveryClient) Deregister(dereg *connector.CatalogDeregistrati
 
 func (dc *EurekaDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
 	ins := reg.ToEureka()
-	metadataSet := dc.connectController.GetAppendMetadataSet().ToSlice()
+	metadataSet := dc.connectController.GetK2CAppendMetadataSet().ToSlice()
 	if len(metadataSet) > 0 {
 		rMetadata := ins.Metadata.GetMap()
 		for _, item := range metadataSet {

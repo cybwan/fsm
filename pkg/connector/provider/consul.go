@@ -262,13 +262,13 @@ func (dc *ConsulDiscoveryClient) Register(reg *connector.CatalogRegistration) er
 	ins.Service.Tags = append(ins.Service.Tags, dc.GetClusterTag())
 	ins.Service.Tags = append(ins.Service.Tags, dc.GetConnectorUidTag())
 
-	appendTagSet := dc.connectController.GetAppendTagSet().ToSlice()
+	appendTagSet := dc.connectController.GetK2CAppendTagSet().ToSlice()
 	if len(appendTagSet) > 0 {
 		for _, tag := range appendTagSet {
 			ins.Service.Tags = append(ins.Service.Tags, tag.(string))
 		}
 	}
-	appendMetadataSet := dc.connectController.GetAppendMetadataSet().ToSlice()
+	appendMetadataSet := dc.connectController.GetK2CAppendMetadataSet().ToSlice()
 	if len(appendMetadataSet) > 0 {
 		rMetadata := ins.Service.Meta
 		for _, item := range appendMetadataSet {
