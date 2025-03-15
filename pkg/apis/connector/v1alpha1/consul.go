@@ -106,7 +106,10 @@ type ConsulSyncToK8SSpec struct {
 	GenerateInternalServiceHealthCheck bool `json:"generateInternalServiceHealthCheck,omitempty"`
 
 	// +optional
-	MetadataStrategy *MetadataStrategy `json:"tagStrategy,omitempty"`
+	TagStrategy *MetadataStrategy `json:"tagStrategy,omitempty"`
+
+	// +optional
+	MetadataStrategy *MetadataStrategy `json:"metadataStrategy,omitempty"`
 
 	// +optional
 	ConversionStrategy *ConversionStrategy `json:"conversionStrategy,omitempty"`
@@ -152,7 +155,13 @@ type ConsulSyncFromK8SSpec struct {
 	AppendTags []string `json:"appendTags,omitempty"`
 
 	// +optional
+	TagStrategy *MetadataStrategy `json:"tagStrategy,omitempty"`
+
+	// +optional
 	AppendMetadatas []Metadata `json:"appendMetadatas,omitempty"`
+
+	// +optional
+	MetadataStrategy *MetadataStrategy `json:"metadataStrategy,omitempty"`
 
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:default={"*"}

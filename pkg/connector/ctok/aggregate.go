@@ -38,18 +38,22 @@ func (s *CtoKSource) Aggregate(ctx context.Context, kubeSvcName connector.KubeSv
 
 	svcMetaMap = make(map[connector.KubeSvcName]*connector.MicroSvcMeta)
 
+	enableTagStrategy := s.controller.EnableC2KTagStrategy()
+	tagToLabelConversions := s.controller.GetC2KTagToLabelConversions()
+	tagToAnnotationConversions := s.controller.GetC2KTagToAnnotationConversions()
+
 	enableMetadataStrategy := s.controller.EnableC2KMetadataStrategy()
-	labelConversions := s.controller.GetC2KMetadataToLabelConversions()
-	annotationConversions := s.controller.GetC2KMetadataToAnnotationConversions()
+	metadataToLabelConversions := s.controller.GetC2KMetadataToLabelConversions()
+	metadataToAnnotationConversions := s.controller.GetC2KMetadataToAnnotationConversions()
 
 	for _, instance := range instanceEntries {
 		instance.MicroService.Service = strings.ToLower(instance.MicroService.Service)
 		kubeSvcNames := []connector.KubeSvcName{kubeSvcName}
 		if len(instance.Tags) > 0 {
-			kubeSvcNames = s.aggregateTag(kubeSvcName, instance, kubeSvcNames, enableMetadataStrategy, labelConversions, labels, annotationConversions, annotations)
+			kubeSvcNames = s.aggregateTag(kubeSvcName, instance, kubeSvcNames, enableTagStrategy, tagToLabelConversions, labels, tagToAnnotationConversions, annotations)
 		}
 		if len(instance.Meta) > 0 {
-			kubeSvcNames = s.aggregateMetadata(kubeSvcName, instance, kubeSvcNames, enableMetadataStrategy, labelConversions, labels, annotationConversions, annotations)
+			kubeSvcNames = s.aggregateMetadata(kubeSvcName, instance, kubeSvcNames, enableMetadataStrategy, metadataToLabelConversions, labels, metadataToAnnotationConversions, annotations)
 		}
 		for _, k8sSvcName := range kubeSvcNames {
 			s.aggregateMeta(svcMetaMap, k8sSvcName, instance)

@@ -143,6 +143,9 @@ type EurekaSyncFromK8SSpec struct {
 	// +optional
 	AppendMetadatas []Metadata `json:"appendMetadatas,omitempty"`
 
+	// +optional
+	MetadataStrategy *MetadataStrategy `json:"metadataStrategy,omitempty"`
+
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:default={"*"}
 	// +optional

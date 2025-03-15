@@ -58,6 +58,10 @@ type ConnectController interface {
 
 	GetC2KFixedHTTPServicePort() *uint32
 
+	EnableC2KTagStrategy() bool
+	GetC2KTagToLabelConversions() map[string]string
+	GetC2KTagToAnnotationConversions() map[string]string
+
 	EnableC2KMetadataStrategy() bool
 	GetC2KMetadataToLabelConversions() map[string]string
 	GetC2KMetadataToAnnotationConversions() map[string]string

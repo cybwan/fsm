@@ -186,10 +186,20 @@ func (in *ConsulSyncFromK8SSpec) DeepCopyInto(out *ConsulSyncFromK8SSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.TagStrategy != nil {
+		in, out := &in.TagStrategy, &out.TagStrategy
+		*out = new(MetadataStrategy)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.AppendMetadatas != nil {
 		in, out := &in.AppendMetadatas, &out.AppendMetadatas
 		*out = make([]Metadata, len(*in))
 		copy(*out, *in)
+	}
+	if in.MetadataStrategy != nil {
+		in, out := &in.MetadataStrategy, &out.MetadataStrategy
+		*out = new(MetadataStrategy)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.AllowK8sNamespaces != nil {
 		in, out := &in.AllowK8sNamespaces, &out.AllowK8sNamespaces
@@ -254,6 +264,11 @@ func (in *ConsulSyncToK8SSpec) DeepCopyInto(out *ConsulSyncToK8SSpec) {
 		**out = **in
 	}
 	out.WithGateway = in.WithGateway
+	if in.TagStrategy != nil {
+		in, out := &in.TagStrategy, &out.TagStrategy
+		*out = new(MetadataStrategy)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.MetadataStrategy != nil {
 		in, out := &in.MetadataStrategy, &out.MetadataStrategy
 		*out = new(MetadataStrategy)
@@ -423,6 +438,11 @@ func (in *EurekaSyncFromK8SSpec) DeepCopyInto(out *EurekaSyncFromK8SSpec) {
 		in, out := &in.AppendMetadatas, &out.AppendMetadatas
 		*out = make([]Metadata, len(*in))
 		copy(*out, *in)
+	}
+	if in.MetadataStrategy != nil {
+		in, out := &in.MetadataStrategy, &out.MetadataStrategy
+		*out = new(MetadataStrategy)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.AllowK8sNamespaces != nil {
 		in, out := &in.AllowK8sNamespaces, &out.AllowK8sNamespaces
@@ -968,6 +988,11 @@ func (in *NacosSyncFromK8SSpec) DeepCopyInto(out *NacosSyncFromK8SSpec) {
 		*out = make([]Metadata, len(*in))
 		copy(*out, *in)
 	}
+	if in.MetadataStrategy != nil {
+		in, out := &in.MetadataStrategy, &out.MetadataStrategy
+		*out = new(MetadataStrategy)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.AllowK8sNamespaces != nil {
 		in, out := &in.AllowK8sNamespaces, &out.AllowK8sNamespaces
 		*out = make([]string, len(*in))
@@ -1268,6 +1293,11 @@ func (in *ZookeeperSyncFromK8SSpec) DeepCopyInto(out *ZookeeperSyncFromK8SSpec) 
 		in, out := &in.AppendMetadatas, &out.AppendMetadatas
 		*out = make([]Metadata, len(*in))
 		copy(*out, *in)
+	}
+	if in.MetadataStrategy != nil {
+		in, out := &in.MetadataStrategy, &out.MetadataStrategy
+		*out = new(MetadataStrategy)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.AllowK8sNamespaces != nil {
 		in, out := &in.AllowK8sNamespaces, &out.AllowK8sNamespaces

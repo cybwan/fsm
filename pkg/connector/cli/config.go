@@ -70,6 +70,7 @@ type config struct {
 
 		fixedHTTPServicePort *uint32
 
+		tagStrategy      *ctv1.MetadataStrategy
 		metadataStrategy *ctv1.MetadataStrategy
 
 		enableConversions  bool
@@ -640,6 +641,33 @@ func (c *config) GetC2KFixedHTTPServicePort() *uint32 {
 	return c.c2kCfg.fixedHTTPServicePort
 }
 
+func (c *config) EnableC2KTagStrategy() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.c2kCfg.tagStrategy != nil {
+		return c.c2kCfg.tagStrategy.Enable
+	}
+	return false
+}
+
+func (c *config) GetC2KTagToLabelConversions() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.c2kCfg.tagStrategy != nil {
+		return c.c2kCfg.tagStrategy.LabelConversions
+	}
+	return nil
+}
+
+func (c *config) GetC2KTagToAnnotationConversions() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	if c.c2kCfg.tagStrategy != nil {
+		return c.c2kCfg.tagStrategy.AnnotationConversions
+	}
+	return nil
+}
+
 func (c *config) EnableC2KMetadataStrategy() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -1013,6 +1041,7 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.config.c2kCfg.tagStrategy = spec.SyncToK8S.TagStrategy
 	c.config.c2kCfg.metadataStrategy = spec.SyncToK8S.MetadataStrategy
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
