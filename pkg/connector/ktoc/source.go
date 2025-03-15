@@ -422,14 +422,14 @@ func (t *KtoCSource) generateRegistrations(key string) {
 }
 
 func (t *KtoCSource) fillTagMetadata(svc *corev1.Service, baseService *connector.AgentService) {
-	if appendTagSet := t.controller.GetK2CAppendTagSet().ToSlice(); len(appendTagSet) > 0 {
-		for _, tag := range appendTagSet {
+	if appendTagSet := t.controller.GetK2CAppendTagSet(); appendTagSet != nil && appendTagSet.Cardinality() > 0 {
+		for _, tag := range appendTagSet.ToSlice() {
 			baseService.Tags = append(baseService.Tags, tag.(string))
 		}
 	}
 
-	if metadataSet := t.controller.GetK2CAppendMetadataSet().ToSlice(); len(metadataSet) > 0 {
-		for _, item := range metadataSet {
+	if metadataSet := t.controller.GetK2CAppendMetadataSet(); metadataSet != nil && metadataSet.Cardinality() > 0 {
+		for _, item := range metadataSet.ToSlice() {
 			metadata := item.(ctv1.Metadata)
 			baseService.Meta[metadata.Key] = metadata.Value
 		}
