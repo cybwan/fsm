@@ -377,21 +377,10 @@ func (t *KtoCSource) generateRegistrations(key string) {
 		baseService.MicroService.Namespace = registeredNS
 	}
 
+	t.fillTagMetadata(svc, &baseService)
+
 	// Determine the default port and set port annotations
 	overridePortName, overridePortNumber := t.determinePortAnnotations(svc, baseService)
-
-	// Parse any additional tags
-	if rawTags, ok := svc.Annotations[connector.AnnotationServiceTags]; ok {
-		baseService.Tags = append(baseService.Tags, parseTags(rawTags)...)
-	}
-
-	// Parse any additional meta
-	for k, v := range svc.Annotations {
-		if strings.HasPrefix(k, connector.AnnotationServiceMetaPrefix) {
-			k = strings.TrimPrefix(k, connector.AnnotationServiceMetaPrefix)
-			baseService.Meta[k] = v
-		}
-	}
 
 	// Always log what we generated
 	defer func() {
@@ -429,6 +418,80 @@ func (t *KtoCSource) generateRegistrations(key string) {
 	// for each endpoint.
 	case corev1.ServiceTypeClusterIP:
 		t.registerServiceInstance(svcMeta, baseNode, baseService, key, overridePortName, overridePortNumber, true)
+	}
+}
+
+func (t *KtoCSource) fillTagMetadata(svc *corev1.Service, baseService *connector.AgentService) {
+	if appendTagSet := t.controller.GetK2CAppendTagSet().ToSlice(); len(appendTagSet) > 0 {
+		for _, tag := range appendTagSet {
+			baseService.Tags = append(baseService.Tags, tag.(string))
+		}
+	}
+
+	if metadataSet := t.controller.GetK2CAppendMetadataSet().ToSlice(); len(metadataSet) > 0 {
+		for _, item := range metadataSet {
+			metadata := item.(ctv1.Metadata)
+			baseService.Meta[metadata.Key] = metadata.Value
+		}
+	}
+
+	if t.controller.EnableK2CTagStrategy() {
+		labelConversions := t.controller.GetK2CTagToLabelConversions()
+		if len(labelConversions) > 0 {
+			if len(svc.Labels) > 0 {
+				for label, value := range svc.Labels {
+					if labelConversion, exists := labelConversions[label]; exists {
+						baseService.Tags = append(baseService.Tags, fmt.Sprintf("%s=%s", labelConversion, value))
+					}
+				}
+			}
+		}
+		annotationConversions := t.controller.GetK2CTagToAnnotationConversions()
+		if len(annotationConversions) > 0 {
+			if len(svc.Annotations) > 0 {
+				for annotation, value := range svc.Annotations {
+					if annotationConversion, exists := annotationConversions[annotation]; exists {
+						baseService.Tags = append(baseService.Tags, fmt.Sprintf("%s=%s", annotationConversion, value))
+					}
+				}
+			}
+		}
+	}
+
+	if t.controller.EnableK2CMetadataStrategy() {
+		labelConversions := t.controller.GetK2CMetadataToLabelConversions()
+		if len(labelConversions) > 0 {
+			if len(svc.Labels) > 0 {
+				for label, value := range svc.Labels {
+					if labelConversion, exists := labelConversions[label]; exists {
+						baseService.Meta[labelConversion] = value
+					}
+				}
+			}
+		}
+		annotationConversions := t.controller.GetK2CMetadataToAnnotationConversions()
+		if len(annotationConversions) > 0 {
+			if len(svc.Annotations) > 0 {
+				for annotation, value := range svc.Annotations {
+					if annotationConversion, exists := annotationConversions[annotation]; exists {
+						baseService.Meta[annotationConversion] = value
+					}
+				}
+			}
+		}
+	}
+
+	// Parse any additional tags
+	if rawTags, ok := svc.Annotations[connector.AnnotationServiceTags]; ok {
+		baseService.Tags = append(baseService.Tags, parseTags(rawTags)...)
+	}
+
+	// Parse any additional meta
+	for k, v := range svc.Annotations {
+		if strings.HasPrefix(k, connector.AnnotationServiceMetaPrefix) {
+			k = strings.TrimPrefix(k, connector.AnnotationServiceMetaPrefix)
+			baseService.Meta[k] = v
+		}
 	}
 }
 

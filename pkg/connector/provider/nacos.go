@@ -412,14 +412,6 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 		k2cClusterId = connector.NACOS_DEFAULT_CLUSTER
 	}
 	ins := reg.ToNacos(k2cClusterId, k2cGroupId, float64(1))
-	appendMetadataSet := dc.connectController.GetK2CAppendMetadataSet().ToSlice()
-	if len(appendMetadataSet) > 0 {
-		rMetadata := ins.Metadata
-		for _, item := range appendMetadataSet {
-			metadata := item.(ctv1.Metadata)
-			rMetadata[metadata.Key] = metadata.Value
-		}
-	}
 	port, _ := strconv.Atoi(fmt.Sprintf("%d", ins.Port))
 	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, connector.MicroServicePort(port), connector.ProtocolHTTP)
 	return dc.connectController.CacheRegisterInstance(instanceId, ins, func() error {
