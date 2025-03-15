@@ -91,6 +91,15 @@ type ConnectController interface {
 
 	GetAppendTagSet() mapset.Set
 	GetAppendMetadataSet() mapset.Set
+
+	EnableK2CTagStrategy() bool
+	GetK2CTagToLabelConversions() map[string]string
+	GetK2CTagToAnnotationConversions() map[string]string
+
+	EnableK2CMetadataStrategy() bool
+	GetK2CMetadataToLabelConversions() map[string]string
+	GetK2CMetadataToAnnotationConversions() map[string]string
+
 	GetAllowK8SNamespaceSet() mapset.Set
 	GetDenyK8SNamespaceSet() mapset.Set
 
