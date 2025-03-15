@@ -264,6 +264,20 @@ func (in *ConsulSyncToK8SSpec) DeepCopyInto(out *ConsulSyncToK8SSpec) {
 		**out = **in
 	}
 	out.WithGateway = in.WithGateway
+	if in.AppendLabels != nil {
+		in, out := &in.AppendLabels, &out.AppendLabels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.AppendAnnotations != nil {
+		in, out := &in.AppendAnnotations, &out.AppendAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.TagStrategy != nil {
 		in, out := &in.TagStrategy, &out.TagStrategy
 		*out = new(MetadataStrategy)
@@ -507,6 +521,20 @@ func (in *EurekaSyncToK8SSpec) DeepCopyInto(out *EurekaSyncToK8SSpec) {
 		**out = **in
 	}
 	out.WithGateway = in.WithGateway
+	if in.AppendLabels != nil {
+		in, out := &in.AppendLabels, &out.AppendLabels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.AppendAnnotations != nil {
+		in, out := &in.AppendAnnotations, &out.AppendAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.MetadataStrategy != nil {
 		in, out := &in.MetadataStrategy, &out.MetadataStrategy
 		*out = new(MetadataStrategy)
@@ -798,6 +826,20 @@ func (in *MachineSyncToK8SSpec) DeepCopyInto(out *MachineSyncToK8SSpec) {
 		copy(*out, *in)
 	}
 	out.WithGateway = in.WithGateway
+	if in.AppendLabels != nil {
+		in, out := &in.AppendLabels, &out.AppendLabels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.AppendAnnotations != nil {
+		in, out := &in.AppendAnnotations, &out.AppendAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.ConversionStrategy != nil {
 		in, out := &in.ConversionStrategy, &out.ConversionStrategy
 		*out = new(ConversionStrategy)
@@ -1066,6 +1108,20 @@ func (in *NacosSyncToK8SSpec) DeepCopyInto(out *NacosSyncToK8SSpec) {
 		copy(*out, *in)
 	}
 	out.WithGateway = in.WithGateway
+	if in.AppendLabels != nil {
+		in, out := &in.AppendLabels, &out.AppendLabels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.AppendAnnotations != nil {
+		in, out := &in.AppendAnnotations, &out.AppendAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.MetadataStrategy != nil {
 		in, out := &in.MetadataStrategy, &out.MetadataStrategy
 		*out = new(MetadataStrategy)
@@ -1362,6 +1418,20 @@ func (in *ZookeeperSyncToK8SSpec) DeepCopyInto(out *ZookeeperSyncToK8SSpec) {
 		**out = **in
 	}
 	out.WithGateway = in.WithGateway
+	if in.AppendLabels != nil {
+		in, out := &in.AppendLabels, &out.AppendLabels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.AppendAnnotations != nil {
+		in, out := &in.AppendAnnotations, &out.AppendAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.MetadataStrategy != nil {
 		in, out := &in.MetadataStrategy, &out.MetadataStrategy
 		*out = new(MetadataStrategy)

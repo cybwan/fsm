@@ -106,6 +106,12 @@ type ConsulSyncToK8SSpec struct {
 	GenerateInternalServiceHealthCheck bool `json:"generateInternalServiceHealthCheck,omitempty"`
 
 	// +optional
+	AppendLabels map[string]string `json:"appendLabels,omitempty"`
+
+	// +optional
+	AppendAnnotations map[string]string `json:"appendAnnotations,omitempty"`
+
+	// +optional
 	TagStrategy *MetadataStrategy `json:"tagStrategy,omitempty"`
 
 	// +optional

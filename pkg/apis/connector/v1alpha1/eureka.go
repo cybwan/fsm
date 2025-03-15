@@ -89,6 +89,12 @@ type EurekaSyncToK8SSpec struct {
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
 
 	// +optional
+	AppendLabels map[string]string `json:"appendLabels,omitempty"`
+
+	// +optional
+	AppendAnnotations map[string]string `json:"appendAnnotations,omitempty"`
+
+	// +optional
 	MetadataStrategy *MetadataStrategy `json:"metadataStrategy,omitempty"`
 
 	// +optional

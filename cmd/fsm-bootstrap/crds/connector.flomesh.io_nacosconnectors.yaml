@@ -312,6 +312,14 @@ spec:
                 description: NacosSyncToK8SSpec is the type used to represent the
                   sync from Nacos to K8S specification.
                 properties:
+                  appendAnnotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  appendLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
                   clusterId:
                     default: ""
                     type: string
