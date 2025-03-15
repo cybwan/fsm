@@ -915,10 +915,14 @@ func (t *KtoCSource) bindService(
 	rs.Meta = make(map[string]interface{})
 	rs.Meta[connector.CloudViaGatewayMode] = string(t.controller.GetK2CWithGatewayMode())
 	if *protocol == connector.ProtocolHTTP {
-		rs.Meta[connector.CloudHTTPViaGateway] = fmt.Sprintf("%s:%d", *viaAddr, *viaPort)
+		if len(*viaAddr) > 0 && *viaPort > 0 {
+			rs.Meta[connector.CloudHTTPViaGateway] = fmt.Sprintf("%s:%d", *viaAddr, *viaPort)
+		}
 	}
 	if *protocol == connector.ProtocolGRPC {
-		rs.Meta[connector.CloudGRPCViaGateway] = fmt.Sprintf("%s:%d", *viaAddr, *viaPort)
+		if len(*viaAddr) > 0 && *viaPort > 0 {
+			rs.Meta[connector.CloudGRPCViaGateway] = fmt.Sprintf("%s:%d", *viaAddr, *viaPort)
+		}
 		if svcMeta != nil && svcMeta.GRPCMeta != nil {
 			if len(svcMeta.GRPCMeta.Interface) > 0 {
 				rs.GRPCInterface = svcMeta.GRPCMeta.Interface
