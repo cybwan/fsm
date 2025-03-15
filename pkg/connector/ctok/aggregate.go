@@ -3,6 +3,7 @@ package ctok
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
@@ -12,8 +13,14 @@ import (
 
 // Aggregate micro services
 func (s *CtoKSource) Aggregate(ctx context.Context, kubeSvcName connector.KubeSvcName) (svcMetaMap map[connector.KubeSvcName]*connector.MicroSvcMeta, labels, annotations map[string]string, err error) {
-	labels = make(map[string]string)
-	annotations = make(map[string]string)
+	labels = maps.Clone(s.syncer.controller.GetC2KAppendLabels())
+	annotations = maps.Clone(s.syncer.controller.GetC2KAppendAnnotations())
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
 
 	cloudSvcName, exists := s.syncer.controller.GetC2KContext().NativeServices[kubeSvcName]
 	if !exists {

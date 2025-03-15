@@ -70,8 +70,10 @@ type config struct {
 
 		fixedHTTPServicePort *uint32
 
-		tagStrategy      *ctv1.MetadataStrategy
-		metadataStrategy *ctv1.MetadataStrategy
+		appendLabels      map[string]string
+		appendAnnotations map[string]string
+		tagStrategy       *ctv1.MetadataStrategy
+		metadataStrategy  *ctv1.MetadataStrategy
 
 		enableConversions  bool
 		serviceConversions map[string]ctv1.ServiceConversion
@@ -698,6 +700,18 @@ func (c *config) GetC2KFixedHTTPServicePort() *uint32 {
 	return c.c2kCfg.fixedHTTPServicePort
 }
 
+func (c *config) GetC2KAppendLabels() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.c2kCfg.appendLabels
+}
+
+func (c *config) GetC2KAppendAnnotations() map[string]string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.c2kCfg.appendAnnotations
+}
+
 func (c *config) EnableC2KTagStrategy() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -905,9 +919,10 @@ func (c *client) initMachineConnectorConfig(spec ctv1.MachineSpec) {
 	c.c2kCfg.filterTag = spec.SyncToK8S.FilterLabel
 	c.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
 	c.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
-
 	c.c2kCfg.prefixTag = spec.SyncToK8S.PrefixLabel
 	c.c2kCfg.suffixTag = spec.SyncToK8S.SuffixLabel
+	c.c2kCfg.appendLabels = spec.SyncToK8S.AppendLabels
+	c.c2kCfg.appendAnnotations = spec.SyncToK8S.AppendAnnotations
 	c.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 
@@ -954,6 +969,8 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.c2kCfg.appendLabels = spec.SyncToK8S.AppendLabels
+	c.c2kCfg.appendAnnotations = spec.SyncToK8S.AppendAnnotations
 	c.c2kCfg.metadataStrategy = spec.SyncToK8S.MetadataStrategy
 	c.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
@@ -1028,6 +1045,8 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.c2kCfg.appendLabels = spec.SyncToK8S.AppendLabels
+	c.c2kCfg.appendAnnotations = spec.SyncToK8S.AppendAnnotations
 	c.c2kCfg.metadataStrategy = spec.SyncToK8S.MetadataStrategy
 	c.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
@@ -1100,6 +1119,8 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.c2kCfg.appendLabels = spec.SyncToK8S.AppendLabels
+	c.c2kCfg.appendAnnotations = spec.SyncToK8S.AppendAnnotations
 	c.c2kCfg.tagStrategy = spec.SyncToK8S.TagStrategy
 	c.c2kCfg.metadataStrategy = spec.SyncToK8S.MetadataStrategy
 	c.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
@@ -1174,6 +1195,8 @@ func (c *client) initZookeeperConnectorConfig(spec ctv1.ZookeeperSpec) {
 	c.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.c2kCfg.appendLabels = spec.SyncToK8S.AppendLabels
+	c.c2kCfg.appendAnnotations = spec.SyncToK8S.AppendAnnotations
 	c.c2kCfg.metadataStrategy = spec.SyncToK8S.MetadataStrategy
 	c.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
