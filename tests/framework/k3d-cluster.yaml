@@ -38,6 +38,14 @@ ports:
   - port: 5053:5053/udp
     nodeFilters:
       - loadbalancer
+registries:
+  use:
+    - k3d-registry.localhost:5000
+  config: |
+    mirrors:
+      "localhost:5000":
+        endpoint:
+          - http://k3d-registry.localhost:5000
 options:
   k3d:
     wait: true
